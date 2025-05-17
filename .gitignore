@@ -1,0 +1,5 @@
+vendor/
+logs/
+.docker/
+env/.env.dev
+env/.env.qa
