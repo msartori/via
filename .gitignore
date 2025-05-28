@@ -1,5 +1,5 @@
-vendor/
+api/vendor/
 logs/
 .docker/
-env/.env.dev
-env/.env.qa
+.vscode/
+secrets/

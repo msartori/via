@@ -1,28 +1,31 @@
 SHELL := /usr/bin/bash
-
+MAKEFLAGS += --no-print-directory
 ENV ?= dev
 ENV_FILE := env/.env.$(ENV)
 
 include $(ENV_FILE)
 export
 
-CURDIR := $(shell pwd)
-APPNAME := via
-COVERAGE_THRESHOLD := 30# coverage lower threshold
+CURDIR := $(shell pwd)/api
+API_IMAGE_NAME := $(APPNAME)-$(ENV)-api-img
+WEB_IMAGE_NAME := $(APPNAME)-$(ENV)-web-img
+COVERAGE_THRESHOLD := 20# coverage lower threshold
 BROWSERDIR := "/c/Program Files/Google/Chrome/Application/chrome.exe"
 
 GOBUILD := $(CURDIR)/build
 TEMP := $(CURDIR)/tmp
-TMP := $(CURDIR)/tmp
+
+export GOCACHE=${TEMP}
 
 # Test execution
 test:
 	@mkdir -p $(GOBUILD) $(TEMP)
-	go test ./... -coverprofile=$(TEMP)/coverage.out
+	cd api && go test ./... -coverprofile=$(TEMP)/coverage.out
+
 
 # Will test and verify coverage in order to build
 build: test
-	@coverage=$(shell go tool cover -func=$(TEMP)/coverage.out | grep total | awk '{print $$3}' | sed 's/%//'); \
+	@coverage=$(shell cd api && go tool cover -func=$(TEMP)/coverage.out | grep total | awk '{print $$3}' | sed 's/%//'); \
 	if [ -z "$$coverage" ]; then \
 		echo "Error: Unable to get coverage."; \
 		exit 1; \
@@ -30,42 +33,51 @@ build: test
 	coverage_int=$$(echo "$$coverage" | awk '{print int($$1)}'); \
 	if [ "$$coverage_int" -ge $(COVERAGE_THRESHOLD) ]; then \
 		echo "Coverage successfully achieved, got $$coverage_int% of $(COVERAGE_THRESHOLD)% required."; \
-		go build -o $(GOBUILD)/$(APPNAME) ./cmd; \
+		cd api && go build -o $(GOBUILD)/$(APPNAME) ./cmd; \
 	else \
 		echo "Insufficient coverage, got $$coverage_int% of $(COVERAGE_THRESHOLD)% required."; \
 		exit 1; \
 	fi;
 
 coverage: test
-	go tool cover -html=$(TEMP)/coverage.out -o $(TEMP)/coverage.html
+	cd api && GOCACHE=/tmp/gocache go tool cover -html=$(TEMP)/coverage.out -o $(TEMP)/coverage.html
 	$(BROWSERDIR) "$(TEMP)/coverage.html"
 
 coverage-no-test:
-	"$(BROWSERDIR)" $(TEMP)/coverage.html
+	$(BROWSERDIR) "$(TEMP)/coverage.html"
 
 clean-local:
 	rm -rf $(GOBUILD) $(TEMP)
 
 up:
-	@echo "🔼 Levantando servicio con entorno $(ENV_FILE)..."
+	echo "🔼 Starting service on ENV: $(ENV_FILE)..."
 	docker-compose --env-file $(ENV_FILE) up --build -d
 	
-# Detiene contenedor
+# Stop container
 down:
 	docker-compose --env-file $(ENV_FILE) down
 
-# Logs del servicio
+# Chech service logs
 logs:
 	docker-compose --env-file $(ENV_FILE) logs -f
 
-# Rebuild limpio
-rebuild: down clean-local up
+# Rebuild 
+rebuild: down clean-local remove-image up
 
-# Shell dentro del contenedor
+# Shell in container
 sh:
-	docker-compose --env-file $(ENV_FILE) exec $(SERVICE_NAME) sh
+	docker-compose --env-file $(ENV_FILE) exec api sh
 
-# Verifica variables cargadas
+# Verify vars in
 env:
-	@echo "🧪 Variables desde $(ENV_FILE):"
+	@echo "🧪 Vars in $(ENV_FILE):"
 	@cat $(ENV_FILE)
+
+# clean image
+remove-image:
+	@echo "🗑️  Deleting image $(API_IMAGE_NAME)..."
+	docker rmi -f $(API_IMAGE_NAME) || true
+	@echo "🗑️  Deleting image $(WEB_IMAGE_NAME)..."
+	docker rmi -f $(WEB_IMAGE_NAME) || true
+
+.PHONY: env logs

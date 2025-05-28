@@ -10,7 +10,7 @@ import (
 )
 
 type FileWriter struct {
-	Enabled    bool   `envconfig:"ENABLED" default:"false" json:"enabled"`
+	Enabled    bool   `envconfig:"ENABLED" default:"true" json:"enabled"`
 	Filename   string `envconfig:"FILE_NAME" default:"logs/app.log" json:"fileName"`
 	MaxSizeMB  int    `envconfig:"MAX_SIZE_MB" default:"1" json:"maxSizeMB"`
 	MaxBackups int    `envconfig:"MAX_BACKUPS" default:"5" json:"maxBackups"`
@@ -39,8 +39,12 @@ type Config struct {
 	Log         `envconfig:"LOG" json:"log"`
 	Application struct {
 		Env  string `envconfig:"ENV"  default:"production" json:"env"`
-		Name string `envconfig:"NAME" default:"MyApp"      json:"name"`
+		Name string `envconfig:"NAME" default:"MyApp" json:"name"`
+		Port int    `envconfig:"PORT" default:"8080" json:"port"`
 	} `envconfig:"APP" json:"application"`
+	Database struct {
+		PasswordFile string `envconfig:"PASSWORD_FILE"  default:"" json:"passwordFile"`
+	} `envconfig:"DB" json:"db"`
 }
 
 var (

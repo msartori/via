@@ -1,25 +1,46 @@
-#version: "3.9"
-
 services:
   api:
+    image: ${APPNAME}-${ENV}-api-img
+    container_name: ${APPNAME}-${ENV}-api-svc
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: dockerfile.api
       args:
         APPNAME: ${APPNAME}
-        PORT: ${PORT}
-    container_name: ${APPNAME}
+        PORT: ${API_PORT}
+    env_file:
+      - api/env/.env.${ENV}   
+    environment:
+      DB_PASSWORD_FILE: /run/secrets/db_password   
+    networks:
+      - ${APPNAME}-network  
     ports:
-      - "${PORT}:${PORT}"
-    #environment:
-      #- DB_HOST=${DB_HOST}
-      #- DB_PORT=${DB_PORT}
-      #- DB_USER=${DB_USER}
-      #- DB_PASSWORD=${DB_PASSWORD}
-      #- DB_NAME=${DB_NAME}
+      - "${API_PORT}:${API_PORT}"
+    secrets:
+      - db_password    
     #depends_on:
     #  - db
-
+  web:
+    build:
+      context: .
+      dockerfile: dockerfile.web
+      args:
+        ENV: ${ENV}
+        PORT: ${WEB_PORT}
+    environment:
+      PORT: ${WEB_PORT} 
+    image: ${APPNAME}-${ENV}-web-img
+    container_name: ${APPNAME}-${ENV}-web-svc
+    ports:
+      - "${WEB_PORT}:80"
+    networks:
+      - via-network  
+    depends_on:
+      - api
+networks:
+  via-network:
+    name: ${APPNAME}-${ENV}-net
+    driver: bridge
   #db:
   #  image: postgres:16
   #  container_name: ${APPNAME}-db
@@ -34,3 +55,6 @@ services:
 
 #volumes:
 #  db_data:
+secrets:
+  db_password:
+    file: ./secrets/db_password.${ENV}

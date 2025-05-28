@@ -1,7 +1,7 @@
-# Dockerfile
+# dockerfile.api
 
 # -------------------------
-# Etapa de construcción
+# Build Stage
 # -------------------------
     FROM golang:1.24 AS builder
 
@@ -10,17 +10,17 @@
     ARG APPNAME
     ENV GO111MODULE=on
 
-    # Copia los archivos necesarios
+    # Will copy all
     COPY . .
     
-    # Instala make (por si no viene en la imagen base)
+    # make install
     RUN apt-get update && apt-get install -y make
     
-    # Ejecuta tests, chequea cobertura y construye el binario
+    # Unit test execution, coverage test, binary generation
     RUN make build
     
     # -------------------------
-    # Imagen final mínima
+    # Minimun final image
     # -------------------------
     FROM debian:bookworm-slim
 
@@ -30,14 +30,13 @@
     ARG APPNAME
     ARG PORT
 
-    # Copiamos el binario desde el build stage
-    COPY --from=builder /app/build/${APPNAME} .
+    # Will copy binary from build
+    COPY --from=builder /app/api/build/${APPNAME} .
     
-    # Abrimos el puerto de la API (ajustalo si tu app usa otro)
+    # Api port open
     EXPOSE ${PORT}
     
-    # Comando que se ejecuta al iniciar el contenedor
-    #CMD ["sh", "-c", "./${APPNAME}"]
     ENV APPNAME=${APPNAME}
     ENTRYPOINT ["sh", "-c"]
+    # App start
     CMD ["./$APPNAME"]
