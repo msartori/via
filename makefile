@@ -1,7 +1,8 @@
-SHELL := /usr/bin/bash
 MAKEFLAGS += --no-print-directory
-ENV ?= dev
+ENV ?= local
 ENV_FILE := env/.env.$(ENV)
+LT_API_LOG=lt_api.log
+LT_FRONT_LOG=lt_front.log
 
 include $(ENV_FILE)
 export
@@ -49,12 +50,42 @@ coverage-no-test:
 clean-local:
 	rm -rf $(GOBUILD) $(TEMP)
 
+localtunnel-start:
+	@echo "Starting LocalTunnel API ($(API_PORT))..."
+	@nohup npx localtunnel --subdomain via-$(ENV)-api --port $(API_PORT) > $(LT_API_LOG) 2>&1 &
+	@sleep 5
+	@echo "Starting LocalTunnel WEB ($(WEB_PORT))..."
+	@nohup npx localtunnel --subdomain via-$(ENV)-web --port $(WEB_PORT) > $(LT_FRONT_LOG) 2>&1 &
+	@sleep 8
+	@echo "Extracting URLs..."
+	@API_URL=$$(grep -m 1 -o 'https://[^ ]*\.loca\.lt' $(LT_API_LOG)); \
+	FRONT_URL=$$(grep -m 1 -o 'https://[^ ]*\.loca\.lt' $(LT_FRONT_LOG)); \
+	echo "VITE_API_URL=$$API_URL" > web/env/.env.$(ENV); \
+	#echo "FRONT_URL=$$FRONT_URL" >> web/env/.env.$(ENV); \
+	echo "API_URL=$$API_URL"; \
+	echo "FRONT_URL=$$FRONT_URL"
+
+#localtunnel-stop:
+#	@echo "Killing LocalTunnel process..."
+#	@pkill -f "localtunnel" || true
+
+start-api:
+	docker-compose --env-file $(ENV_FILE) up --build -d api
+
+start-web:
+	docker-compose --env-file $(ENV_FILE) up --build -d web
+
 up:
 	echo "🔼 Starting service on ENV: $(ENV_FILE)..."
-	docker-compose --env-file $(ENV_FILE) up --build -d
+	#docker-compose --env-file $(ENV_FILE) up --build -d
+	make start-api
+	make localtunnel-start
+	make start-web
 	
 # Stop container
 down:
+	#make localtunnel-stop
+	@echo "🔽 Stopping service on ENV: $(ENV_FILE)..."
 	docker-compose --env-file $(ENV_FILE) down
 
 # Chech service logs

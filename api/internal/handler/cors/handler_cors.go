@@ -7,7 +7,7 @@ func WithCORS(next http.Handler) http.Handler {
 		// Permití el origen del frontend (puede ser localhost o uno de Docker)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, bypass-tunnel-reminder")
 
 		// Respondé directamente a las preflight OPTIONS
 		if r.Method == "OPTIONS" {

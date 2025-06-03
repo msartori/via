@@ -3,3 +3,7 @@ logs/
 .docker/
 .vscode/
 secrets/
+tmp/
+lt_api.log
+.gitignore
+lt_front.log
