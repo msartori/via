@@ -15,6 +15,8 @@ require (
 
 require (
 	github.com/andybalholm/cascadia v1.3.3 // indirect
+	github.com/caarlos0/env/v10 v10.0.0
+	github.com/google/uuid v1.6.0
 	github.com/rs/zerolog v1.34.0
 	golang.org/x/net v0.35.0 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

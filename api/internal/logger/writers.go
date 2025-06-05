@@ -1,4 +1,4 @@
-package util_logger
+package logger
 
 import (
 	"io"

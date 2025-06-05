@@ -1,7 +1,8 @@
-package util_logger
+package logger
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"os"
 	"os/exec"
@@ -31,30 +32,31 @@ func getBaseLogConfig() config.Log {
 
 func logAll(logger *Log, logLvl string) {
 	key := "key"
+	ctx := context.Background()
 	if logLvl == lvlTrace {
-		logger.Trace(key, lvlTrace)
-		logger.Debug(key, lvlDebug)
-		logger.Info(key, lvlInfo)
-		logger.Warn(key, lvlWarn)
-		logger.Error(errors.New(lvlError), key, lvlError)
+		logger.Trace(ctx, key, lvlTrace)
+		logger.Debug(ctx, key, lvlDebug)
+		logger.Info(ctx, key, lvlInfo)
+		logger.Warn(ctx, key, lvlWarn)
+		logger.Error(ctx, errors.New(lvlError), key, lvlError)
 	}
 	if logLvl == lvlDebug {
-		logger.Debug(key, lvlDebug)
-		logger.Info(key, lvlInfo)
-		logger.Warn(key, lvlWarn)
-		logger.Error(errors.New(lvlError), key, lvlError)
+		logger.Debug(ctx, key, lvlDebug)
+		logger.Info(ctx, key, lvlInfo)
+		logger.Warn(ctx, key, lvlWarn)
+		logger.Error(ctx, errors.New(lvlError), key, lvlError)
 	}
 	if logLvl == lvlInfo {
-		logger.Info(key, lvlInfo)
-		logger.Warn(key, lvlWarn)
-		logger.Error(errors.New(lvlError), key, lvlError)
+		logger.Info(ctx, key, lvlInfo)
+		logger.Warn(ctx, key, lvlWarn)
+		logger.Error(ctx, errors.New(lvlError), key, lvlError)
 	}
 	if logLvl == lvlWarn {
-		logger.Warn(key, lvlWarn)
-		logger.Error(errors.New(lvlError), key, lvlError)
+		logger.Warn(ctx, key, lvlWarn)
+		logger.Error(ctx, errors.New(lvlError), key, lvlError)
 	}
 	if logLvl == lvlError {
-		logger.Error(errors.New(lvlError), key, lvlError)
+		logger.Error(ctx, errors.New(lvlError), key, lvlError)
 	}
 }
 
@@ -79,7 +81,7 @@ func TestFatal(t *testing.T) {
 		Init(cfg)
 		logger := Get()
 		logAll(logger, lvlTrace)
-		logger.Fatal(errors.New("fatal"), key, lvlFatal)
+		logger.Fatal(context.Background(), errors.New("fatal"), key, lvlFatal)
 		return
 	}
 	var logOutput bytes.Buffer

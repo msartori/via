@@ -79,7 +79,9 @@ up:
 	echo "🔼 Starting service on ENV: $(ENV_FILE)..."
 	#docker-compose --env-file $(ENV_FILE) up --build -d
 	make start-api
+ifeq ($(SKIP_TUNNEL),)
 	make localtunnel-start
+endif
 	make start-web
 	
 # Stop container

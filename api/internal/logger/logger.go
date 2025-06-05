@@ -1,8 +1,11 @@
-package util_logger
+package logger
 
 import (
+	"context"
 	"io"
 	defaultLog "log"
+	"maps"
+	"net/http"
 	"sync"
 	"via/internal/config"
 
@@ -71,33 +74,39 @@ func Get() *Log {
 	return instance
 }
 
-func (l Log) Trace(pairs ...any) {
+func (l Log) Trace(ctx context.Context, pairs ...any) {
 	event := l.Logger.Trace()
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlTrace, pairs...)
 }
 
-func (l Log) Debug(pairs ...any) {
+func (l Log) Debug(ctx context.Context, pairs ...any) {
 	event := l.Logger.Debug()
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlDebug, pairs...)
 }
 
-func (l Log) Info(pairs ...any) {
+func (l Log) Info(ctx context.Context, pairs ...any) {
 	event := l.Logger.Info()
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlInfo, pairs...)
 }
 
-func (l Log) Warn(pairs ...any) {
+func (l Log) Warn(ctx context.Context, pairs ...any) {
 	event := l.Logger.Warn()
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlWarn, pairs...)
 }
 
-func (l Log) Error(err error, pairs ...any) {
+func (l Log) Error(ctx context.Context, err error, pairs ...any) {
 	event := l.Logger.Error().Err(err)
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlError, pairs...)
 }
 
-func (l Log) Fatal(err error, pairs ...any) {
+func (l Log) Fatal(ctx context.Context, err error, pairs ...any) {
 	event := l.Logger.Fatal().Err(err)
+	pairs = l.addContextFields(ctx, pairs...)
 	l.publish(event, lvlFatal, pairs...)
 }
 
@@ -118,6 +127,7 @@ func (l Log) publish(e *zerolog.Event, level string, pairs ...any) {
 // arg conversion to key value
 func (l Log) addFields(e *zerolog.Event, pairs ...any) *zerolog.Event {
 	for i := 0; i+1 < len(pairs); i += 2 {
+		//if key is not a string, skip it
 		key, ok := pairs[i].(string)
 		if !ok {
 			continue
@@ -125,7 +135,63 @@ func (l Log) addFields(e *zerolog.Event, pairs ...any) *zerolog.Event {
 		e = e.Interface(key, pairs[i+1])
 	}
 	if len(pairs)%2 != 0 {
-		l.Warn("msg", "Logger received an odd number of arguments. Last argument ignored.")
+		l.Warn(context.Background(), "msg", "Logger received an odd number of arguments. Last argument ignored.", "key", pairs[len(pairs)-1])
+		// If the last argument is not a key-value pair, we ignore it value
 	}
 	return e
+}
+
+type ctxKey string
+
+const logContextKey ctxKey = "logFields"
+
+type LogFields map[string]any
+
+func (l Log) WithLogFieldsInRequest(r *http.Request, pairs ...any) *http.Request {
+	return r.WithContext(l.WithLogFields(r.Context(), pairs...))
+}
+
+// WithLogFields returns a new context with logging fields added
+func (l Log) WithLogFields(ctx context.Context, pairs ...any) context.Context {
+	ctxFields, _ := ctx.Value(logContextKey).(LogFields)
+	if ctxFields == nil {
+		ctxFields = make(LogFields)
+	}
+	maps.Copy(ctxFields, l.pairsToLogFields(pairs...))
+	return context.WithValue(ctx, logContextKey, ctxFields)
+}
+
+func (l Log) pairsToLogFields(pairs ...any) LogFields {
+	fields := make(LogFields)
+	for i := 0; i+1 < len(pairs); i += 2 {
+		//if key is not a string, skip it
+		key, ok := pairs[i].(string)
+		if !ok {
+			continue
+		}
+		fields[key] = pairs[i+1]
+	}
+	if len(pairs)%2 != 0 {
+		if len(pairs)%2 != 0 {
+			l.Warn(context.Background(), "msg", "Logger received an odd number of arguments. Last argument ignored.", "key", pairs[len(pairs)-1])
+			// If the last argument is not a key-value pair, we ignore it value
+		}
+	}
+	return fields
+}
+
+func (l Log) addContextFields(ctx context.Context, pairs ...any) []any {
+	if ctx == nil {
+		return pairs
+	}
+	fields, ok := ctx.Value(logContextKey).(LogFields)
+	if !ok || len(fields) == 0 {
+		return pairs
+	}
+	maps.Copy(fields, l.pairsToLogFields(pairs...))
+	result := make([]any, 0, len(fields)*2)
+	for k, v := range fields {
+		result = append(result, k, v)
+	}
+	return result
 }
