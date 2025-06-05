@@ -7,3 +7,4 @@ tmp/
 lt_api.log
 .gitignore
 lt_front.log
+.vscode/launch.json
