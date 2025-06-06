@@ -2,9 +2,12 @@ package middleware
 
 import (
 	"context"
+	"errors"
+	"maps"
 	"net/http"
+	"sync"
 	"time"
-	"via/internal/logger"
+	"via/internal/log"
 )
 
 const HttpStatusClientCloseRequest = 499
@@ -16,6 +19,8 @@ type timeoutWriter struct {
 	statusCode int
 	body       []byte
 	written    bool
+	timedOut   bool
+	mu         sync.Mutex
 }
 
 func (tw *timeoutWriter) Header() http.Header {
@@ -23,29 +28,43 @@ func (tw *timeoutWriter) Header() http.Header {
 }
 
 func (tw *timeoutWriter) Write(b []byte) (int, error) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+
+	if tw.timedOut {
+		return 0, errors.New("write after timeout")
+	}
 	tw.body = append(tw.body, b...)
 	tw.written = true
 	return len(b), nil
 }
 
 func (tw *timeoutWriter) WriteHeader(statusCode int) {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
 	tw.statusCode = statusCode
 }
 
 func (tw *timeoutWriter) copy(r *http.Request) {
-	// Only write if not already written by middleware
-	if !tw.written {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+
+	if tw.timedOut || !tw.written {
 		return
 	}
 	h := tw.ResponseWriter.Header()
-	for k, v := range tw.header {
-		h[k] = v
-	}
+	maps.Copy(h, tw.header)
 	if tw.statusCode != 0 {
 		tw.ResponseWriter.WriteHeader(tw.statusCode)
-		logger.Get().WithLogFieldsInRequest(r, "status", tw.statusCode)
+		log.Get().WithLogFieldsInRequest(r, "status", tw.statusCode)
 	}
 	tw.ResponseWriter.Write(tw.body)
+}
+
+func (tw *timeoutWriter) markTimedOut() {
+	tw.mu.Lock()
+	defer tw.mu.Unlock()
+	tw.timedOut = true
 }
 
 // Middleware to apply a global timeout
@@ -73,9 +92,10 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 			statusCode := http.StatusOK
 			msg := ""
 			var err error
-			log := logger.Get()
+			logger := log.Get()
 			select {
 			case <-ctx.Done(): //timeout or cancellation
+				tw.markTimedOut()
 				switch err = ctx.Err(); err {
 				case context.DeadlineExceeded:
 					msg = "request timeout"
@@ -87,8 +107,8 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 					msg = "unexpected context error"
 					statusCode = http.StatusServiceUnavailable
 				}
-				log.WithLogFieldsInRequest(r, "status", statusCode)
-				log.Error(r.Context(), err, "msg", msg)
+				logger.WithLogFieldsInRequest(r, "status", statusCode)
+				logger.Error(r.Context(), err, "msg", msg)
 				w.WriteHeader(statusCode)
 			case <-done: // handler completed successfully
 				tw.copy(r)

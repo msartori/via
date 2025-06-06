@@ -37,7 +37,7 @@ type Log struct {
 
 type Application struct {
 	Env  string `env:"ENV"  envDefault:"production" json:"env"`
-	Name string `env:"NAME" envDefault:"MyApp"      json:"name"`
+	Name string `env:"NAME" envDefault:"via"      json:"name"`
 	Port int    `env:"PORT" envDefault:"8080"       json:"port"`
 }
 
@@ -45,10 +45,18 @@ type Database struct {
 	PasswordFile string `env:"PASSWORD_FILE" envDefault:"" json:"passwordFile"`
 }
 
+type CORS struct {
+	Enabled bool   `env:"ENABLED" envDefault:"true" json:"enabled"`
+	Origins string `env:"ORIGINS" envDefault:"*" json:"origins"`
+	Methods string `env:"METHODS" envDefault:"GET,POST,PUT,PATCH,DELETE,OPTIONS" json:"methods"`
+	Headers string `env:"HEADERS" envDefault:"Content-Type,Authorization,bypass-tunnel-reminder" json:"headers"`
+}
+
 type Config struct {
 	Log         Log         `envPrefix:"LOG_" json:"log"`
 	Application Application `envPrefix:"APP_" json:"application"`
 	Database    Database    `envPrefix:"DB_" json:"db"`
+	CORS        CORS        `envPrefix:"CORS_" json:"cors"`
 }
 
 var (

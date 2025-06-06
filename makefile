@@ -11,7 +11,7 @@ CURDIR := $(shell pwd)/api
 API_IMAGE_NAME := $(APPNAME)-$(ENV)-api-img
 WEB_IMAGE_NAME := $(APPNAME)-$(ENV)-web-img
 COVERAGE_THRESHOLD := 20# coverage lower threshold
-BROWSERDIR := "/c/Program Files/Google/Chrome/Application/chrome.exe"
+BROWSERDIR := open -a "Google Chrome"
 
 GOBUILD := $(CURDIR)/build
 TEMP := $(CURDIR)/tmp

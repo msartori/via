@@ -1,4 +1,4 @@
-package logger
+package app_log
 
 import (
 	"bytes"
@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"via/internal/config"
+	"via/internal/log"
 )
 
 var logTrace = "\"key\":\"trace\""
@@ -30,7 +31,7 @@ func getBaseLogConfig() config.Log {
 	}
 }
 
-func logAll(logger *Log, logLvl string) {
+func logAll(logger log.Logger, logLvl string) {
 	key := "key"
 	ctx := context.Background()
 	if logLvl == lvlTrace {
@@ -78,8 +79,8 @@ func TestFatal(t *testing.T) {
 		cfg := getBaseLogConfig()
 		cfg.Level = lvlError
 		cfg.DefaultWriter.Output = os.Stdout
-		Init(cfg)
-		logger := Get()
+		log.Set(New(cfg)) // Initialize the logger with the config
+		logger := log.Get()
 		logAll(logger, lvlTrace)
 		logger.Fatal(context.Background(), errors.New("fatal"), key, lvlFatal)
 		return
