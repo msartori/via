@@ -6,7 +6,6 @@ import (
 	defaultLog "log"
 	"maps"
 	"net/http"
-	"via/internal/config"
 	"via/internal/log"
 
 	"github.com/rs/zerolog"
@@ -16,6 +15,14 @@ import (
 type AppLogger struct {
 	zerolog.Logger
 	iconEnabled bool
+}
+
+type LogCfg struct {
+	FileWriter    FileWriterCfg    `envPrefix:"FILE_WRITER_"    json:"fileWriter"`
+	ConsoleWriter ConsoleWriterCfg `envPrefix:"CONSOLE_WRITER_" json:"consoleWriter"`
+	DefaultWriter DefaultWriterCfg `envPrefix:"DEFAULT_WRITER_" json:"defaultWriter"`
+	IconEnabled   bool             `env:"ICON_ENABLED"          envDefault:"false"  json:"iconEnabled"`
+	Level         string           `env:"LEVEL"                 envDefault:"debug" json:"level"`
 }
 
 var (
@@ -34,7 +41,7 @@ var (
 		lvlFatal: "💀"}
 )
 
-func New(logCfg config.Log) log.Logger {
+func New(logCfg LogCfg) log.Logger {
 	var writers []io.Writer
 	if logCfg.DefaultWriter.Enabled {
 		writers = append(writers, DefaultWriter{logCfg.DefaultWriter}.Writer())
@@ -137,6 +144,9 @@ func (l AppLogger) WithLogFieldsInRequest(r *http.Request, pairs ...any) *http.R
 
 // WithLogFields returns a new context with logging fields added
 func (l AppLogger) WithLogFields(ctx context.Context, pairs ...any) context.Context {
+	if ctx == nil {
+		return ctx
+	}
 	ctxFields, _ := ctx.Value(logContextKey).(LogFields)
 	if ctxFields == nil {
 		ctxFields = make(LogFields)

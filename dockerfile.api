@@ -30,6 +30,10 @@
     ARG APPNAME
     ARG PORT
 
+    # Install certificates for HTTPS
+    RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
     # Will copy binary from build
     COPY --from=builder /app/api/build/${APPNAME} .
     

@@ -99,11 +99,6 @@ func TestTimeoutMiddleware_Success(t *testing.T) {
 	mockLogger.AssertExpectations(t)
 }
 
-type customContext struct {
-	context.Context
-	err error
-}
-
 // Custom context that returns unexpected error
 type dummyCtx struct {
 	r *http.Request
@@ -147,4 +142,38 @@ func TestTimeoutWriter_WriteAfterTimeout(t *testing.T) {
 	n, err := tw.Write([]byte("late"))
 	assert.Equal(t, 0, n)
 	assert.Equal(t, "write after timeout", err.Error())
+}
+
+func TestTimeoutWriter_Copy_SkipsWhenTimedOut(t *testing.T) {
+	rr := httptest.NewRecorder()
+	tw := &timeoutWriter{
+		ResponseWriter: rr,
+		header:         make(http.Header),
+		timedOut:       true, // <-- Simulate timeout
+		written:        true, // written true so only timedOut triggers
+	}
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+
+	tw.copy(req)
+
+	if rr.Body.Len() != 0 {
+		t.Error("expected no response written when timed out")
+	}
+}
+
+func TestTimeoutWriter_Copy_SkipsWhenNotWritten(t *testing.T) {
+	rr := httptest.NewRecorder()
+	tw := &timeoutWriter{
+		ResponseWriter: rr,
+		header:         make(http.Header),
+		timedOut:       false,
+		written:        false, // <-- Simulate nothing was written
+	}
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+
+	tw.copy(req)
+
+	if rr.Body.Len() != 0 {
+		t.Error("expected no response written when nothing was written")
+	}
 }

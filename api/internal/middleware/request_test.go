@@ -12,9 +12,8 @@ import (
 )
 
 func TestRequestMiddleware_GeneratesRequestID(t *testing.T) {
-	// Setup
 	mockLogger := new(mock_log.MockLogger)
-	log.Set(mockLogger) // Asume que tienes una función SetMock para sustituir el singleton
+	log.Set(mockLogger)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	mockLogger.On("WithLogFieldsInRequest", mock.Anything, mock.Anything).Return(req)
 	mockLogger.On("Info", mock.Anything, mock.Anything).Twice()
@@ -40,7 +39,6 @@ func TestRequestMiddleware_GeneratesRequestID(t *testing.T) {
 }
 
 func TestRequestMiddleware_UsesExistingRequestID(t *testing.T) {
-	// Setup
 	mockLogger := new(mock_log.MockLogger)
 	log.Set(mockLogger)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)

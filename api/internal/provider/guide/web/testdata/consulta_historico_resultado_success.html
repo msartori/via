@@ -1,0 +1,241 @@
+
+<html>
+
+<head>
+  <title>Consulta al histórico de envíos</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <link rel="stylesheet" href='/ViaCargo/css/sintra.css' media="screen" type="text/css">
+  <html>
+  <script language="javascript1.2" src='/ViaCargo/scripts/funciones.js'></script>
+   <script language="javascript1.2" src="/ViaCargo/scripts/introEsTab.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/jsrsClient.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/procesarRespuesta.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/impresion.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/tabla.js"></script>
+
+  <script language="javascript1.2">
+  	var codigo_expe;
+
+   	function iniciar()
+   	{
+		if ('undefined' != parent.frames['filtro']){
+	   		if ('undefined' != parent.frames['filtro'].getObj('find')){
+	   			if(parent.frames['filtro'].getObj('find')){
+					parent.frames['filtro'].getObj('find').style.display = '';
+	   			}
+	   		}
+			if ('undefined' != parent.frames['filtro'].getObj('export')){
+				if(parent.frames['filtro'].getObj('export')){
+					parent.frames['filtro'].getObj('export').style.display = '';
+				}
+			}
+			if(parent.frames['filtro'].getObj('searching')){
+				parent.frames['filtro'].getObj("searching").style.display='none';
+			}
+		}
+		
+		
+		    	tabla = new Tabla('listado');
+		    	resizeCuadro(120);
+				getObj("btn_detalle_expe").disabled=true;
+				tabla.noOrdenarUltimaColumna();
+		
+
+		
+			
+				detalleParcial(1,'27066564');
+			
+		
+
+		init();
+   }
+
+   function verExpedicion(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+	pagina += '&tab=3';
+    pagina += '&url=/ViaCargo/atencion_cliente/historico/consulta_historico.do';
+    parent.document.location = pagina;
+   }
+
+   function verExpedicion_detalle()
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + codigo_expe;
+	pagina += '&tab=3';
+    pagina += '&url=/ViaCargo/atencion_cliente/historico/consulta_historico.do';
+    parent.document.location = pagina;
+   }
+
+   function goIncidencias(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+    pagina += '&tab=3';
+    pagina += '&url=' + escape('/ViaCargo/atencion_cliente/historico/consulta_historico.do');
+    parent.document.location = pagina;
+   }
+
+   function goPOD(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+    pagina += '&tab=11';
+    pagina += '&url=' + escape('/ViaCargo/atencion_cliente/historico/consulta_historico.do');
+    parent.document.location = pagina;
+   }
+
+   function borrar_expedicion(expedicion)
+   {
+    if (!confirm("Esta Seguro de que quiere borrar este registro?"))
+    {
+     return;
+    }
+    var pagina = '/ViaCargo/salidas/expediciones_acciones.do';
+    pagina += '?consulta=0';
+    pagina += '&expedicion=' + expedicion;
+    document.location = pagina;
+   }
+
+   function detalleParcial(id,codigo)
+    {
+	 tabla.resaltado(id);
+	 jsrsExecute('/ViaCargo/atencion_cliente/historico/detalleExpedicion.do', detalleParcial_jsrs, 'datosExpedicion',[codigo]);
+	 getObj("btn_detalle_expe").disabled=false;
+	 codigo_expe=codigo;
+    }
+
+	 function detalleParcial_jsrs(texto)
+     {
+
+	  jsrseRellenarDatos(texto);
+	}
+	
+	 function imprimirRangoEtiquetas(codigo)
+	   {   
+	       var pagina = '/ViaCargo/salidas/generar_Etiquetas.do';
+	       pagina += '?expedicion='+codigo;
+	   	   abrirVentanaPopUpCentrada(pagina,200,300);
+	   }
+  </script>
+ </head>
+
+ <body onload="javascript:iniciar();" onresize="resizeCuadro(120);">
+
+
+  <form action="" method="get" onSubmit="return false;">
+   <input type="hidden" name="pagina" value="1">
+   <input type="hidden" name="total" value="0">
+   <table>
+    <tr class="titulo">
+     <td>Resultados de la búsqueda</td>
+     <td align="right">1 registros encontrados</td>
+    </tr>
+    <tr>
+     <td colspan="2">
+      <div class="cuadro" style="height: 305px" id="cuadro">
+       <table id="listado">
+        <tr class="cabecera">
+         <td nowrap><span class="cabecera">Envío</span></td>
+         <td nowrap><span class="cabecera">Referencia</span></td>
+         <td nowrap><span class="cabecera">Estado</span></td>
+         <td nowrap align="right"><span class="cabecera">BUL</span></td>
+         <td nowrap align="right"><span class="cabecera">PR Kg</span></td>
+         <td nowrap><span class="cabecera">Portes</span></td>
+         <td nowrap><span class="cabecera">Ruta</span></td>
+         <!--<td nowrap><span class="cabecera">Destino</span></td>-->
+         <td nowrap><span class="cabecera">Fecha </span></td>
+         <td><span class="cabecera">Remitente</span></td>
+         <td><span class="cabecera">Destinatario</span></td>
+         <!--<td nowrap><span class="cabecera">Reem</span></td>-->
+		 <td nowrap><span class="cabecera">Acciones</span></td>
+		 <!--<td nowrap><span class="cabecera">Población destino</span></td>-->
+        </tr>
+
+	<tbody class="cuerpo_tabla">
+		
+		
+				<tr class="color_impar">
+				 <td><a href="javascript:verExpedicion('27066564');">999025862539</a></td>
+				 <td>999025862539</td>
+				 <td>ENT</td>
+				 <td align="right">
+				 	<a href="javascript:imprimirRangoEtiquetas('27066564')" title='Imprimir rótulos'>
+				 		1
+				 	</a>
+				 </td>
+				 <td align="right">1,714</td>
+				 <td align="center">D</td>
+				 <td nowrap>TUC-MDQ</td>
+				 <!--<td>MDQ</td>-->
+				 <td>13/03/25</td>
+				 <td>ROLDAN PAULA </td>
+				 <td>DANIELA AGUIRRE @</td>
+				 <!--<td></td>-->
+				 <!--<td>7600 MAR DEL PLATA</td>-->
+				 <td>
+					<table class="acciones">
+						<tr>					
+							<td>
+								<a class="btn2" href="javascript:detalleParcial(1,'27066564');" title="Detalle">DE</a>							
+							</td>
+							
+							<td>
+								
+								
+								
+									&nbsp;
+								
+							</td>
+							
+							<td>
+															
+							</td>
+						</tr>
+					</table>
+				 </td>
+				</tr>
+		
+	</tbody>
+       </table>
+      </div>
+     </td>
+    </tr>
+    <tr class="pie">
+     <td colspan="20" align="center"><input type='hidden' name='pagina_actual' value='1'> <input type='hidden' name='pagina_maximo' value='1'> <input type='hidden' name='pagina_total' value='1'> Páginas: (1)&nbsp;&nbsp;&nbsp;&nbsp;<font class="resaltado">1</font></td>
+    </tr>
+   </table>
+     </form>
+   <form name="detalleExpedicion" onsubmit="return false;">
+   <table >
+   	<tr>
+		<td class="titulo" colspan="10">Detalle parcial</td>
+	</tr>
+	<tr>
+		 <td align="left">Envío</td>
+		 <td><input size="14" type="text" name="numero_envio"  readOnly></td>
+		 <td align="left">Fecha de Retiro</td>
+		 <td><input size="10" type="text" name="fechaRecogida"  readOnly></td>
+		 <td align="left">Fecha de salida</td>
+		 <td ><input type="text" size="10" name="fechaSalida" value="" readOnly></td>
+		 <td align="left">Fecha de llegada</td>
+		 <td ><input type="text" size="10" name="fechaLlegada" value="" readOnly></td>
+		 <td align="right"><button id="btn_detalle_expe" class="btn3" accesskey="H" onClick="javascript:verExpedicion_detalle()"><u>H</u>istórico</button></td>
+		 <td>&nbsp;</td>
+	</tr>
+	<tr>
+		 <td align="left">Fecha de Asignación</td>
+		 <td><input size="10" type="text" name="fechaAsignacion" value="" readOnly></td>
+		 <td align="left">Fecha de entrega</td>
+		 <td ><input type="text" size="10" name="fechaEntrega" value="" readOnly></td>
+		 <td align="left">Ult. Incidencia</td>
+		 <td  colspan="4"><input type="text" size="50" name="ultimaIncidencia" value="" readOnly></td>
+	</tr>
+   </table>
+  </form>
+
+
+
+</body>
+</html>

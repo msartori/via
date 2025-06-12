@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// Función dummy que el middleware va a invocar
+// dummy function that will be invoked by the middleware
 func testHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTeapot)
 	w.Write([]byte("OK"))
@@ -23,17 +23,17 @@ func testHandler(w http.ResponseWriter, r *http.Request) {
 func TestCORSMiddleware(t *testing.T) {
 	mockLog := new(mock_log.MockLogger)
 
-	// Reemplazar el logger global por el mock
+	// logger mock setup
 	log.Set(mockLog)
 
-	// Configuración del middleware
+	// middleware configuration
 	cfg := config.CORS{
 		Origins: "http://localhost",
 		Methods: "GET,POST,OPTIONS",
 		Headers: "Content-Type,Authorization",
 	}
 
-	// Handler envuelto con el middleware
+	// handler setup with CORS middleware
 	handler := middleware.CORS(http.HandlerFunc(testHandler), cfg)
 
 	t.Run("regular request passes with correct headers", func(t *testing.T) {

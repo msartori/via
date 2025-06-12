@@ -3,19 +3,24 @@ package util_response
 import (
 	"encoding/json"
 	"net/http"
+	"via/internal/middleware"
 )
 
-func ResponderJSON(w http.ResponseWriter, r *http.Request, data any, status int) {
+type Response struct {
+	Data      any    `json:"data"`
+	Message   string `json:"message"`
+	RequestID string `json:"requestId"`
+}
 
+func ResponderJSON(w http.ResponseWriter, r *http.Request, response Response, status int) {
 	if r.Context().Err() != nil {
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(data)
-}
+	if requestID, ok := r.Context().Value(middleware.RequestIDKey).(string); ok {
+		response.RequestID = requestID
+	}
 
-func ResponderError(w http.ResponseWriter, r *http.Request, mensaje string, status int) {
-	ResponderJSON(w, r, map[string]string{"error": mensaje}, status)
+	json.NewEncoder(w).Encode(response)
 }

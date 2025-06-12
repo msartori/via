@@ -33,16 +33,15 @@ func TestRecoverMiddleware(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, rec.Code)
 	assert.Equal(t, "internal server error\n", rec.Body.String())
 
-	// Verificar que se llamó Info con algún contexto y algún par de argumentos
+	// Verify that the logger was called with the expected message
 	mockLog.AssertCalled(t, "Info", mock.Anything, mock.Anything)
 
-	// También podés verificar parcialmente los argumentos:
-	// Extraer los argumentos reales para validarlos
+	// Check the arguments passed to the logger
 	args := mockLog.Calls[0].Arguments
 	pairs, ok := args.Get(1).([]any)
 	assert.True(t, ok, "expected second arg to be []any")
 
-	// Validar que contiene el mensaje y el error
+	// Verify that the log contains the expected panic message
 	str := fmt.Sprint(pairs)
 	assert.Contains(t, str, "recovering from panic")
 	assert.Contains(t, str, "something went wrong")

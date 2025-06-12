@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"net/http"
 	"os"
 	"os/exec"
 	"strings"
 	"testing"
-	"via/internal/config"
 	"via/internal/log"
 )
 
@@ -19,13 +19,13 @@ var logWarn = "\"key\":\"warn\""
 var logError = "\"key\":\"error\""
 var logFatal = "\"key\":\"fatal\""
 
-func getBaseLogConfig() config.Log {
-	return config.Log{
+func getBaseLogConfig() LogCfg {
+	return LogCfg{
 		IconEnabled: false,
-		DefaultWriter: config.DefaultWriter{
+		DefaultWriter: DefaultWriterCfg{
 			Enabled: true,
 		},
-		FileWriter: config.FileWriter{
+		FileWriter: FileWriterCfg{
 			Enabled: false,
 		},
 	}
@@ -104,43 +104,259 @@ func TestFatal(t *testing.T) {
 	t.Fatalf("Process ran with err %v, want exit status 1", err)
 }
 
-/*
-func TestLoggerLevel(t *testing.T) {
-	var logOutput bytes.Buffer
+func TestFileWriter(t *testing.T) {
+	tmpFile, err := os.CreateTemp("", "testlog-*.log")
+	if err != nil {
+		t.Fatalf("Error creating temp file: %v", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
 	cfg := getBaseLogConfig()
+	cfg.Level = lvlInfo
+	cfg.FileWriter.Enabled = true
+	cfg.FileWriter.Filename = tmpFile.Name()
+	cfg.DefaultWriter.Enabled = false
 
-	Init(cfg)
-	logger := Get()
-	logger.Trace("key", "trace")
-	logger.Debug("key", "debug")
-	logger.Info("key", "info")
-	logger.Warn("key", "warn")
-	logger.Error(errors.New("error"), "key", "error")
-	output := logOutput.String()
-	if !strings.Contains(output, "fatal") || strings.Contains(output, "trace") {
-		t.Errorf("Expected log output to contain provided key-value pairs, got: %s", output)
+	log.Set(New(cfg))
+	logger := log.Get()
+	logger.Info(context.Background(), "key", "filewriter")
+
+	content, err := os.ReadFile(tmpFile.Name())
+	if err != nil {
+		t.Fatalf("Error reading log file: %v", err)
+	}
+
+	if !strings.Contains(string(content), "filewriter") {
+		t.Errorf("Expected log not found in file, got: %s", string(content))
 	}
 }
 
-func TestLogger_Info(t *testing.T) {
-	var logOutput bytes.Buffer
-	cfg := config.Log{
-		Level:       "info",
-		IconEnabled: true,
-		DefaultWriter: config.DefaultWriter{
-			Enabled: true,
-			Output:  &logOutput,
-		},
-		FileWriter: config.FileWriter{
-			Enabled: false,
-		},
+func TestConsoleWriter(t *testing.T) {
+	// Backup original stdout
+	originalStdout := os.Stdout
+
+	// Create a pipe to capture stdout
+	readPipe, writePipe, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("Failed to create pipe: %v", err)
 	}
-	Init(cfg)
-	logger := Get()
-	logger.Info("key1", "value1", "key2", "value")
-	output := logOutput.String()
-	if !strings.Contains(output, "value1") || !strings.Contains(output, "value2") {
-		t.Errorf("Expected log output to contain provided key-value pairs, got: %s", output)
+
+	// Redirect stdout
+	os.Stdout = writePipe
+
+	// Setup logger with console writer
+	cfg := getBaseLogConfig()
+	cfg.Level = lvlInfo
+	cfg.ConsoleWriter.Enabled = true
+	cfg.DefaultWriter.Enabled = false
+	log.Set(New(cfg))
+	logger := log.Get()
+
+	// Log something
+	logger.Info(context.Background(), "key", "consolewriter")
+
+	// Close writer to finish the pipe and restore stdout
+	writePipe.Close()
+	os.Stdout = originalStdout // Restore stdout
+
+	// Read captured output
+	var buf bytes.Buffer
+	_, err = buf.ReadFrom(readPipe)
+	if err != nil {
+		t.Fatalf("Failed to read from pipe: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "consolewriter") {
+		t.Errorf("Expected output not found in console log, got: %s", output)
 	}
 }
-*/
+
+func TestUnknownLogLevel(t *testing.T) {
+	if os.Getenv("TEST_UNKNOWN_LEVEL") == "1" {
+		cfg := getBaseLogConfig()
+		cfg.Level = "nonexistent"
+		New(cfg)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestUnknownLogLevel")
+	cmd.Env = append(os.Environ(), "TEST_UNKNOWN_LEVEL=1")
+	err := cmd.Run()
+
+	if err == nil {
+		t.Fatalf("Expected fatal error due to unknown log level")
+	}
+}
+
+func TestTraceLevelEnabled(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := getBaseLogConfig()
+	cfg.Level = lvlTrace
+	cfg.DefaultWriter.Output = &buf
+	log.Set(New(cfg))
+	logger := log.Get()
+
+	logger.Trace(context.Background(), "key", "tracelevel")
+
+	if !strings.Contains(buf.String(), "tracelevel") {
+		t.Errorf("Expected 'tracelevel' in output, got: %s", buf.String())
+	}
+}
+
+func TestLoggerWithNoWriters(t *testing.T) {
+	cfg := getBaseLogConfig()
+	cfg.Level = lvlInfo
+	cfg.DefaultWriter.Enabled = false
+	cfg.ConsoleWriter.Enabled = false
+	cfg.FileWriter.Enabled = false
+
+	defer func() {
+		if r := recover(); r != nil {
+			t.Errorf("Logger panicked with no writers configured: %v", r)
+		}
+	}()
+
+	_ = New(cfg) // Just ensure it doesn't panic
+}
+
+func TestLoggerWithIconsEnabled(t *testing.T) {
+	var buf bytes.Buffer
+	cfg := getBaseLogConfig()
+	cfg.IconEnabled = true
+	cfg.Level = lvlInfo
+	cfg.DefaultWriter.Output = &buf
+
+	log.Set(New(cfg))
+	logger := log.Get()
+	logger.Info(context.Background(), "key", "with-icon")
+
+	output := buf.String()
+	if !strings.Contains(output, "with-icon") {
+		t.Errorf("Expected 'with-icon' log message in output, got: %s", output)
+	}
+	if !strings.Contains(output, "\"lvl\":\"ℹ️\"") {
+		t.Errorf("Expected info icon in log output: %s", output)
+	}
+}
+
+func TestAddFields_InvalidKeyAndOddArgs(t *testing.T) {
+	var buf bytes.Buffer
+
+	cfg := getBaseLogConfig()
+	cfg.Level = lvlWarn
+	cfg.DefaultWriter.Output = &buf
+
+	log.Set(New(cfg))
+	log.Get().Info(context.Background(), 123, "valueOfNonStringIgnoredKey", "keyWithoutValue")
+
+	output := buf.String()
+
+	// Validate keyWithoutValue is ignored due to missing value
+	if strings.Contains(output, "\"keyWithoutValue\":") {
+		t.Errorf("Expected 'keyWithoutValue' to be ignored due to missing value, got: %s", output)
+	}
+
+	// Validate valueOfNonStringIgnoredKey is skipped due to non-string key
+	if strings.Contains(output, "valueOfNonStringIgnoredKey") {
+		t.Errorf("Expected valueOfNonStringIgnoredKey to be skipped due to non-string key, got: %s", output)
+	}
+
+	// Validate warning about odd number of arguments
+	if !strings.Contains(output, "Logger received an odd number of arguments. Last argument ignored.") {
+		t.Errorf("Expected warning about odd number of arguments, got: %s", output)
+	}
+}
+
+func TestLogFieldsHelpers(t *testing.T) {
+	var buf bytes.Buffer
+
+	cfg := getBaseLogConfig()
+	cfg.Level = lvlWarn
+	cfg.DefaultWriter.Output = &buf
+
+	log.Set(New(cfg))
+	logger := log.Get()
+
+	// Casos para WithLogFields
+	ctx := context.Background()
+	ctx = logger.WithLogFields(ctx, "k1", "v1", 123, "ignored", "orphan") // 123 no es string, "orphan" es impar
+
+	// Verifica que "k1" fue añadido
+	fields, ok := ctx.Value(logContextKey).(LogFields)
+	if !ok || fields == nil {
+		t.Fatal("Expected LogFields in context")
+	}
+	if val, exists := fields["k1"]; !exists || val != "v1" {
+		t.Errorf("Expected key k1 with value v1, got: %v", fields)
+	}
+
+	// Verifica que 123 no fue añadido como clave y "orphan" fue ignorado
+	if _, exists := fields["ignored"]; exists {
+		t.Errorf("Expected key 'ignored' to be skipped, got: %v", fields)
+	}
+	if _, exists := fields["orphan"]; exists {
+		t.Errorf("Expected 'orphan' to be ignored due to odd count, got: %v", fields)
+	}
+	if !strings.Contains(buf.String(), "Logger received an odd number of arguments") {
+		t.Errorf("Expected warning about odd number of arguments")
+	}
+
+	// Casos para WithLogFieldsInRequest
+	req, _ := http.NewRequest("GET", "/", nil)
+	req = logger.WithLogFieldsInRequest(req, "rk", "rv")
+
+	rctx := req.Context().Value(logContextKey).(LogFields)
+	if val, ok := rctx["rk"]; !ok || val != "rv" {
+		t.Errorf("Expected request context field rk=rv, got: %v", rctx)
+	}
+	ctx = logger.WithLogFields(nil, "key", "value") // Test with nil context, should not panic
+	if ctx != nil {
+		t.Errorf("Expected nil context to return nil, got: %v", ctx)
+	}
+
+	logger.Warn(nil, "keyCtxNil", "value") // Test with nil context, should not panic
+	output := buf.String()
+	if !strings.Contains(output, "keyCtxNil") {
+		t.Errorf("Expected 'keyCtxNil' in output, got: %s", output)
+	}
+
+	ctx = context.Background()
+	ctx = logger.WithLogFields(ctx, "addedToCtx", "value") // Test with valid context and pairs
+	logger.Warn(ctx, "key", "value")
+	output = buf.String()
+	if !strings.Contains(output, "addedToCtx") {
+		t.Errorf("Expected 'addedToCtx' in output, got: %s", output)
+	}
+
+	/*
+
+		// Casos para addContextFields
+		merged := appLogger.addContextFields(req.Context(), "x", "y")
+
+		expected := map[string]any{
+			"rk": "rv",
+			"x":  "y",
+		}
+
+		if len(merged)%2 != 0 {
+			t.Errorf("Expected even number of merged fields, got: %v", merged)
+		}
+
+		m := make(map[string]any)
+		for i := 0; i < len(merged); i += 2 {
+			k, ok := merged[i].(string)
+			if !ok {
+				t.Errorf("Unexpected non-string key: %v", merged[i])
+				continue
+			}
+			m[k] = merged[i+1]
+		}
+
+		for k, v := range expected {
+			if m[k] != v {
+				t.Errorf("Expected key %s with value %v, got %v", k, v, m[k])
+			}
+		}
+	*/
+}

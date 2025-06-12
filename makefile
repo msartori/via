@@ -10,7 +10,7 @@ export
 CURDIR := $(shell pwd)/api
 API_IMAGE_NAME := $(APPNAME)-$(ENV)-api-img
 WEB_IMAGE_NAME := $(APPNAME)-$(ENV)-web-img
-COVERAGE_THRESHOLD := 20# coverage lower threshold
+COVERAGE_THRESHOLD := 50# coverage lower threshold
 BROWSERDIR := open -a "Google Chrome"
 
 GOBUILD := $(CURDIR)/build
@@ -21,7 +21,12 @@ export GOCACHE=${TEMP}
 # Test execution
 test:
 	@mkdir -p $(GOBUILD) $(TEMP)
-	cd api && go test ./... -coverprofile=$(TEMP)/coverage.out
+	@cd api && \
+	PKG_LIST=$$(go list ./... | grep -v '/mock') && \
+	go test $$PKG_LIST -coverpkg=$$(echo $$PKG_LIST | tr ' ' ',') -coverprofile=$(TEMP)/coverage.out
+	@echo "Total test coverage:"
+	cd api && go tool cover -func=$(TEMP)/coverage.out | grep total
+	cd api && go tool cover -html=$(TEMP)/coverage.out -o $(TEMP)/coverage.html
 
 
 # Will test and verify coverage in order to build
@@ -39,9 +44,9 @@ build: test
 		echo "Insufficient coverage, got $$coverage_int% of $(COVERAGE_THRESHOLD)% required."; \
 		exit 1; \
 	fi;
+	@echo "$$coverage"
 
 coverage: test
-	cd api && GOCACHE=/tmp/gocache go tool cover -html=$(TEMP)/coverage.out -o $(TEMP)/coverage.html
 	$(BROWSERDIR) "$(TEMP)/coverage.html"
 
 coverage-no-test:

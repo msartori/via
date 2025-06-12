@@ -1,0 +1,125 @@
+<html>
+<head>
+  <title>Consulta al histórico de envíos</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <link rel="stylesheet" href='/ViaCargo/css/sintra.css' media="screen" type="text/css">
+  <html>
+  <script language="javascript1.2" src='/ViaCargo/scripts/funciones.js'></script>
+   <script language="javascript1.2" src="/ViaCargo/scripts/introEsTab.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/jsrsClient.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/procesarRespuesta.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/impresion.js"></script>
+	  <script language="javascript1.2" src="/ViaCargo/scripts/tabla.js"></script>
+
+  <script language="javascript1.2">
+  	var codigo_expe;
+
+   	function iniciar()
+   	{
+		if ('undefined' != parent.frames['filtro']){
+	   		if ('undefined' != parent.frames['filtro'].getObj('find')){
+	   			if(parent.frames['filtro'].getObj('find')){
+					parent.frames['filtro'].getObj('find').style.display = '';
+	   			}
+	   		}
+			if ('undefined' != parent.frames['filtro'].getObj('export')){
+				if(parent.frames['filtro'].getObj('export')){
+					parent.frames['filtro'].getObj('export').style.display = '';
+				}
+			}
+			if(parent.frames['filtro'].getObj('searching')){
+				parent.frames['filtro'].getObj("searching").style.display='none';
+			}
+		}
+		
+		
+
+		
+
+		init();
+   }
+
+   function verExpedicion(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+	pagina += '&tab=3';
+    pagina += '&url=/ViaCargo/atencion_cliente/historico/consulta_historico.do';
+    parent.document.location = pagina;
+   }
+
+   function verExpedicion_detalle()
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + codigo_expe;
+	pagina += '&tab=3';
+    pagina += '&url=/ViaCargo/atencion_cliente/historico/consulta_historico.do';
+    parent.document.location = pagina;
+   }
+
+   function goIncidencias(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+    pagina += '&tab=3';
+    pagina += '&url=' + escape('/ViaCargo/atencion_cliente/historico/consulta_historico.do');
+    parent.document.location = pagina;
+   }
+
+   function goPOD(expedicion)
+   {
+    var pagina = '/ViaCargo/atencion_cliente/detalle/detalle_expedicion.do';
+    pagina += '?expedicion=' + expedicion;
+    pagina += '&tab=11';
+    pagina += '&url=' + escape('/ViaCargo/atencion_cliente/historico/consulta_historico.do');
+    parent.document.location = pagina;
+   }
+
+   function borrar_expedicion(expedicion)
+   {
+    if (!confirm("Esta Seguro de que quiere borrar este registro?"))
+    {
+     return;
+    }
+    var pagina = '/ViaCargo/salidas/expediciones_acciones.do';
+    pagina += '?consulta=0';
+    pagina += '&expedicion=' + expedicion;
+    document.location = pagina;
+   }
+
+   function detalleParcial(id,codigo)
+    {
+	 tabla.resaltado(id);
+	 jsrsExecute('/ViaCargo/atencion_cliente/historico/detalleExpedicion.do', detalleParcial_jsrs, 'datosExpedicion',[codigo]);
+	 getObj("btn_detalle_expe").disabled=false;
+	 codigo_expe=codigo;
+    }
+
+	 function detalleParcial_jsrs(texto)
+     {
+
+	  jsrseRellenarDatos(texto);
+	}
+	
+	 function imprimirRangoEtiquetas(codigo)
+	   {   
+	       var pagina = '/ViaCargo/salidas/generar_Etiquetas.do';
+	       pagina += '?expedicion='+codigo;
+	   	   abrirVentanaPopUpCentrada(pagina,200,300);
+	   }
+  </script>
+ </head>
+
+ <body onload="javascript:iniciar();" onresize="resizeCuadro(120);">
+
+  <table>
+   <tr class="titulo">
+    <td>Resultados de la búsqueda</td>
+    <td align="right">0 registros encontrados</td>
+   </tr>
+  </table>
+
+
+
+</body>
+</html>
