@@ -4,33 +4,43 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	http_client "via/internal/client/http"
-	custom_error "via/internal/error"
+	"via/internal/log"
 	"via/internal/model"
 	"via/internal/secret"
 )
 
 type GuideWebProvider struct {
-	client *http_client.HttpClient
+	client      *http_client.HttpClient
+	guideParser ViaResponseParser
 }
 
-func New(cfg http_client.HttpClientCfg) *GuideWebProvider {
+func New(cfg http_client.HttpClientCfg, guideParser ViaResponseParser) *GuideWebProvider {
 	cfg.AuthorizationHeaderSecret = secret.ReadSecret(cfg.AuthorizationHeaderSecret)
 	return (&GuideWebProvider{
-		client: http_client.New(cfg),
+		client:      http_client.New(cfg),
+		guideParser: guideParser,
 	})
 }
 
 func (p *GuideWebProvider) GetGuide(ctx context.Context, id string) (model.Guide, error) {
+	logger := log.Get()
+	logger.Info(ctx, "msg", "guide_web_provider.GetGuide_start")
+	defer logger.Info(ctx, "msg", "guide_web_provider.GetGuide_end")
+
 	params := url.Values{"nenvio": {id}, "pagina": {"1"}}
+	reqRes := fmt.Sprintf("%s/atencion_cliente/historico/consulta_historico_resultado.do", p.client.BaseURL)
+	logger.Info(ctx, "msg", "http request", "resource", reqRes, "params", params)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
-		fmt.Sprintf("%s/atencion_cliente/historico/consulta_historico_resultado.do", p.client.BaseURL),
+		reqRes,
 		strings.NewReader(params.Encode()))
 
 	if err != nil {
+		logger.Error(ctx, err, "msg", "error creatig request")
 		return model.Guide{}, fmt.Errorf("creating request: %w", err)
 	}
 
@@ -40,29 +50,30 @@ func (p *GuideWebProvider) GetGuide(ctx context.Context, id string) (model.Guide
 		req.Header.Set("Authorization", p.client.AuthorizationHeader)
 	}
 
-	resp, err := p.client.Do(req)
+	resp, err := p.client.Requester.Do(req)
 	if err != nil {
+		logger.Error(ctx, err, "msg", "error making HTTP request")
 		return model.Guide{}, fmt.Errorf("making HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		logger.Error(ctx, err, "msg", "unexpected status code")
 		return model.Guide{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
-	guide, err := ParseHistoricalQueryResponse(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
-		switch {
-		case errors.Is(err, ErrBadResponse):
-		case errors.Is(err, ErrMalformedHTML):
-		case errors.Is(err, ErrMissingColumn):
-			return guide, custom_error.NewHttpError(http.StatusInternalServerError, "Error interno de servidor")
-		case errors.Is(err, ErrNoResultRow):
-			return guide, custom_error.NewHttpError(http.StatusNotFound, "Guía no econtrada")
-		default:
+		logger.Error(ctx, err, "msg", "error reading response")
+		return model.Guide{}, fmt.Errorf("error reading response: %w", err)
+	}
+	var guide model.Guide
+	err = p.guideParser.Parse(bodyBytes, &guide)
+
+	if err != nil {
+		if !errors.Is(err, ErrNoResultRow) {
 			return guide, err
 		}
 	}
 	return guide, nil
-
 }

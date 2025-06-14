@@ -4,14 +4,12 @@ import (
 	"context"
 	"net/http"
 	"time"
+	"via/internal/global"
 	"via/internal/log"
 
 	"github.com/google/uuid"
 )
 
-type contextKey string
-
-const RequestIDKey contextKey = "requestID"
 const RequestIDHeader = "x-request-id"
 
 // Middleware to wrap all requests
@@ -23,7 +21,7 @@ func Request(next http.Handler) http.Handler {
 		r = logger.WithLogFieldsInRequest(r, "requestId", reqID)
 		logger.Info(r.Context(), "msg", "request start")
 		// Add Request ID to context
-		ctx := context.WithValue(r.Context(), RequestIDKey, reqID)
+		ctx := context.WithValue(r.Context(), global.RequestIDKey, reqID)
 		r = r.WithContext(ctx)
 		// Log when the request finishes
 		defer func() {

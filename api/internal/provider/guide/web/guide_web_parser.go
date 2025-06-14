@@ -3,7 +3,6 @@ package guide_web_provider
 import (
 	"errors"
 	"fmt"
-	"io"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,20 +18,25 @@ var (
 	ErrBadResponse   = errors.New("malformed response")
 )
 
-// ViaCargo/atencion_cliente/historico/consulta_historico_resultado.do
-func ParseHistoricalQueryResponse(r io.Reader) (model.Guide, error) {
-	raw, err := io.ReadAll(r)
-	if err != nil {
-		return model.Guide{}, fmt.Errorf("%w: %v", ErrBadResponse, err)
+type ViaResponseParser interface {
+	Parse(data []byte, v any) error
+}
+
+type HistoricalQueryResponseParser struct {
+}
+
+func (p HistoricalQueryResponseParser) Parse(data []byte, v any) error {
+	guidePtr, ok := v.(*model.Guide)
+	if !ok {
+		return fmt.Errorf("invalid type for output: expected *model.Guide")
 	}
-	htmlStr := string(raw)
 
 	// remove comments from <td> elements
-	htmlStr = uncommentTDs(htmlStr)
+	htmlStr := uncommentTDs(string(data))
 	// new reader with cleaned HTML
 	doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlStr))
 	if err != nil {
-		return model.Guide{}, fmt.Errorf("%w: %v", ErrMalformedHTML, err)
+		return fmt.Errorf("%w: %v", ErrMalformedHTML, err)
 	}
 
 	// extract header row
@@ -47,7 +51,7 @@ func ParseHistoricalQueryResponse(r io.Reader) (model.Guide, error) {
 	})
 
 	if len(headerMap) == 0 {
-		return model.Guide{}, ErrNoResultRow
+		return ErrNoResultRow
 	}
 
 	requiredHeaders := []string{
@@ -55,7 +59,7 @@ func ParseHistoricalQueryResponse(r io.Reader) (model.Guide, error) {
 	}
 	for _, header := range requiredHeaders {
 		if _, ok := headerMap[header]; !ok {
-			return model.Guide{}, fmt.Errorf("%w: %s", ErrMissingColumn, header)
+			return fmt.Errorf("%w: %s", ErrMissingColumn, header)
 		}
 	}
 
@@ -92,7 +96,7 @@ func ParseHistoricalQueryResponse(r io.Reader) (model.Guide, error) {
 
 	}
 
-	guide := model.Guide{
+	*guidePtr = model.Guide{
 		ID:          getCell("Envío"),
 		Reference:   getCell("Referencia"),
 		Status:      getCell("Estado"),
@@ -105,8 +109,7 @@ func ParseHistoricalQueryResponse(r io.Reader) (model.Guide, error) {
 		Recipient:   getCell("Destinatario"),
 		Destination: parseDestination("Acciones"),
 	}
-
-	return guide, nil
+	return nil
 }
 
 func uncommentTDs(html string) string {

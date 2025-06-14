@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
+	"via/internal/i18n"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
 
@@ -31,7 +32,7 @@ func TestTimeoutMiddleware_DeadlineExceeded(t *testing.T) {
 	// Expected log calls
 	mockLogger.On("WithLogFieldsInRequest", mock.Anything, []any{"status", http.StatusGatewayTimeout}).
 		Return(req).Once()
-	mockLogger.On("Error", mock.Anything, context.DeadlineExceeded, []any{"msg", "request timeout"}).
+	mockLogger.On("Error", mock.Anything, context.DeadlineExceeded, []any{"msg", i18n.GetWithLang("en", i18n.MsgRequestTimeout)}).
 		Return().Once()
 
 	timeoutMiddleware := Timeout(10 * time.Millisecond)
@@ -60,7 +61,7 @@ func TestTimeoutMiddleware_Canceled(t *testing.T) {
 
 	mockLogger.On("WithLogFieldsInRequest", mock.Anything, []any{"status", HttpStatusClientCloseRequest}).
 		Return(req).Once()
-	mockLogger.On("Error", mock.Anything, context.Canceled, []any{"msg", "request canceled by client"}).
+	mockLogger.On("Error", mock.Anything, context.Canceled, []any{"msg", i18n.GetWithLang("en", i18n.MsgRequestCanceledByClient)}).
 		Return().Once()
 
 	timeoutMiddleware := Timeout(100 * time.Millisecond)
@@ -115,7 +116,7 @@ func TestTimeoutMiddleware_DefaultErrorCase(t *testing.T) {
 	log.Set(mockLogger) // You must have this method available in your logger
 
 	mockLogger.On("WithLogFieldsInRequest", mock.Anything, []any{"status", http.StatusServiceUnavailable}).Return(&http.Request{})
-	mockLogger.On("Error", mock.Anything, mock.Anything, []any{"msg", "unexpected context error"})
+	mockLogger.On("Error", mock.Anything, mock.Anything, []any{"msg", i18n.GetWithLang("en", i18n.MsgUnexpectedContextError)})
 
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("should be discarded"))

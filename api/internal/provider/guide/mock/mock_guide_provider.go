@@ -3,23 +3,15 @@ package mock_guide_provider
 import (
 	"context"
 	"via/internal/model"
+
+	"github.com/stretchr/testify/mock"
 )
 
-type MockProvider struct {
-	guides map[string]model.Guide
-	err    error
+type MockGuideProvider struct {
+	mock.Mock
 }
 
-func New(guides map[string]model.Guide, err error) *MockProvider {
-	return &MockProvider{
-		guides: guides,
-		err:    err,
-	}
-}
-
-func (m *MockProvider) GetGuide(ctx context.Context, id string) (model.Guide, error) {
-	if m.err != nil {
-		return model.Guide{}, m.err
-	}
-	return m.guides[id], nil
+func (m *MockGuideProvider) GetGuide(ctx context.Context, id string) (model.Guide, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(model.Guide), args.Error(1)
 }

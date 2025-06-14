@@ -34,7 +34,9 @@ func TestCORSMiddleware(t *testing.T) {
 	}
 
 	// handler setup with CORS middleware
-	handler := middleware.CORS(http.HandlerFunc(testHandler), cfg)
+	handler := middleware.CORS(cfg)
+
+	//handler := middleware.CORS(http.HandlerFunc(testHandler), cfg)
 
 	t.Run("regular request passes with correct headers", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/resource", nil)
@@ -43,7 +45,7 @@ func TestCORSMiddleware(t *testing.T) {
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
 
-		handler.ServeHTTP(rec, req)
+		handler(http.HandlerFunc(testHandler)).ServeHTTP(rec, req)
 
 		res := rec.Result()
 		defer res.Body.Close()
@@ -64,7 +66,7 @@ func TestCORSMiddleware(t *testing.T) {
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
 
-		handler.ServeHTTP(rec, req)
+		handler(http.HandlerFunc(testHandler)).ServeHTTP(rec, req)
 
 		res := rec.Result()
 		defer res.Body.Close()
@@ -77,7 +79,7 @@ func TestCORSMiddleware(t *testing.T) {
 
 	t.Run("handles empty config gracefully", func(t *testing.T) {
 		emptyCfg := config.CORS{}
-		handlerEmpty := middleware.CORS(http.HandlerFunc(testHandler), emptyCfg)
+		handlerEmpty := middleware.CORS(emptyCfg)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		rec := httptest.NewRecorder()
@@ -85,7 +87,7 @@ func TestCORSMiddleware(t *testing.T) {
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
 
-		handlerEmpty.ServeHTTP(rec, req)
+		handlerEmpty(http.HandlerFunc(testHandler)).ServeHTTP(rec, req)
 
 		res := rec.Result()
 		defer res.Body.Close()

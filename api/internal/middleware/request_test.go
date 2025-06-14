@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"via/internal/global"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
 
@@ -20,7 +21,7 @@ func TestRequestMiddleware_GeneratesRequestID(t *testing.T) {
 
 	var receivedReqID string
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedReqID = r.Context().Value(RequestIDKey).(string)
+		receivedReqID = r.Context().Value(global.RequestIDKey).(string)
 		assert.NotEmpty(t, receivedReqID)
 		w.WriteHeader(http.StatusOK)
 	})
@@ -48,7 +49,7 @@ func TestRequestMiddleware_UsesExistingRequestID(t *testing.T) {
 	existingID := "test-id-123"
 	var receivedReqID string
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedReqID = r.Context().Value(RequestIDKey).(string)
+		receivedReqID = r.Context().Value(global.RequestIDKey).(string)
 		assert.Equal(t, existingID, receivedReqID)
 		w.WriteHeader(http.StatusOK)
 	})

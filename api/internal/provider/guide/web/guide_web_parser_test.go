@@ -1,7 +1,6 @@
 package guide_web_provider
 
 import (
-	"fmt"
 	"os"
 	"testing"
 	"via/internal/log"
@@ -12,22 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type brokenReader struct {
-}
-
-func (b brokenReader) Read(p []byte) (int, error) {
-	return 0, fmt.Errorf("boom")
-}
-
 func TestParseHistoricalQueryResponse(t *testing.T) {
 
-	log.Set(app_log.New(app_log.LogCfg{Level: "debug", ConsoleWriter: app_log.ConsoleWriterCfg{Enabled: true}}))
+	log.Set(app_log.New(app_log.LogCfg{Level: "debug", DefaultWriter: app_log.DefaultWriterCfg{Enabled: true}}))
 	t.Run("success", func(t *testing.T) {
-		f, err := os.Open("testdata/consulta_historico_resultado_success.html")
+		f, err := os.ReadFile("testdata/consulta_historico_resultado_success.html")
 		require.NoError(t, err)
-		defer f.Close()
-
-		guide, err := ParseHistoricalQueryResponse(f)
+		var guide model.Guide
+		err = HistoricalQueryResponseParser{}.Parse(f, &guide)
 		require.NoError(t, err)
 
 		expected := model.Guide{
@@ -46,30 +37,21 @@ func TestParseHistoricalQueryResponse(t *testing.T) {
 		require.Equal(t, expected, guide)
 	})
 
-	t.Run("error invalid input", func(t *testing.T) {
-		r := brokenReader{}
-		// Simulate a broken reader that returns an error
-		_, err := ParseHistoricalQueryResponse(r)
-		//require.Error(t, err)
-		require.ErrorIs(t, err, ErrBadResponse)
-	})
-
 	t.Run("error no rows", func(t *testing.T) {
-		f, err := os.Open("testdata/consulta_historico_resultado_empty.html")
+		f, err := os.ReadFile("testdata/consulta_historico_resultado_empty.html")
 		require.NoError(t, err)
-		defer f.Close()
-
-		_, err = ParseHistoricalQueryResponse(f)
+		var guide model.Guide
+		err = HistoricalQueryResponseParser{}.Parse(f, &guide)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "no result row found")
 	})
 
 	t.Run("error insufficient columns", func(t *testing.T) {
-		f, err := os.Open("testdata/consulta_historico_resultado_missing_cols.html")
+		f, err := os.ReadFile("testdata/consulta_historico_resultado_missing_cols.html")
 		require.NoError(t, err)
-		defer f.Close()
+		var guide model.Guide
 
-		_, err = ParseHistoricalQueryResponse(f)
+		err = HistoricalQueryResponseParser{}.Parse(f, &guide)
 		require.Error(t, err)
 		require.ErrorIs(t, err, ErrMissingColumn)
 	})

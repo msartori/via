@@ -7,7 +7,9 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"via/internal/i18n"
 	"via/internal/log"
+	"via/internal/response"
 )
 
 const HttpStatusClientCloseRequest = 499
@@ -98,18 +100,18 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 				tw.markTimedOut()
 				switch err = ctx.Err(); err {
 				case context.DeadlineExceeded:
-					msg = "request timeout"
+					msg = i18n.MsgRequestTimeout
 					statusCode = http.StatusGatewayTimeout
 				case context.Canceled:
-					msg = "request canceled by client"
+					msg = i18n.MsgRequestCanceledByClient
 					statusCode = HttpStatusClientCloseRequest
 				default:
-					msg = "unexpected context error"
+					msg = i18n.MsgUnexpectedContextError
 					statusCode = http.StatusServiceUnavailable
 				}
 				logger.WithLogFieldsInRequest(r, "status", statusCode)
-				logger.Error(r.Context(), err, "msg", msg)
-				w.WriteHeader(statusCode)
+				logger.Error(r.Context(), err, "msg", i18n.GetWithLang("en", msg))
+				response.WriteJSONError(w, r, response.Response{Message: i18n.Get(r, msg)}, statusCode)
 			case <-done: // handler completed successfully
 				tw.copy(r)
 			}

@@ -5,8 +5,12 @@ import (
 	"time"
 )
 
+type HttpRequester interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
 type HttpClient struct {
-	*http.Client
+	Requester           HttpRequester
 	BaseURL             string
 	AuthorizationHeader string
 }
@@ -18,7 +22,8 @@ type HttpClientCfg struct {
 
 func New(cfg HttpClientCfg) *HttpClient {
 	return &HttpClient{
-		Client:  &http.Client{Timeout: time.Duration(cfg.Timeout) * time.Second},
-		BaseURL: cfg.BaseURL, AuthorizationHeader: cfg.AuthorizationHeaderSecret,
+		Requester:           &http.Client{Timeout: time.Duration(cfg.Timeout) * time.Second},
+		BaseURL:             cfg.BaseURL,
+		AuthorizationHeader: cfg.AuthorizationHeaderSecret,
 	}
 }

@@ -50,7 +50,7 @@ var (
 )
 
 // Get returns a singleton config loaded from environment variables
-func Get() *Config {
+func Get() Config {
 	once.Do(func() {
 		var cfg Config
 		opts := env.Options{
@@ -67,5 +67,5 @@ func Get() *Config {
 		}
 		instance = &cfg
 	})
-	return instance
+	return *instance
 }

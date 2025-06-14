@@ -6,7 +6,7 @@
   </nav>
 </template>
 
-<style scoped>
+<style>
 nav {
   margin-bottom: 1rem;
 }
