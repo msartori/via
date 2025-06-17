@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const apiUrl = import.meta.env.VITE_API_URL;
 
-export async function buscarGuiaPorCodigo(codigo) {
+export async function getGuide(codigo) {
   try {
     const res = await axios.get(`${apiUrl}/guide/${codigo}`, {
       headers: {
@@ -10,17 +10,18 @@ export async function buscarGuiaPorCodigo(codigo) {
         'bypass-tunnel-reminder': 'true',
         'Accept-Language': 'es',
       },
-      validateStatus: () => true // permite manejar manualmente todos los estados
+      validateStatus: () => true // will allow manage status
     });
 
     return {
       status: res.status,
-      result: res.data
+      content: res.data
     };
   } catch (err) {
+    console.error(err)
     return {
       status: 500,
-      result: {
+      content: {
         message: 'Error al conectarse al servidor.',
         requestId: null
       }

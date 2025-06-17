@@ -10,8 +10,6 @@ services:
         PORT: ${API_PORT}
     env_file:
       - api/env/.env.${ENV}   
-    #environment:
-    #  DB_PASSWORD_FILE: /run/secrets/db_password   
     networks:
       - ${APPNAME}-network  
     ports:
@@ -19,8 +17,9 @@ services:
     secrets:
       - db_password   
       - via_auth
-    #depends_on:
-    #  - db
+    depends_on:
+      - db  
+
   web:
     build:
       context: .
@@ -38,24 +37,30 @@ services:
       - via-network  
     depends_on:
       - api
+
+  db:
+    image: postgres:15
+    container_name: ${APPNAME}-${ENV}-db
+    env_file:
+      - db/env/.env.${ENV}  
+    volumes:
+      - ./db_data.${ENV}:/var/lib/postgresql/data 
+      - ./db/conf/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./db/script/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    command: >
+      -c hba_file=/etc/postgresql/pg_hba.conf  
+    networks:
+      - ${APPNAME}-network
+    secrets:
+      - db_password
+    ports:
+      - "5432:5432"  # opcional si necesitas acceder desde el host
+
 networks:
   via-network:
     name: ${APPNAME}-${ENV}-net
     driver: bridge
-  #db:
-  #  image: postgres:16
-  #  container_name: ${APPNAME}-db
-  #  ports:
-  #    - "5432:5432"
-  #  environment:
-  #    POSTGRES_USER: ${DB_USER}
-  #    POSTGRES_PASSWORD: ${DB_PASSWORD}
-  #    POSTGRES_DB: ${DB_NAME}
-  #  volumes:
-  #    - db_data:/var/lib/postgresql/data
 
-#volumes:
-#  db_data:
 secrets:
   db_password:
     file: ./secrets/db_password.${ENV}

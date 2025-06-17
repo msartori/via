@@ -12,7 +12,6 @@ func CORS(cfg config.CORS) func(http.Handler) http.Handler {
 			logger := log.Get()
 			r = logger.WithLogFieldsInRequest(r, "method", r.Method, "uri", r.RequestURI, "proto", r.Proto)
 			logger.Info(r.Context(), "msg", "CORS middleware invoked")
-			//TODO This needs to be configurable
 			w.Header().Set("Access-Control-Allow-Origin", cfg.Origins)
 			w.Header().Set("Access-Control-Allow-Methods", cfg.Methods)
 			w.Header().Set("Access-Control-Allow-Headers", cfg.Headers)

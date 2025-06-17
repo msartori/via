@@ -26,13 +26,17 @@ type Application struct {
 
 type Database struct {
 	PasswordFile string `env:"PASSWORD_FILE" envDefault:"" json:"passwordFile"`
+	User         string `env:"USER" envDefault:"" json:"-"`
+	Base         string `env:"BASE" envDefault:"" json:"-"`
+	Port         string `env:"PORT" envDefault:"" json:"port"`
+	Host         string `env:"HOST" envDefault:"" json:"host"`
 }
 
 type CORS struct {
 	Enabled bool   `env:"ENABLED" envDefault:"true" json:"enabled"`
 	Origins string `env:"ORIGINS" envDefault:"*" json:"origins"`
 	Methods string `env:"METHODS" envDefault:"GET,POST,PUT,PATCH,DELETE,OPTIONS" json:"methods"`
-	Headers string `env:"HEADERS" envDefault:"Content-Type,Authorization,bypass-tunnel-reminder" json:"headers"`
+	Headers string `env:"HEADERS" envDefault:"Content-Type,Authorization,bypass-tunnel-reminder,Accept-Language" json:"headers"`
 }
 
 type Config struct {

@@ -7,3 +7,5 @@ tmp/
 lt_api.log
 lt_front.log
 .DS_Store
+/db_data.local
+/db_data.dev
