@@ -230,21 +230,21 @@ func UpdatedAtLTE(v time.Time) predicate.Operator {
 	return predicate.Operator(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasGuideProcesses applies the HasEdge predicate on the "guide_processes" edge.
-func HasGuideProcesses() predicate.Operator {
+// HasGuide applies the HasEdge predicate on the "guide" edge.
+func HasGuide() predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, GuideProcessesTable, GuideProcessesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, GuideTable, GuideColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasGuideProcessesWith applies the HasEdge predicate on the "guide_processes" edge with a given conditions (other predicates).
-func HasGuideProcessesWith(preds ...predicate.GuideProcess) predicate.Operator {
+// HasGuideWith applies the HasEdge predicate on the "guide" edge with a given conditions (other predicates).
+func HasGuideWith(preds ...predicate.Guide) predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
-		step := newGuideProcessesStep()
+		step := newGuideStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)
@@ -253,21 +253,21 @@ func HasGuideProcessesWith(preds ...predicate.GuideProcess) predicate.Operator {
 	})
 }
 
-// HasGuideProcessHistories applies the HasEdge predicate on the "guide_process_histories" edge.
-func HasGuideProcessHistories() predicate.Operator {
+// HasGuideHistory applies the HasEdge predicate on the "guide_history" edge.
+func HasGuideHistory() predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, GuideProcessHistoriesTable, GuideProcessHistoriesColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, GuideHistoryTable, GuideHistoryColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasGuideProcessHistoriesWith applies the HasEdge predicate on the "guide_process_histories" edge with a given conditions (other predicates).
-func HasGuideProcessHistoriesWith(preds ...predicate.GuideProcessHistory) predicate.Operator {
+// HasGuideHistoryWith applies the HasEdge predicate on the "guide_history" edge with a given conditions (other predicates).
+func HasGuideHistoryWith(preds ...predicate.GuideHistory) predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
-		step := newGuideProcessHistoriesStep()
+		step := newGuideHistoryStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

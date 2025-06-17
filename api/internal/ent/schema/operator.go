@@ -13,6 +13,7 @@ type Operator struct {
 	ent.Schema
 }
 
+// Fields of the Operator.
 func (Operator) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("account").Unique().NotEmpty(),
@@ -22,9 +23,10 @@ func (Operator) Fields() []ent.Field {
 	}
 }
 
+// Edges of the Operator.
 func (Operator) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("guide_processes", GuideProcess.Type),
-		edge.To("guide_process_histories", GuideProcessHistory.Type),
+		edge.To("guide", Guide.Type),
+		edge.To("guide_history", GuideHistory.Type),
 	}
 }

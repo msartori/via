@@ -11,8 +11,8 @@ import (
 
 	"via/internal/ent/migrate"
 
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 
 	"entgo.io/ent"
@@ -26,10 +26,10 @@ type Client struct {
 	config
 	// Schema is the client for creating, migrating and dropping schema.
 	Schema *migrate.Schema
-	// GuideProcess is the client for interacting with the GuideProcess builders.
-	GuideProcess *GuideProcessClient
-	// GuideProcessHistory is the client for interacting with the GuideProcessHistory builders.
-	GuideProcessHistory *GuideProcessHistoryClient
+	// Guide is the client for interacting with the Guide builders.
+	Guide *GuideClient
+	// GuideHistory is the client for interacting with the GuideHistory builders.
+	GuideHistory *GuideHistoryClient
 	// Operator is the client for interacting with the Operator builders.
 	Operator *OperatorClient
 }
@@ -43,8 +43,8 @@ func NewClient(opts ...Option) *Client {
 
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
-	c.GuideProcess = NewGuideProcessClient(c.config)
-	c.GuideProcessHistory = NewGuideProcessHistoryClient(c.config)
+	c.Guide = NewGuideClient(c.config)
+	c.GuideHistory = NewGuideHistoryClient(c.config)
 	c.Operator = NewOperatorClient(c.config)
 }
 
@@ -136,11 +136,11 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:                 ctx,
-		config:              cfg,
-		GuideProcess:        NewGuideProcessClient(cfg),
-		GuideProcessHistory: NewGuideProcessHistoryClient(cfg),
-		Operator:            NewOperatorClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Guide:        NewGuideClient(cfg),
+		GuideHistory: NewGuideHistoryClient(cfg),
+		Operator:     NewOperatorClient(cfg),
 	}, nil
 }
 
@@ -158,18 +158,18 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:                 ctx,
-		config:              cfg,
-		GuideProcess:        NewGuideProcessClient(cfg),
-		GuideProcessHistory: NewGuideProcessHistoryClient(cfg),
-		Operator:            NewOperatorClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Guide:        NewGuideClient(cfg),
+		GuideHistory: NewGuideHistoryClient(cfg),
+		Operator:     NewOperatorClient(cfg),
 	}, nil
 }
 
 // Debug returns a new debug-client. It's used to get verbose logging on specific operations.
 //
 //	client.Debug().
-//		GuideProcess.
+//		Guide.
 //		Query().
 //		Count(ctx)
 func (c *Client) Debug() *Client {
@@ -191,26 +191,26 @@ func (c *Client) Close() error {
 // Use adds the mutation hooks to all the entity clients.
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
-	c.GuideProcess.Use(hooks...)
-	c.GuideProcessHistory.Use(hooks...)
+	c.Guide.Use(hooks...)
+	c.GuideHistory.Use(hooks...)
 	c.Operator.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
-	c.GuideProcess.Intercept(interceptors...)
-	c.GuideProcessHistory.Intercept(interceptors...)
+	c.Guide.Intercept(interceptors...)
+	c.GuideHistory.Intercept(interceptors...)
 	c.Operator.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
 func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
-	case *GuideProcessMutation:
-		return c.GuideProcess.mutate(ctx, m)
-	case *GuideProcessHistoryMutation:
-		return c.GuideProcessHistory.mutate(ctx, m)
+	case *GuideMutation:
+		return c.Guide.mutate(ctx, m)
+	case *GuideHistoryMutation:
+		return c.GuideHistory.mutate(ctx, m)
 	case *OperatorMutation:
 		return c.Operator.mutate(ctx, m)
 	default:
@@ -218,107 +218,107 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	}
 }
 
-// GuideProcessClient is a client for the GuideProcess schema.
-type GuideProcessClient struct {
+// GuideClient is a client for the Guide schema.
+type GuideClient struct {
 	config
 }
 
-// NewGuideProcessClient returns a client for the GuideProcess from the given config.
-func NewGuideProcessClient(c config) *GuideProcessClient {
-	return &GuideProcessClient{config: c}
+// NewGuideClient returns a client for the Guide from the given config.
+func NewGuideClient(c config) *GuideClient {
+	return &GuideClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `guideprocess.Hooks(f(g(h())))`.
-func (c *GuideProcessClient) Use(hooks ...Hook) {
-	c.hooks.GuideProcess = append(c.hooks.GuideProcess, hooks...)
+// A call to `Use(f, g, h)` equals to `guide.Hooks(f(g(h())))`.
+func (c *GuideClient) Use(hooks ...Hook) {
+	c.hooks.Guide = append(c.hooks.Guide, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `guideprocess.Intercept(f(g(h())))`.
-func (c *GuideProcessClient) Intercept(interceptors ...Interceptor) {
-	c.inters.GuideProcess = append(c.inters.GuideProcess, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `guide.Intercept(f(g(h())))`.
+func (c *GuideClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Guide = append(c.inters.Guide, interceptors...)
 }
 
-// Create returns a builder for creating a GuideProcess entity.
-func (c *GuideProcessClient) Create() *GuideProcessCreate {
-	mutation := newGuideProcessMutation(c.config, OpCreate)
-	return &GuideProcessCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a Guide entity.
+func (c *GuideClient) Create() *GuideCreate {
+	mutation := newGuideMutation(c.config, OpCreate)
+	return &GuideCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of GuideProcess entities.
-func (c *GuideProcessClient) CreateBulk(builders ...*GuideProcessCreate) *GuideProcessCreateBulk {
-	return &GuideProcessCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of Guide entities.
+func (c *GuideClient) CreateBulk(builders ...*GuideCreate) *GuideCreateBulk {
+	return &GuideCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *GuideProcessClient) MapCreateBulk(slice any, setFunc func(*GuideProcessCreate, int)) *GuideProcessCreateBulk {
+func (c *GuideClient) MapCreateBulk(slice any, setFunc func(*GuideCreate, int)) *GuideCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &GuideProcessCreateBulk{err: fmt.Errorf("calling to GuideProcessClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &GuideCreateBulk{err: fmt.Errorf("calling to GuideClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*GuideProcessCreate, rv.Len())
+	builders := make([]*GuideCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &GuideProcessCreateBulk{config: c.config, builders: builders}
+	return &GuideCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for GuideProcess.
-func (c *GuideProcessClient) Update() *GuideProcessUpdate {
-	mutation := newGuideProcessMutation(c.config, OpUpdate)
-	return &GuideProcessUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for Guide.
+func (c *GuideClient) Update() *GuideUpdate {
+	mutation := newGuideMutation(c.config, OpUpdate)
+	return &GuideUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *GuideProcessClient) UpdateOne(gp *GuideProcess) *GuideProcessUpdateOne {
-	mutation := newGuideProcessMutation(c.config, OpUpdateOne, withGuideProcess(gp))
-	return &GuideProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *GuideClient) UpdateOne(gu *Guide) *GuideUpdateOne {
+	mutation := newGuideMutation(c.config, OpUpdateOne, withGuide(gu))
+	return &GuideUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *GuideProcessClient) UpdateOneID(id int) *GuideProcessUpdateOne {
-	mutation := newGuideProcessMutation(c.config, OpUpdateOne, withGuideProcessID(id))
-	return &GuideProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *GuideClient) UpdateOneID(id int) *GuideUpdateOne {
+	mutation := newGuideMutation(c.config, OpUpdateOne, withGuideID(id))
+	return &GuideUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for GuideProcess.
-func (c *GuideProcessClient) Delete() *GuideProcessDelete {
-	mutation := newGuideProcessMutation(c.config, OpDelete)
-	return &GuideProcessDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for Guide.
+func (c *GuideClient) Delete() *GuideDelete {
+	mutation := newGuideMutation(c.config, OpDelete)
+	return &GuideDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *GuideProcessClient) DeleteOne(gp *GuideProcess) *GuideProcessDeleteOne {
-	return c.DeleteOneID(gp.ID)
+func (c *GuideClient) DeleteOne(gu *Guide) *GuideDeleteOne {
+	return c.DeleteOneID(gu.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *GuideProcessClient) DeleteOneID(id int) *GuideProcessDeleteOne {
-	builder := c.Delete().Where(guideprocess.ID(id))
+func (c *GuideClient) DeleteOneID(id int) *GuideDeleteOne {
+	builder := c.Delete().Where(guide.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &GuideProcessDeleteOne{builder}
+	return &GuideDeleteOne{builder}
 }
 
-// Query returns a query builder for GuideProcess.
-func (c *GuideProcessClient) Query() *GuideProcessQuery {
-	return &GuideProcessQuery{
+// Query returns a query builder for Guide.
+func (c *GuideClient) Query() *GuideQuery {
+	return &GuideQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeGuideProcess},
+		ctx:    &QueryContext{Type: TypeGuide},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a GuideProcess entity by its id.
-func (c *GuideProcessClient) Get(ctx context.Context, id int) (*GuideProcess, error) {
-	return c.Query().Where(guideprocess.ID(id)).Only(ctx)
+// Get returns a Guide entity by its id.
+func (c *GuideClient) Get(ctx context.Context, id int) (*Guide, error) {
+	return c.Query().Where(guide.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *GuideProcessClient) GetX(ctx context.Context, id int) *GuideProcess {
+func (c *GuideClient) GetX(ctx context.Context, id int) *Guide {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -326,164 +326,164 @@ func (c *GuideProcessClient) GetX(ctx context.Context, id int) *GuideProcess {
 	return obj
 }
 
-// QueryOperator queries the operator edge of a GuideProcess.
-func (c *GuideProcessClient) QueryOperator(gp *GuideProcess) *OperatorQuery {
+// QueryOperator queries the operator edge of a Guide.
+func (c *GuideClient) QueryOperator(gu *Guide) *OperatorQuery {
 	query := (&OperatorClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := gp.ID
+		id := gu.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(guideprocess.Table, guideprocess.FieldID, id),
+			sqlgraph.From(guide.Table, guide.FieldID, id),
 			sqlgraph.To(operator.Table, operator.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, guideprocess.OperatorTable, guideprocess.OperatorColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, guide.OperatorTable, guide.OperatorColumn),
 		)
-		fromV = sqlgraph.Neighbors(gp.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(gu.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryHistory queries the history edge of a GuideProcess.
-func (c *GuideProcessClient) QueryHistory(gp *GuideProcess) *GuideProcessHistoryQuery {
-	query := (&GuideProcessHistoryClient{config: c.config}).Query()
+// QueryHistory queries the history edge of a Guide.
+func (c *GuideClient) QueryHistory(gu *Guide) *GuideHistoryQuery {
+	query := (&GuideHistoryClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := gp.ID
+		id := gu.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(guideprocess.Table, guideprocess.FieldID, id),
-			sqlgraph.To(guideprocesshistory.Table, guideprocesshistory.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, guideprocess.HistoryTable, guideprocess.HistoryColumn),
+			sqlgraph.From(guide.Table, guide.FieldID, id),
+			sqlgraph.To(guidehistory.Table, guidehistory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, guide.HistoryTable, guide.HistoryColumn),
 		)
-		fromV = sqlgraph.Neighbors(gp.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(gu.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *GuideProcessClient) Hooks() []Hook {
-	return c.hooks.GuideProcess
+func (c *GuideClient) Hooks() []Hook {
+	return c.hooks.Guide
 }
 
 // Interceptors returns the client interceptors.
-func (c *GuideProcessClient) Interceptors() []Interceptor {
-	return c.inters.GuideProcess
+func (c *GuideClient) Interceptors() []Interceptor {
+	return c.inters.Guide
 }
 
-func (c *GuideProcessClient) mutate(ctx context.Context, m *GuideProcessMutation) (Value, error) {
+func (c *GuideClient) mutate(ctx context.Context, m *GuideMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&GuideProcessCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&GuideProcessUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&GuideProcessUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&GuideProcessDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&GuideDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown GuideProcess mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown Guide mutation op: %q", m.Op())
 	}
 }
 
-// GuideProcessHistoryClient is a client for the GuideProcessHistory schema.
-type GuideProcessHistoryClient struct {
+// GuideHistoryClient is a client for the GuideHistory schema.
+type GuideHistoryClient struct {
 	config
 }
 
-// NewGuideProcessHistoryClient returns a client for the GuideProcessHistory from the given config.
-func NewGuideProcessHistoryClient(c config) *GuideProcessHistoryClient {
-	return &GuideProcessHistoryClient{config: c}
+// NewGuideHistoryClient returns a client for the GuideHistory from the given config.
+func NewGuideHistoryClient(c config) *GuideHistoryClient {
+	return &GuideHistoryClient{config: c}
 }
 
 // Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `guideprocesshistory.Hooks(f(g(h())))`.
-func (c *GuideProcessHistoryClient) Use(hooks ...Hook) {
-	c.hooks.GuideProcessHistory = append(c.hooks.GuideProcessHistory, hooks...)
+// A call to `Use(f, g, h)` equals to `guidehistory.Hooks(f(g(h())))`.
+func (c *GuideHistoryClient) Use(hooks ...Hook) {
+	c.hooks.GuideHistory = append(c.hooks.GuideHistory, hooks...)
 }
 
 // Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `guideprocesshistory.Intercept(f(g(h())))`.
-func (c *GuideProcessHistoryClient) Intercept(interceptors ...Interceptor) {
-	c.inters.GuideProcessHistory = append(c.inters.GuideProcessHistory, interceptors...)
+// A call to `Intercept(f, g, h)` equals to `guidehistory.Intercept(f(g(h())))`.
+func (c *GuideHistoryClient) Intercept(interceptors ...Interceptor) {
+	c.inters.GuideHistory = append(c.inters.GuideHistory, interceptors...)
 }
 
-// Create returns a builder for creating a GuideProcessHistory entity.
-func (c *GuideProcessHistoryClient) Create() *GuideProcessHistoryCreate {
-	mutation := newGuideProcessHistoryMutation(c.config, OpCreate)
-	return &GuideProcessHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Create returns a builder for creating a GuideHistory entity.
+func (c *GuideHistoryClient) Create() *GuideHistoryCreate {
+	mutation := newGuideHistoryMutation(c.config, OpCreate)
+	return &GuideHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// CreateBulk returns a builder for creating a bulk of GuideProcessHistory entities.
-func (c *GuideProcessHistoryClient) CreateBulk(builders ...*GuideProcessHistoryCreate) *GuideProcessHistoryCreateBulk {
-	return &GuideProcessHistoryCreateBulk{config: c.config, builders: builders}
+// CreateBulk returns a builder for creating a bulk of GuideHistory entities.
+func (c *GuideHistoryClient) CreateBulk(builders ...*GuideHistoryCreate) *GuideHistoryCreateBulk {
+	return &GuideHistoryCreateBulk{config: c.config, builders: builders}
 }
 
 // MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
 // a builder and applies setFunc on it.
-func (c *GuideProcessHistoryClient) MapCreateBulk(slice any, setFunc func(*GuideProcessHistoryCreate, int)) *GuideProcessHistoryCreateBulk {
+func (c *GuideHistoryClient) MapCreateBulk(slice any, setFunc func(*GuideHistoryCreate, int)) *GuideHistoryCreateBulk {
 	rv := reflect.ValueOf(slice)
 	if rv.Kind() != reflect.Slice {
-		return &GuideProcessHistoryCreateBulk{err: fmt.Errorf("calling to GuideProcessHistoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
+		return &GuideHistoryCreateBulk{err: fmt.Errorf("calling to GuideHistoryClient.MapCreateBulk with wrong type %T, need slice", slice)}
 	}
-	builders := make([]*GuideProcessHistoryCreate, rv.Len())
+	builders := make([]*GuideHistoryCreate, rv.Len())
 	for i := 0; i < rv.Len(); i++ {
 		builders[i] = c.Create()
 		setFunc(builders[i], i)
 	}
-	return &GuideProcessHistoryCreateBulk{config: c.config, builders: builders}
+	return &GuideHistoryCreateBulk{config: c.config, builders: builders}
 }
 
-// Update returns an update builder for GuideProcessHistory.
-func (c *GuideProcessHistoryClient) Update() *GuideProcessHistoryUpdate {
-	mutation := newGuideProcessHistoryMutation(c.config, OpUpdate)
-	return &GuideProcessHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Update returns an update builder for GuideHistory.
+func (c *GuideHistoryClient) Update() *GuideHistoryUpdate {
+	mutation := newGuideHistoryMutation(c.config, OpUpdate)
+	return &GuideHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *GuideProcessHistoryClient) UpdateOne(gph *GuideProcessHistory) *GuideProcessHistoryUpdateOne {
-	mutation := newGuideProcessHistoryMutation(c.config, OpUpdateOne, withGuideProcessHistory(gph))
-	return &GuideProcessHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *GuideHistoryClient) UpdateOne(gh *GuideHistory) *GuideHistoryUpdateOne {
+	mutation := newGuideHistoryMutation(c.config, OpUpdateOne, withGuideHistory(gh))
+	return &GuideHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *GuideProcessHistoryClient) UpdateOneID(id int) *GuideProcessHistoryUpdateOne {
-	mutation := newGuideProcessHistoryMutation(c.config, OpUpdateOne, withGuideProcessHistoryID(id))
-	return &GuideProcessHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+func (c *GuideHistoryClient) UpdateOneID(id int) *GuideHistoryUpdateOne {
+	mutation := newGuideHistoryMutation(c.config, OpUpdateOne, withGuideHistoryID(id))
+	return &GuideHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
-// Delete returns a delete builder for GuideProcessHistory.
-func (c *GuideProcessHistoryClient) Delete() *GuideProcessHistoryDelete {
-	mutation := newGuideProcessHistoryMutation(c.config, OpDelete)
-	return &GuideProcessHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+// Delete returns a delete builder for GuideHistory.
+func (c *GuideHistoryClient) Delete() *GuideHistoryDelete {
+	mutation := newGuideHistoryMutation(c.config, OpDelete)
+	return &GuideHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *GuideProcessHistoryClient) DeleteOne(gph *GuideProcessHistory) *GuideProcessHistoryDeleteOne {
-	return c.DeleteOneID(gph.ID)
+func (c *GuideHistoryClient) DeleteOne(gh *GuideHistory) *GuideHistoryDeleteOne {
+	return c.DeleteOneID(gh.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *GuideProcessHistoryClient) DeleteOneID(id int) *GuideProcessHistoryDeleteOne {
-	builder := c.Delete().Where(guideprocesshistory.ID(id))
+func (c *GuideHistoryClient) DeleteOneID(id int) *GuideHistoryDeleteOne {
+	builder := c.Delete().Where(guidehistory.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
-	return &GuideProcessHistoryDeleteOne{builder}
+	return &GuideHistoryDeleteOne{builder}
 }
 
-// Query returns a query builder for GuideProcessHistory.
-func (c *GuideProcessHistoryClient) Query() *GuideProcessHistoryQuery {
-	return &GuideProcessHistoryQuery{
+// Query returns a query builder for GuideHistory.
+func (c *GuideHistoryClient) Query() *GuideHistoryQuery {
+	return &GuideHistoryQuery{
 		config: c.config,
-		ctx:    &QueryContext{Type: TypeGuideProcessHistory},
+		ctx:    &QueryContext{Type: TypeGuideHistory},
 		inters: c.Interceptors(),
 	}
 }
 
-// Get returns a GuideProcessHistory entity by its id.
-func (c *GuideProcessHistoryClient) Get(ctx context.Context, id int) (*GuideProcessHistory, error) {
-	return c.Query().Where(guideprocesshistory.ID(id)).Only(ctx)
+// Get returns a GuideHistory entity by its id.
+func (c *GuideHistoryClient) Get(ctx context.Context, id int) (*GuideHistory, error) {
+	return c.Query().Where(guidehistory.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *GuideProcessHistoryClient) GetX(ctx context.Context, id int) *GuideProcessHistory {
+func (c *GuideHistoryClient) GetX(ctx context.Context, id int) *GuideHistory {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -491,60 +491,60 @@ func (c *GuideProcessHistoryClient) GetX(ctx context.Context, id int) *GuideProc
 	return obj
 }
 
-// QueryGuideProcess queries the guide_process edge of a GuideProcessHistory.
-func (c *GuideProcessHistoryClient) QueryGuideProcess(gph *GuideProcessHistory) *GuideProcessQuery {
-	query := (&GuideProcessClient{config: c.config}).Query()
+// QueryGuide queries the guide edge of a GuideHistory.
+func (c *GuideHistoryClient) QueryGuide(gh *GuideHistory) *GuideQuery {
+	query := (&GuideClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := gph.ID
+		id := gh.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(guideprocesshistory.Table, guideprocesshistory.FieldID, id),
-			sqlgraph.To(guideprocess.Table, guideprocess.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, guideprocesshistory.GuideProcessTable, guideprocesshistory.GuideProcessColumn),
+			sqlgraph.From(guidehistory.Table, guidehistory.FieldID, id),
+			sqlgraph.To(guide.Table, guide.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, guidehistory.GuideTable, guidehistory.GuideColumn),
 		)
-		fromV = sqlgraph.Neighbors(gph.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(gh.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
-// QueryOperator queries the operator edge of a GuideProcessHistory.
-func (c *GuideProcessHistoryClient) QueryOperator(gph *GuideProcessHistory) *OperatorQuery {
+// QueryOperator queries the operator edge of a GuideHistory.
+func (c *GuideHistoryClient) QueryOperator(gh *GuideHistory) *OperatorQuery {
 	query := (&OperatorClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := gph.ID
+		id := gh.ID
 		step := sqlgraph.NewStep(
-			sqlgraph.From(guideprocesshistory.Table, guideprocesshistory.FieldID, id),
+			sqlgraph.From(guidehistory.Table, guidehistory.FieldID, id),
 			sqlgraph.To(operator.Table, operator.FieldID),
-			sqlgraph.Edge(sqlgraph.M2O, true, guideprocesshistory.OperatorTable, guideprocesshistory.OperatorColumn),
+			sqlgraph.Edge(sqlgraph.M2O, true, guidehistory.OperatorTable, guidehistory.OperatorColumn),
 		)
-		fromV = sqlgraph.Neighbors(gph.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(gh.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // Hooks returns the client hooks.
-func (c *GuideProcessHistoryClient) Hooks() []Hook {
-	return c.hooks.GuideProcessHistory
+func (c *GuideHistoryClient) Hooks() []Hook {
+	return c.hooks.GuideHistory
 }
 
 // Interceptors returns the client interceptors.
-func (c *GuideProcessHistoryClient) Interceptors() []Interceptor {
-	return c.inters.GuideProcessHistory
+func (c *GuideHistoryClient) Interceptors() []Interceptor {
+	return c.inters.GuideHistory
 }
 
-func (c *GuideProcessHistoryClient) mutate(ctx context.Context, m *GuideProcessHistoryMutation) (Value, error) {
+func (c *GuideHistoryClient) mutate(ctx context.Context, m *GuideHistoryMutation) (Value, error) {
 	switch m.Op() {
 	case OpCreate:
-		return (&GuideProcessHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideHistoryCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdate:
-		return (&GuideProcessHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideHistoryUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpUpdateOne:
-		return (&GuideProcessHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+		return (&GuideHistoryUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
 	case OpDelete, OpDeleteOne:
-		return (&GuideProcessHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+		return (&GuideHistoryDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
-		return nil, fmt.Errorf("ent: unknown GuideProcessHistory mutation op: %q", m.Op())
+		return nil, fmt.Errorf("ent: unknown GuideHistory mutation op: %q", m.Op())
 	}
 }
 
@@ -656,15 +656,15 @@ func (c *OperatorClient) GetX(ctx context.Context, id int) *Operator {
 	return obj
 }
 
-// QueryGuideProcesses queries the guide_processes edge of a Operator.
-func (c *OperatorClient) QueryGuideProcesses(o *Operator) *GuideProcessQuery {
-	query := (&GuideProcessClient{config: c.config}).Query()
+// QueryGuide queries the guide edge of a Operator.
+func (c *OperatorClient) QueryGuide(o *Operator) *GuideQuery {
+	query := (&GuideClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := o.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(operator.Table, operator.FieldID, id),
-			sqlgraph.To(guideprocess.Table, guideprocess.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideProcessesTable, operator.GuideProcessesColumn),
+			sqlgraph.To(guide.Table, guide.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideTable, operator.GuideColumn),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil
@@ -672,15 +672,15 @@ func (c *OperatorClient) QueryGuideProcesses(o *Operator) *GuideProcessQuery {
 	return query
 }
 
-// QueryGuideProcessHistories queries the guide_process_histories edge of a Operator.
-func (c *OperatorClient) QueryGuideProcessHistories(o *Operator) *GuideProcessHistoryQuery {
-	query := (&GuideProcessHistoryClient{config: c.config}).Query()
+// QueryGuideHistory queries the guide_history edge of a Operator.
+func (c *OperatorClient) QueryGuideHistory(o *Operator) *GuideHistoryQuery {
+	query := (&GuideHistoryClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := o.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(operator.Table, operator.FieldID, id),
-			sqlgraph.To(guideprocesshistory.Table, guideprocesshistory.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideProcessHistoriesTable, operator.GuideProcessHistoriesColumn),
+			sqlgraph.To(guidehistory.Table, guidehistory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideHistoryTable, operator.GuideHistoryColumn),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil
@@ -716,9 +716,9 @@ func (c *OperatorClient) mutate(ctx context.Context, m *OperatorMutation) (Value
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		GuideProcess, GuideProcessHistory, Operator []ent.Hook
+		Guide, GuideHistory, Operator []ent.Hook
 	}
 	inters struct {
-		GuideProcess, GuideProcessHistory, Operator []ent.Interceptor
+		Guide, GuideHistory, Operator []ent.Interceptor
 	}
 )

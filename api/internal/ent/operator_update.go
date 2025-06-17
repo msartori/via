@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 	"via/internal/ent/predicate"
 
@@ -78,34 +78,34 @@ func (ou *OperatorUpdate) SetUpdatedAt(t time.Time) *OperatorUpdate {
 	return ou
 }
 
-// AddGuideProcessIDs adds the "guide_processes" edge to the GuideProcess entity by IDs.
-func (ou *OperatorUpdate) AddGuideProcessIDs(ids ...int) *OperatorUpdate {
-	ou.mutation.AddGuideProcessIDs(ids...)
+// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+func (ou *OperatorUpdate) AddGuideIDs(ids ...int) *OperatorUpdate {
+	ou.mutation.AddGuideIDs(ids...)
 	return ou
 }
 
-// AddGuideProcesses adds the "guide_processes" edges to the GuideProcess entity.
-func (ou *OperatorUpdate) AddGuideProcesses(g ...*GuideProcess) *OperatorUpdate {
+// AddGuide adds the "guide" edges to the Guide entity.
+func (ou *OperatorUpdate) AddGuide(g ...*Guide) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ou.AddGuideProcessIDs(ids...)
+	return ou.AddGuideIDs(ids...)
 }
 
-// AddGuideProcessHistoryIDs adds the "guide_process_histories" edge to the GuideProcessHistory entity by IDs.
-func (ou *OperatorUpdate) AddGuideProcessHistoryIDs(ids ...int) *OperatorUpdate {
-	ou.mutation.AddGuideProcessHistoryIDs(ids...)
+// AddGuideHistoryIDs adds the "guide_history" edge to the GuideHistory entity by IDs.
+func (ou *OperatorUpdate) AddGuideHistoryIDs(ids ...int) *OperatorUpdate {
+	ou.mutation.AddGuideHistoryIDs(ids...)
 	return ou
 }
 
-// AddGuideProcessHistories adds the "guide_process_histories" edges to the GuideProcessHistory entity.
-func (ou *OperatorUpdate) AddGuideProcessHistories(g ...*GuideProcessHistory) *OperatorUpdate {
+// AddGuideHistory adds the "guide_history" edges to the GuideHistory entity.
+func (ou *OperatorUpdate) AddGuideHistory(g ...*GuideHistory) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ou.AddGuideProcessHistoryIDs(ids...)
+	return ou.AddGuideHistoryIDs(ids...)
 }
 
 // Mutation returns the OperatorMutation object of the builder.
@@ -113,46 +113,46 @@ func (ou *OperatorUpdate) Mutation() *OperatorMutation {
 	return ou.mutation
 }
 
-// ClearGuideProcesses clears all "guide_processes" edges to the GuideProcess entity.
-func (ou *OperatorUpdate) ClearGuideProcesses() *OperatorUpdate {
-	ou.mutation.ClearGuideProcesses()
+// ClearGuide clears all "guide" edges to the Guide entity.
+func (ou *OperatorUpdate) ClearGuide() *OperatorUpdate {
+	ou.mutation.ClearGuide()
 	return ou
 }
 
-// RemoveGuideProcessIDs removes the "guide_processes" edge to GuideProcess entities by IDs.
-func (ou *OperatorUpdate) RemoveGuideProcessIDs(ids ...int) *OperatorUpdate {
-	ou.mutation.RemoveGuideProcessIDs(ids...)
+// RemoveGuideIDs removes the "guide" edge to Guide entities by IDs.
+func (ou *OperatorUpdate) RemoveGuideIDs(ids ...int) *OperatorUpdate {
+	ou.mutation.RemoveGuideIDs(ids...)
 	return ou
 }
 
-// RemoveGuideProcesses removes "guide_processes" edges to GuideProcess entities.
-func (ou *OperatorUpdate) RemoveGuideProcesses(g ...*GuideProcess) *OperatorUpdate {
+// RemoveGuide removes "guide" edges to Guide entities.
+func (ou *OperatorUpdate) RemoveGuide(g ...*Guide) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ou.RemoveGuideProcessIDs(ids...)
+	return ou.RemoveGuideIDs(ids...)
 }
 
-// ClearGuideProcessHistories clears all "guide_process_histories" edges to the GuideProcessHistory entity.
-func (ou *OperatorUpdate) ClearGuideProcessHistories() *OperatorUpdate {
-	ou.mutation.ClearGuideProcessHistories()
+// ClearGuideHistory clears all "guide_history" edges to the GuideHistory entity.
+func (ou *OperatorUpdate) ClearGuideHistory() *OperatorUpdate {
+	ou.mutation.ClearGuideHistory()
 	return ou
 }
 
-// RemoveGuideProcessHistoryIDs removes the "guide_process_histories" edge to GuideProcessHistory entities by IDs.
-func (ou *OperatorUpdate) RemoveGuideProcessHistoryIDs(ids ...int) *OperatorUpdate {
-	ou.mutation.RemoveGuideProcessHistoryIDs(ids...)
+// RemoveGuideHistoryIDs removes the "guide_history" edge to GuideHistory entities by IDs.
+func (ou *OperatorUpdate) RemoveGuideHistoryIDs(ids ...int) *OperatorUpdate {
+	ou.mutation.RemoveGuideHistoryIDs(ids...)
 	return ou
 }
 
-// RemoveGuideProcessHistories removes "guide_process_histories" edges to GuideProcessHistory entities.
-func (ou *OperatorUpdate) RemoveGuideProcessHistories(g ...*GuideProcessHistory) *OperatorUpdate {
+// RemoveGuideHistory removes "guide_history" edges to GuideHistory entities.
+func (ou *OperatorUpdate) RemoveGuideHistory(g ...*GuideHistory) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ou.RemoveGuideProcessHistoryIDs(ids...)
+	return ou.RemoveGuideHistoryIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -225,28 +225,28 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ou.mutation.UpdatedAt(); ok {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if ou.mutation.GuideProcessesCleared() {
+	if ou.mutation.GuideCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.RemovedGuideProcessesIDs(); len(nodes) > 0 && !ou.mutation.GuideProcessesCleared() {
+	if nodes := ou.mutation.RemovedGuideIDs(); len(nodes) > 0 && !ou.mutation.GuideCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -254,15 +254,15 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.GuideProcessesIDs(); len(nodes) > 0 {
+	if nodes := ou.mutation.GuideIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -270,28 +270,28 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ou.mutation.GuideProcessHistoriesCleared() {
+	if ou.mutation.GuideHistoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.RemovedGuideProcessHistoriesIDs(); len(nodes) > 0 && !ou.mutation.GuideProcessHistoriesCleared() {
+	if nodes := ou.mutation.RemovedGuideHistoryIDs(); len(nodes) > 0 && !ou.mutation.GuideHistoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -299,15 +299,15 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.GuideProcessHistoriesIDs(); len(nodes) > 0 {
+	if nodes := ou.mutation.GuideHistoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -383,34 +383,34 @@ func (ouo *OperatorUpdateOne) SetUpdatedAt(t time.Time) *OperatorUpdateOne {
 	return ouo
 }
 
-// AddGuideProcessIDs adds the "guide_processes" edge to the GuideProcess entity by IDs.
-func (ouo *OperatorUpdateOne) AddGuideProcessIDs(ids ...int) *OperatorUpdateOne {
-	ouo.mutation.AddGuideProcessIDs(ids...)
+// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+func (ouo *OperatorUpdateOne) AddGuideIDs(ids ...int) *OperatorUpdateOne {
+	ouo.mutation.AddGuideIDs(ids...)
 	return ouo
 }
 
-// AddGuideProcesses adds the "guide_processes" edges to the GuideProcess entity.
-func (ouo *OperatorUpdateOne) AddGuideProcesses(g ...*GuideProcess) *OperatorUpdateOne {
+// AddGuide adds the "guide" edges to the Guide entity.
+func (ouo *OperatorUpdateOne) AddGuide(g ...*Guide) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ouo.AddGuideProcessIDs(ids...)
+	return ouo.AddGuideIDs(ids...)
 }
 
-// AddGuideProcessHistoryIDs adds the "guide_process_histories" edge to the GuideProcessHistory entity by IDs.
-func (ouo *OperatorUpdateOne) AddGuideProcessHistoryIDs(ids ...int) *OperatorUpdateOne {
-	ouo.mutation.AddGuideProcessHistoryIDs(ids...)
+// AddGuideHistoryIDs adds the "guide_history" edge to the GuideHistory entity by IDs.
+func (ouo *OperatorUpdateOne) AddGuideHistoryIDs(ids ...int) *OperatorUpdateOne {
+	ouo.mutation.AddGuideHistoryIDs(ids...)
 	return ouo
 }
 
-// AddGuideProcessHistories adds the "guide_process_histories" edges to the GuideProcessHistory entity.
-func (ouo *OperatorUpdateOne) AddGuideProcessHistories(g ...*GuideProcessHistory) *OperatorUpdateOne {
+// AddGuideHistory adds the "guide_history" edges to the GuideHistory entity.
+func (ouo *OperatorUpdateOne) AddGuideHistory(g ...*GuideHistory) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ouo.AddGuideProcessHistoryIDs(ids...)
+	return ouo.AddGuideHistoryIDs(ids...)
 }
 
 // Mutation returns the OperatorMutation object of the builder.
@@ -418,46 +418,46 @@ func (ouo *OperatorUpdateOne) Mutation() *OperatorMutation {
 	return ouo.mutation
 }
 
-// ClearGuideProcesses clears all "guide_processes" edges to the GuideProcess entity.
-func (ouo *OperatorUpdateOne) ClearGuideProcesses() *OperatorUpdateOne {
-	ouo.mutation.ClearGuideProcesses()
+// ClearGuide clears all "guide" edges to the Guide entity.
+func (ouo *OperatorUpdateOne) ClearGuide() *OperatorUpdateOne {
+	ouo.mutation.ClearGuide()
 	return ouo
 }
 
-// RemoveGuideProcessIDs removes the "guide_processes" edge to GuideProcess entities by IDs.
-func (ouo *OperatorUpdateOne) RemoveGuideProcessIDs(ids ...int) *OperatorUpdateOne {
-	ouo.mutation.RemoveGuideProcessIDs(ids...)
+// RemoveGuideIDs removes the "guide" edge to Guide entities by IDs.
+func (ouo *OperatorUpdateOne) RemoveGuideIDs(ids ...int) *OperatorUpdateOne {
+	ouo.mutation.RemoveGuideIDs(ids...)
 	return ouo
 }
 
-// RemoveGuideProcesses removes "guide_processes" edges to GuideProcess entities.
-func (ouo *OperatorUpdateOne) RemoveGuideProcesses(g ...*GuideProcess) *OperatorUpdateOne {
+// RemoveGuide removes "guide" edges to Guide entities.
+func (ouo *OperatorUpdateOne) RemoveGuide(g ...*Guide) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ouo.RemoveGuideProcessIDs(ids...)
+	return ouo.RemoveGuideIDs(ids...)
 }
 
-// ClearGuideProcessHistories clears all "guide_process_histories" edges to the GuideProcessHistory entity.
-func (ouo *OperatorUpdateOne) ClearGuideProcessHistories() *OperatorUpdateOne {
-	ouo.mutation.ClearGuideProcessHistories()
+// ClearGuideHistory clears all "guide_history" edges to the GuideHistory entity.
+func (ouo *OperatorUpdateOne) ClearGuideHistory() *OperatorUpdateOne {
+	ouo.mutation.ClearGuideHistory()
 	return ouo
 }
 
-// RemoveGuideProcessHistoryIDs removes the "guide_process_histories" edge to GuideProcessHistory entities by IDs.
-func (ouo *OperatorUpdateOne) RemoveGuideProcessHistoryIDs(ids ...int) *OperatorUpdateOne {
-	ouo.mutation.RemoveGuideProcessHistoryIDs(ids...)
+// RemoveGuideHistoryIDs removes the "guide_history" edge to GuideHistory entities by IDs.
+func (ouo *OperatorUpdateOne) RemoveGuideHistoryIDs(ids ...int) *OperatorUpdateOne {
+	ouo.mutation.RemoveGuideHistoryIDs(ids...)
 	return ouo
 }
 
-// RemoveGuideProcessHistories removes "guide_process_histories" edges to GuideProcessHistory entities.
-func (ouo *OperatorUpdateOne) RemoveGuideProcessHistories(g ...*GuideProcessHistory) *OperatorUpdateOne {
+// RemoveGuideHistory removes "guide_history" edges to GuideHistory entities.
+func (ouo *OperatorUpdateOne) RemoveGuideHistory(g ...*GuideHistory) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return ouo.RemoveGuideProcessHistoryIDs(ids...)
+	return ouo.RemoveGuideHistoryIDs(ids...)
 }
 
 // Where appends a list predicates to the OperatorUpdate builder.
@@ -560,28 +560,28 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 	if value, ok := ouo.mutation.UpdatedAt(); ok {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if ouo.mutation.GuideProcessesCleared() {
+	if ouo.mutation.GuideCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.RemovedGuideProcessesIDs(); len(nodes) > 0 && !ouo.mutation.GuideProcessesCleared() {
+	if nodes := ouo.mutation.RemovedGuideIDs(); len(nodes) > 0 && !ouo.mutation.GuideCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -589,15 +589,15 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.GuideProcessesIDs(); len(nodes) > 0 {
+	if nodes := ouo.mutation.GuideIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -605,28 +605,28 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if ouo.mutation.GuideProcessHistoriesCleared() {
+	if ouo.mutation.GuideHistoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.RemovedGuideProcessHistoriesIDs(); len(nodes) > 0 && !ouo.mutation.GuideProcessHistoriesCleared() {
+	if nodes := ouo.mutation.RemovedGuideHistoryIDs(); len(nodes) > 0 && !ouo.mutation.GuideHistoryCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -634,15 +634,15 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.GuideProcessHistoriesIDs(); len(nodes) > 0 {
+	if nodes := ouo.mutation.GuideHistoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

@@ -33,31 +33,31 @@ type Operator struct {
 
 // OperatorEdges holds the relations/edges for other nodes in the graph.
 type OperatorEdges struct {
-	// GuideProcesses holds the value of the guide_processes edge.
-	GuideProcesses []*GuideProcess `json:"guide_processes,omitempty"`
-	// GuideProcessHistories holds the value of the guide_process_histories edge.
-	GuideProcessHistories []*GuideProcessHistory `json:"guide_process_histories,omitempty"`
+	// Guide holds the value of the guide edge.
+	Guide []*Guide `json:"guide,omitempty"`
+	// GuideHistory holds the value of the guide_history edge.
+	GuideHistory []*GuideHistory `json:"guide_history,omitempty"`
 	// loadedTypes holds the information for reporting if a
 	// type was loaded (or requested) in eager-loading or not.
 	loadedTypes [2]bool
 }
 
-// GuideProcessesOrErr returns the GuideProcesses value or an error if the edge
+// GuideOrErr returns the Guide value or an error if the edge
 // was not loaded in eager-loading.
-func (e OperatorEdges) GuideProcessesOrErr() ([]*GuideProcess, error) {
+func (e OperatorEdges) GuideOrErr() ([]*Guide, error) {
 	if e.loadedTypes[0] {
-		return e.GuideProcesses, nil
+		return e.Guide, nil
 	}
-	return nil, &NotLoadedError{edge: "guide_processes"}
+	return nil, &NotLoadedError{edge: "guide"}
 }
 
-// GuideProcessHistoriesOrErr returns the GuideProcessHistories value or an error if the edge
+// GuideHistoryOrErr returns the GuideHistory value or an error if the edge
 // was not loaded in eager-loading.
-func (e OperatorEdges) GuideProcessHistoriesOrErr() ([]*GuideProcessHistory, error) {
+func (e OperatorEdges) GuideHistoryOrErr() ([]*GuideHistory, error) {
 	if e.loadedTypes[1] {
-		return e.GuideProcessHistories, nil
+		return e.GuideHistory, nil
 	}
-	return nil, &NotLoadedError{edge: "guide_process_histories"}
+	return nil, &NotLoadedError{edge: "guide_history"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -131,14 +131,14 @@ func (o *Operator) Value(name string) (ent.Value, error) {
 	return o.selectValues.Get(name)
 }
 
-// QueryGuideProcesses queries the "guide_processes" edge of the Operator entity.
-func (o *Operator) QueryGuideProcesses() *GuideProcessQuery {
-	return NewOperatorClient(o.config).QueryGuideProcesses(o)
+// QueryGuide queries the "guide" edge of the Operator entity.
+func (o *Operator) QueryGuide() *GuideQuery {
+	return NewOperatorClient(o.config).QueryGuide(o)
 }
 
-// QueryGuideProcessHistories queries the "guide_process_histories" edge of the Operator entity.
-func (o *Operator) QueryGuideProcessHistories() *GuideProcessHistoryQuery {
-	return NewOperatorClient(o.config).QueryGuideProcessHistories(o)
+// QueryGuideHistory queries the "guide_history" edge of the Operator entity.
+func (o *Operator) QueryGuideHistory() *GuideHistoryQuery {
+	return NewOperatorClient(o.config).QueryGuideHistory(o)
 }
 
 // Update returns a builder for updating this Operator.

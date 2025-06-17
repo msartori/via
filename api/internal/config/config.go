@@ -5,7 +5,9 @@ import (
 	"os"
 	"sync"
 	http_client "via/internal/client/http"
+	db_pool "via/internal/db/pool"
 	app_log "via/internal/log/app"
+	"via/internal/middleware"
 
 	"github.com/caarlos0/env/v10"
 )
@@ -24,26 +26,11 @@ type Application struct {
 	RequestTimeout int    `env:"REQUEST_TIMEOUT" envDefault:"30"       json:"requestTimeout"`
 }
 
-type Database struct {
-	PasswordFile string `env:"PASSWORD_FILE" envDefault:"" json:"passwordFile"`
-	User         string `env:"USER" envDefault:"" json:"-"`
-	Base         string `env:"BASE" envDefault:"" json:"-"`
-	Port         string `env:"PORT" envDefault:"" json:"port"`
-	Host         string `env:"HOST" envDefault:"" json:"host"`
-}
-
-type CORS struct {
-	Enabled bool   `env:"ENABLED" envDefault:"true" json:"enabled"`
-	Origins string `env:"ORIGINS" envDefault:"*" json:"origins"`
-	Methods string `env:"METHODS" envDefault:"GET,POST,PUT,PATCH,DELETE,OPTIONS" json:"methods"`
-	Headers string `env:"HEADERS" envDefault:"Content-Type,Authorization,bypass-tunnel-reminder,Accept-Language" json:"headers"`
-}
-
 type Config struct {
 	Log            app_log.LogCfg            `envPrefix:"LOG_" json:"log"`
 	Application    Application               `envPrefix:"APP_" json:"application"`
-	Database       Database                  `envPrefix:"DB_" json:"db"`
-	CORS           CORS                      `envPrefix:"CORS_" json:"cors"`
+	Database       db_pool.DatabaseCfg       `envPrefix:"DB_" json:"db"`
+	CORS           middleware.CORSCfg        `envPrefix:"CORS_" json:"cors"`
 	GuideWebClient http_client.HttpClientCfg `envPrefix:"GUIDE_WEB_CLIENT_" json:"guideWebClient"`
 	Bussiness      Bussiness                 `envPrefix:"BUSSINESS_" json:"bussiness"`
 }

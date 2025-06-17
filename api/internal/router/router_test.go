@@ -8,11 +8,12 @@ import (
 	"via/internal/config"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
+	"via/internal/middleware"
 	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	mock_guide_provider "via/internal/provider/guide/mock"
-	guide_process_provider "via/internal/provider/guide/process"
-	mock_guide_process_provider "via/internal/provider/guide/process/mock"
+	via_guide_provider "via/internal/provider/via/guide"
+	mock_via_guide_provider "via/internal/provider/via/guide/mock"
 	"via/internal/router"
 
 	"github.com/stretchr/testify/mock"
@@ -26,7 +27,7 @@ func TestRouter_New(t *testing.T) {
 		Application: config.Application{
 			RequestTimeout: 5,
 		},
-		CORS: config.CORS{
+		CORS: middleware.CORSCfg{
 			Origins: "*",
 		},
 		Bussiness: config.Bussiness{
@@ -38,11 +39,12 @@ func TestRouter_New(t *testing.T) {
 	}
 
 	h := router.New(cfg)
+	mockViaGuideProvider := new(mock_via_guide_provider.MockViaGuideProvider)
+	mockViaGuideProvider.On("GetGuide", mock.Anything, "123456789012").Return(model.ViaGuide{ID: "123456789012"}, nil)
+	via_guide_provider.Set(mockViaGuideProvider)
+
 	mockGuideProvider := new(mock_guide_provider.MockGuideProvider)
-	mockGuideProvider.On("GetGuide", mock.Anything, "123456789012").Return(model.Guide{ID: "123456789012"}, nil)
-	mockGuideProcessProvider := new(mock_guide_process_provider.MockGuideProcessProvider)
 	guide_provider.Set(mockGuideProvider)
-	guide_process_provider.Set(mockGuideProcessProvider)
 	r := httptest.NewRequest(http.MethodGet, "/guide/123456789012", nil)
 	w := httptest.NewRecorder()
 

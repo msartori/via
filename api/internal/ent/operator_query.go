@@ -7,8 +7,8 @@ import (
 	"database/sql/driver"
 	"fmt"
 	"math"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 	"via/internal/ent/predicate"
 
@@ -21,12 +21,12 @@ import (
 // OperatorQuery is the builder for querying Operator entities.
 type OperatorQuery struct {
 	config
-	ctx                       *QueryContext
-	order                     []operator.OrderOption
-	inters                    []Interceptor
-	predicates                []predicate.Operator
-	withGuideProcesses        *GuideProcessQuery
-	withGuideProcessHistories *GuideProcessHistoryQuery
+	ctx              *QueryContext
+	order            []operator.OrderOption
+	inters           []Interceptor
+	predicates       []predicate.Operator
+	withGuide        *GuideQuery
+	withGuideHistory *GuideHistoryQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -63,9 +63,9 @@ func (oq *OperatorQuery) Order(o ...operator.OrderOption) *OperatorQuery {
 	return oq
 }
 
-// QueryGuideProcesses chains the current query on the "guide_processes" edge.
-func (oq *OperatorQuery) QueryGuideProcesses() *GuideProcessQuery {
-	query := (&GuideProcessClient{config: oq.config}).Query()
+// QueryGuide chains the current query on the "guide" edge.
+func (oq *OperatorQuery) QueryGuide() *GuideQuery {
+	query := (&GuideClient{config: oq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := oq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -76,8 +76,8 @@ func (oq *OperatorQuery) QueryGuideProcesses() *GuideProcessQuery {
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(operator.Table, operator.FieldID, selector),
-			sqlgraph.To(guideprocess.Table, guideprocess.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideProcessesTable, operator.GuideProcessesColumn),
+			sqlgraph.To(guide.Table, guide.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideTable, operator.GuideColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
 		return fromU, nil
@@ -85,9 +85,9 @@ func (oq *OperatorQuery) QueryGuideProcesses() *GuideProcessQuery {
 	return query
 }
 
-// QueryGuideProcessHistories chains the current query on the "guide_process_histories" edge.
-func (oq *OperatorQuery) QueryGuideProcessHistories() *GuideProcessHistoryQuery {
-	query := (&GuideProcessHistoryClient{config: oq.config}).Query()
+// QueryGuideHistory chains the current query on the "guide_history" edge.
+func (oq *OperatorQuery) QueryGuideHistory() *GuideHistoryQuery {
+	query := (&GuideHistoryClient{config: oq.config}).Query()
 	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
 		if err := oq.prepareQuery(ctx); err != nil {
 			return nil, err
@@ -98,8 +98,8 @@ func (oq *OperatorQuery) QueryGuideProcessHistories() *GuideProcessHistoryQuery 
 		}
 		step := sqlgraph.NewStep(
 			sqlgraph.From(operator.Table, operator.FieldID, selector),
-			sqlgraph.To(guideprocesshistory.Table, guideprocesshistory.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideProcessHistoriesTable, operator.GuideProcessHistoriesColumn),
+			sqlgraph.To(guidehistory.Table, guidehistory.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideHistoryTable, operator.GuideHistoryColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(oq.driver.Dialect(), step)
 		return fromU, nil
@@ -294,38 +294,38 @@ func (oq *OperatorQuery) Clone() *OperatorQuery {
 		return nil
 	}
 	return &OperatorQuery{
-		config:                    oq.config,
-		ctx:                       oq.ctx.Clone(),
-		order:                     append([]operator.OrderOption{}, oq.order...),
-		inters:                    append([]Interceptor{}, oq.inters...),
-		predicates:                append([]predicate.Operator{}, oq.predicates...),
-		withGuideProcesses:        oq.withGuideProcesses.Clone(),
-		withGuideProcessHistories: oq.withGuideProcessHistories.Clone(),
+		config:           oq.config,
+		ctx:              oq.ctx.Clone(),
+		order:            append([]operator.OrderOption{}, oq.order...),
+		inters:           append([]Interceptor{}, oq.inters...),
+		predicates:       append([]predicate.Operator{}, oq.predicates...),
+		withGuide:        oq.withGuide.Clone(),
+		withGuideHistory: oq.withGuideHistory.Clone(),
 		// clone intermediate query.
 		sql:  oq.sql.Clone(),
 		path: oq.path,
 	}
 }
 
-// WithGuideProcesses tells the query-builder to eager-load the nodes that are connected to
-// the "guide_processes" edge. The optional arguments are used to configure the query builder of the edge.
-func (oq *OperatorQuery) WithGuideProcesses(opts ...func(*GuideProcessQuery)) *OperatorQuery {
-	query := (&GuideProcessClient{config: oq.config}).Query()
+// WithGuide tells the query-builder to eager-load the nodes that are connected to
+// the "guide" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OperatorQuery) WithGuide(opts ...func(*GuideQuery)) *OperatorQuery {
+	query := (&GuideClient{config: oq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	oq.withGuideProcesses = query
+	oq.withGuide = query
 	return oq
 }
 
-// WithGuideProcessHistories tells the query-builder to eager-load the nodes that are connected to
-// the "guide_process_histories" edge. The optional arguments are used to configure the query builder of the edge.
-func (oq *OperatorQuery) WithGuideProcessHistories(opts ...func(*GuideProcessHistoryQuery)) *OperatorQuery {
-	query := (&GuideProcessHistoryClient{config: oq.config}).Query()
+// WithGuideHistory tells the query-builder to eager-load the nodes that are connected to
+// the "guide_history" edge. The optional arguments are used to configure the query builder of the edge.
+func (oq *OperatorQuery) WithGuideHistory(opts ...func(*GuideHistoryQuery)) *OperatorQuery {
+	query := (&GuideHistoryClient{config: oq.config}).Query()
 	for _, opt := range opts {
 		opt(query)
 	}
-	oq.withGuideProcessHistories = query
+	oq.withGuideHistory = query
 	return oq
 }
 
@@ -408,8 +408,8 @@ func (oq *OperatorQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ope
 		nodes       = []*Operator{}
 		_spec       = oq.querySpec()
 		loadedTypes = [2]bool{
-			oq.withGuideProcesses != nil,
-			oq.withGuideProcessHistories != nil,
+			oq.withGuide != nil,
+			oq.withGuideHistory != nil,
 		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
@@ -430,26 +430,24 @@ func (oq *OperatorQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Ope
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
-	if query := oq.withGuideProcesses; query != nil {
-		if err := oq.loadGuideProcesses(ctx, query, nodes,
-			func(n *Operator) { n.Edges.GuideProcesses = []*GuideProcess{} },
-			func(n *Operator, e *GuideProcess) { n.Edges.GuideProcesses = append(n.Edges.GuideProcesses, e) }); err != nil {
+	if query := oq.withGuide; query != nil {
+		if err := oq.loadGuide(ctx, query, nodes,
+			func(n *Operator) { n.Edges.Guide = []*Guide{} },
+			func(n *Operator, e *Guide) { n.Edges.Guide = append(n.Edges.Guide, e) }); err != nil {
 			return nil, err
 		}
 	}
-	if query := oq.withGuideProcessHistories; query != nil {
-		if err := oq.loadGuideProcessHistories(ctx, query, nodes,
-			func(n *Operator) { n.Edges.GuideProcessHistories = []*GuideProcessHistory{} },
-			func(n *Operator, e *GuideProcessHistory) {
-				n.Edges.GuideProcessHistories = append(n.Edges.GuideProcessHistories, e)
-			}); err != nil {
+	if query := oq.withGuideHistory; query != nil {
+		if err := oq.loadGuideHistory(ctx, query, nodes,
+			func(n *Operator) { n.Edges.GuideHistory = []*GuideHistory{} },
+			func(n *Operator, e *GuideHistory) { n.Edges.GuideHistory = append(n.Edges.GuideHistory, e) }); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
 }
 
-func (oq *OperatorQuery) loadGuideProcesses(ctx context.Context, query *GuideProcessQuery, nodes []*Operator, init func(*Operator), assign func(*Operator, *GuideProcess)) error {
+func (oq *OperatorQuery) loadGuide(ctx context.Context, query *GuideQuery, nodes []*Operator, init func(*Operator), assign func(*Operator, *Guide)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Operator)
 	for i := range nodes {
@@ -460,27 +458,27 @@ func (oq *OperatorQuery) loadGuideProcesses(ctx context.Context, query *GuidePro
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.GuideProcess(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(operator.GuideProcessesColumn), fks...))
+	query.Where(predicate.Guide(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(operator.GuideColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.operator_guide_processes
+		fk := n.operator_guide
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "operator_guide_processes" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "operator_guide" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "operator_guide_processes" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "operator_guide" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}
 	return nil
 }
-func (oq *OperatorQuery) loadGuideProcessHistories(ctx context.Context, query *GuideProcessHistoryQuery, nodes []*Operator, init func(*Operator), assign func(*Operator, *GuideProcessHistory)) error {
+func (oq *OperatorQuery) loadGuideHistory(ctx context.Context, query *GuideHistoryQuery, nodes []*Operator, init func(*Operator), assign func(*Operator, *GuideHistory)) error {
 	fks := make([]driver.Value, 0, len(nodes))
 	nodeids := make(map[int]*Operator)
 	for i := range nodes {
@@ -491,21 +489,21 @@ func (oq *OperatorQuery) loadGuideProcessHistories(ctx context.Context, query *G
 		}
 	}
 	query.withFKs = true
-	query.Where(predicate.GuideProcessHistory(func(s *sql.Selector) {
-		s.Where(sql.InValues(s.C(operator.GuideProcessHistoriesColumn), fks...))
+	query.Where(predicate.GuideHistory(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(operator.GuideHistoryColumn), fks...))
 	}))
 	neighbors, err := query.All(ctx)
 	if err != nil {
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.operator_guide_process_histories
+		fk := n.operator_guide_history
 		if fk == nil {
-			return fmt.Errorf(`foreign-key "operator_guide_process_histories" is nil for node %v`, n.ID)
+			return fmt.Errorf(`foreign-key "operator_guide_history" is nil for node %v`, n.ID)
 		}
 		node, ok := nodeids[*fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "operator_guide_process_histories" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "operator_guide_history" returned %v for node %v`, *fk, n.ID)
 		}
 		assign(node, n)
 	}

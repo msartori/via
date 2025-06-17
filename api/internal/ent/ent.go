@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"reflect"
 	"sync"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 
 	"entgo.io/ent"
@@ -75,9 +75,9 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			guideprocess.Table:        guideprocess.ValidColumn,
-			guideprocesshistory.Table: guideprocesshistory.ValidColumn,
-			operator.Table:            operator.ValidColumn,
+			guide.Table:        guide.ValidColumn,
+			guidehistory.Table: guidehistory.ValidColumn,
+			operator.Table:     operator.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

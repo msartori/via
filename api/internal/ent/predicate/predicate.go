@@ -6,11 +6,11 @@ import (
 	"entgo.io/ent/dialect/sql"
 )
 
-// GuideProcess is the predicate function for guideprocess builders.
-type GuideProcess func(*sql.Selector)
+// Guide is the predicate function for guide builders.
+type Guide func(*sql.Selector)
 
-// GuideProcessHistory is the predicate function for guideprocesshistory builders.
-type GuideProcessHistory func(*sql.Selector)
+// GuideHistory is the predicate function for guidehistory builders.
+type GuideHistory func(*sql.Selector)
 
 // Operator is the predicate function for operator builders.
 type Operator func(*sql.Selector)

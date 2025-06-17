@@ -2,11 +2,17 @@ package middleware
 
 import (
 	"net/http"
-	"via/internal/config"
 	"via/internal/log"
 )
 
-func CORS(cfg config.CORS) func(http.Handler) http.Handler {
+type CORSCfg struct {
+	Enabled bool   `env:"ENABLED" envDefault:"true" json:"enabled"`
+	Origins string `env:"ORIGINS" envDefault:"*" json:"origins"`
+	Methods string `env:"METHODS" envDefault:"GET,POST,PUT,PATCH,DELETE,OPTIONS" json:"methods"`
+	Headers string `env:"HEADERS" envDefault:"Content-Type,Authorization,bypass-tunnel-reminder,Accept-Language" json:"headers"`
+}
+
+func CORS(cfg CORSCfg) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger := log.Get()

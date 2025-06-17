@@ -4,8 +4,8 @@ package ent
 
 import (
 	"time"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 	"via/internal/ent/schema"
 )
@@ -14,13 +14,13 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
-	guideprocessFields := schema.GuideProcess{}.Fields()
-	_ = guideprocessFields
-	// guideprocessDescCode is the schema descriptor for code field.
-	guideprocessDescCode := guideprocessFields[0].Descriptor()
-	// guideprocess.CodeValidator is a validator for the "code" field. It is called by the builders before save.
-	guideprocess.CodeValidator = func() func(string) error {
-		validators := guideprocessDescCode.Validators
+	guideFields := schema.Guide{}.Fields()
+	_ = guideFields
+	// guideDescCode is the schema descriptor for code field.
+	guideDescCode := guideFields[0].Descriptor()
+	// guide.CodeValidator is a validator for the "code" field. It is called by the builders before save.
+	guide.CodeValidator = func() func(string) error {
+		validators := guideDescCode.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
@@ -34,34 +34,34 @@ func init() {
 			return nil
 		}
 	}()
-	// guideprocessDescRecipient is the schema descriptor for recipient field.
-	guideprocessDescRecipient := guideprocessFields[1].Descriptor()
-	// guideprocess.RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
-	guideprocess.RecipientValidator = guideprocessDescRecipient.Validators[0].(func(string) error)
-	// guideprocessDescStatus is the schema descriptor for status field.
-	guideprocessDescStatus := guideprocessFields[2].Descriptor()
-	// guideprocess.StatusValidator is a validator for the "status" field. It is called by the builders before save.
-	guideprocess.StatusValidator = guideprocessDescStatus.Validators[0].(func(string) error)
-	// guideprocessDescCreatedAt is the schema descriptor for created_at field.
-	guideprocessDescCreatedAt := guideprocessFields[3].Descriptor()
-	// guideprocess.DefaultCreatedAt holds the default value on creation for the created_at field.
-	guideprocess.DefaultCreatedAt = guideprocessDescCreatedAt.Default.(func() time.Time)
-	// guideprocessDescUpdatedAt is the schema descriptor for updated_at field.
-	guideprocessDescUpdatedAt := guideprocessFields[4].Descriptor()
-	// guideprocess.DefaultUpdatedAt holds the default value on creation for the updated_at field.
-	guideprocess.DefaultUpdatedAt = guideprocessDescUpdatedAt.Default.(func() time.Time)
-	// guideprocess.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
-	guideprocess.UpdateDefaultUpdatedAt = guideprocessDescUpdatedAt.UpdateDefault.(func() time.Time)
-	guideprocesshistoryFields := schema.GuideProcessHistory{}.Fields()
-	_ = guideprocesshistoryFields
-	// guideprocesshistoryDescStatus is the schema descriptor for status field.
-	guideprocesshistoryDescStatus := guideprocesshistoryFields[0].Descriptor()
-	// guideprocesshistory.StatusValidator is a validator for the "status" field. It is called by the builders before save.
-	guideprocesshistory.StatusValidator = guideprocesshistoryDescStatus.Validators[0].(func(string) error)
-	// guideprocesshistoryDescCreatedAt is the schema descriptor for created_at field.
-	guideprocesshistoryDescCreatedAt := guideprocesshistoryFields[1].Descriptor()
-	// guideprocesshistory.DefaultCreatedAt holds the default value on creation for the created_at field.
-	guideprocesshistory.DefaultCreatedAt = guideprocesshistoryDescCreatedAt.Default.(func() time.Time)
+	// guideDescRecipient is the schema descriptor for recipient field.
+	guideDescRecipient := guideFields[1].Descriptor()
+	// guide.RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
+	guide.RecipientValidator = guideDescRecipient.Validators[0].(func(string) error)
+	// guideDescStatus is the schema descriptor for status field.
+	guideDescStatus := guideFields[2].Descriptor()
+	// guide.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	guide.StatusValidator = guideDescStatus.Validators[0].(func(string) error)
+	// guideDescCreatedAt is the schema descriptor for created_at field.
+	guideDescCreatedAt := guideFields[3].Descriptor()
+	// guide.DefaultCreatedAt holds the default value on creation for the created_at field.
+	guide.DefaultCreatedAt = guideDescCreatedAt.Default.(func() time.Time)
+	// guideDescUpdatedAt is the schema descriptor for updated_at field.
+	guideDescUpdatedAt := guideFields[4].Descriptor()
+	// guide.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	guide.DefaultUpdatedAt = guideDescUpdatedAt.Default.(func() time.Time)
+	// guide.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	guide.UpdateDefaultUpdatedAt = guideDescUpdatedAt.UpdateDefault.(func() time.Time)
+	guidehistoryFields := schema.GuideHistory{}.Fields()
+	_ = guidehistoryFields
+	// guidehistoryDescStatus is the schema descriptor for status field.
+	guidehistoryDescStatus := guidehistoryFields[0].Descriptor()
+	// guidehistory.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	guidehistory.StatusValidator = guidehistoryDescStatus.Validators[0].(func(string) error)
+	// guidehistoryDescCreatedAt is the schema descriptor for created_at field.
+	guidehistoryDescCreatedAt := guidehistoryFields[1].Descriptor()
+	// guidehistory.DefaultCreatedAt holds the default value on creation for the created_at field.
+	guidehistory.DefaultCreatedAt = guidehistoryDescCreatedAt.Default.(func() time.Time)
 	operatorFields := schema.Operator{}.Fields()
 	_ = operatorFields
 	// operatorDescAccount is the schema descriptor for account field.

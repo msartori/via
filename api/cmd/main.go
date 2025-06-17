@@ -15,6 +15,7 @@ func main() {
 	log.Set(app_log.New(cfg.Log))
 
 	logger := log.Get()
+	logger.Debug(context.Background(), "config", cfg)
 
 	dbPool, err := db_pool.New(cfg.Database)
 	if err != nil {

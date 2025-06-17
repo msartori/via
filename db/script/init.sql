@@ -6,9 +6,9 @@ CREATE TABLE IF NOT EXISTS operator (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS guide_process (
+CREATE TABLE IF NOT EXISTS guide (
     id SERIAL PRIMARY KEY,
-    code CHAR(12) UNIQUE NOT NULL,
+    via_guide_id CHAR(12) UNIQUE NOT NULL,
     recipient VARCHAR(100),
     status VARCHAR(30),
     operator_id INTEGER REFERENCES operator(id),
@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS guide_process (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS guide_process_history (
+CREATE TABLE IF NOT EXISTS guide_history (
     id SERIAL PRIMARY KEY,
-    guide_process_id INTEGER NOT NULL REFERENCES guide_process(id),
+    guide_id INTEGER NOT NULL REFERENCES guide(id),
     status VARCHAR(30), 
     operator_id INTEGER REFERENCES operator(id),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP

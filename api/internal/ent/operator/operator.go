@@ -22,26 +22,26 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeGuideProcesses holds the string denoting the guide_processes edge name in mutations.
-	EdgeGuideProcesses = "guide_processes"
-	// EdgeGuideProcessHistories holds the string denoting the guide_process_histories edge name in mutations.
-	EdgeGuideProcessHistories = "guide_process_histories"
+	// EdgeGuide holds the string denoting the guide edge name in mutations.
+	EdgeGuide = "guide"
+	// EdgeGuideHistory holds the string denoting the guide_history edge name in mutations.
+	EdgeGuideHistory = "guide_history"
 	// Table holds the table name of the operator in the database.
 	Table = "operators"
-	// GuideProcessesTable is the table that holds the guide_processes relation/edge.
-	GuideProcessesTable = "guide_processes"
-	// GuideProcessesInverseTable is the table name for the GuideProcess entity.
-	// It exists in this package in order to avoid circular dependency with the "guideprocess" package.
-	GuideProcessesInverseTable = "guide_processes"
-	// GuideProcessesColumn is the table column denoting the guide_processes relation/edge.
-	GuideProcessesColumn = "operator_guide_processes"
-	// GuideProcessHistoriesTable is the table that holds the guide_process_histories relation/edge.
-	GuideProcessHistoriesTable = "guide_process_histories"
-	// GuideProcessHistoriesInverseTable is the table name for the GuideProcessHistory entity.
-	// It exists in this package in order to avoid circular dependency with the "guideprocesshistory" package.
-	GuideProcessHistoriesInverseTable = "guide_process_histories"
-	// GuideProcessHistoriesColumn is the table column denoting the guide_process_histories relation/edge.
-	GuideProcessHistoriesColumn = "operator_guide_process_histories"
+	// GuideTable is the table that holds the guide relation/edge.
+	GuideTable = "guides"
+	// GuideInverseTable is the table name for the Guide entity.
+	// It exists in this package in order to avoid circular dependency with the "guide" package.
+	GuideInverseTable = "guides"
+	// GuideColumn is the table column denoting the guide relation/edge.
+	GuideColumn = "operator_guide"
+	// GuideHistoryTable is the table that holds the guide_history relation/edge.
+	GuideHistoryTable = "guide_histories"
+	// GuideHistoryInverseTable is the table name for the GuideHistory entity.
+	// It exists in this package in order to avoid circular dependency with the "guidehistory" package.
+	GuideHistoryInverseTable = "guide_histories"
+	// GuideHistoryColumn is the table column denoting the guide_history relation/edge.
+	GuideHistoryColumn = "operator_guide_history"
 )
 
 // Columns holds all SQL columns for operator fields.
@@ -102,44 +102,44 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByGuideProcessesCount orders the results by guide_processes count.
-func ByGuideProcessesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByGuideCount orders the results by guide count.
+func ByGuideCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newGuideProcessesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newGuideStep(), opts...)
 	}
 }
 
-// ByGuideProcesses orders the results by guide_processes terms.
-func ByGuideProcesses(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByGuide orders the results by guide terms.
+func ByGuide(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newGuideProcessesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newGuideStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
-// ByGuideProcessHistoriesCount orders the results by guide_process_histories count.
-func ByGuideProcessHistoriesCount(opts ...sql.OrderTermOption) OrderOption {
+// ByGuideHistoryCount orders the results by guide_history count.
+func ByGuideHistoryCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newGuideProcessHistoriesStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newGuideHistoryStep(), opts...)
 	}
 }
 
-// ByGuideProcessHistories orders the results by guide_process_histories terms.
-func ByGuideProcessHistories(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByGuideHistory orders the results by guide_history terms.
+func ByGuideHistory(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newGuideProcessHistoriesStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newGuideHistoryStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newGuideProcessesStep() *sqlgraph.Step {
+func newGuideStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(GuideProcessesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, GuideProcessesTable, GuideProcessesColumn),
+		sqlgraph.To(GuideInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GuideTable, GuideColumn),
 	)
 }
-func newGuideProcessHistoriesStep() *sqlgraph.Step {
+func newGuideHistoryStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(GuideProcessHistoriesInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, GuideProcessHistoriesTable, GuideProcessHistoriesColumn),
+		sqlgraph.To(GuideHistoryInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GuideHistoryTable, GuideHistoryColumn),
 	)
 }

@@ -12,10 +12,10 @@ import (
 // Tx is a transactional client that is created by calling Client.Tx().
 type Tx struct {
 	config
-	// GuideProcess is the client for interacting with the GuideProcess builders.
-	GuideProcess *GuideProcessClient
-	// GuideProcessHistory is the client for interacting with the GuideProcessHistory builders.
-	GuideProcessHistory *GuideProcessHistoryClient
+	// Guide is the client for interacting with the Guide builders.
+	Guide *GuideClient
+	// GuideHistory is the client for interacting with the GuideHistory builders.
+	GuideHistory *GuideHistoryClient
 	// Operator is the client for interacting with the Operator builders.
 	Operator *OperatorClient
 
@@ -149,8 +149,8 @@ func (tx *Tx) Client() *Client {
 }
 
 func (tx *Tx) init() {
-	tx.GuideProcess = NewGuideProcessClient(tx.config)
-	tx.GuideProcessHistory = NewGuideProcessHistoryClient(tx.config)
+	tx.Guide = NewGuideClient(tx.config)
+	tx.GuideHistory = NewGuideHistoryClient(tx.config)
 	tx.Operator = NewOperatorClient(tx.config)
 }
 
@@ -161,7 +161,7 @@ func (tx *Tx) init() {
 // of them in order to commit or rollback the transaction.
 //
 // If a closed transaction is embedded in one of the generated entities, and the entity
-// applies a query, for example: GuideProcess.QueryXXX(), the query will be executed
+// applies a query, for example: Guide.QueryXXX(), the query will be executed
 // through the driver which created this transaction.
 //
 // Note that txDriver is not goroutine safe.

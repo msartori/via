@@ -8,28 +8,28 @@ import (
 	"via/internal/ent"
 )
 
-// The GuideProcessFunc type is an adapter to allow the use of ordinary
-// function as GuideProcess mutator.
-type GuideProcessFunc func(context.Context, *ent.GuideProcessMutation) (ent.Value, error)
+// The GuideFunc type is an adapter to allow the use of ordinary
+// function as Guide mutator.
+type GuideFunc func(context.Context, *ent.GuideMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f GuideProcessFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.GuideProcessMutation); ok {
+func (f GuideFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.GuideMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GuideProcessMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GuideMutation", m)
 }
 
-// The GuideProcessHistoryFunc type is an adapter to allow the use of ordinary
-// function as GuideProcessHistory mutator.
-type GuideProcessHistoryFunc func(context.Context, *ent.GuideProcessHistoryMutation) (ent.Value, error)
+// The GuideHistoryFunc type is an adapter to allow the use of ordinary
+// function as GuideHistory mutator.
+type GuideHistoryFunc func(context.Context, *ent.GuideHistoryMutation) (ent.Value, error)
 
 // Mutate calls f(ctx, m).
-func (f GuideProcessHistoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
-	if mv, ok := m.(*ent.GuideProcessHistoryMutation); ok {
+func (f GuideHistoryFunc) Mutate(ctx context.Context, m ent.Mutation) (ent.Value, error) {
+	if mv, ok := m.(*ent.GuideHistoryMutation); ok {
 		return f(ctx, mv)
 	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GuideProcessHistoryMutation", m)
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *ent.GuideHistoryMutation", m)
 }
 
 // The OperatorFunc type is an adapter to allow the use of ordinary

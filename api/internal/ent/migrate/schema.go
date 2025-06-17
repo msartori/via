@@ -8,53 +8,53 @@ import (
 )
 
 var (
-	// GuideProcessesColumns holds the columns for the "guide_processes" table.
-	GuideProcessesColumns = []*schema.Column{
+	// GuidesColumns holds the columns for the "guides" table.
+	GuidesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "code", Type: field.TypeString, Unique: true, Size: 12},
 		{Name: "recipient", Type: field.TypeString, Nullable: true, Size: 100},
 		{Name: "status", Type: field.TypeString, Nullable: true, Size: 30},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "operator_guide_processes", Type: field.TypeInt, Nullable: true},
+		{Name: "operator_guide", Type: field.TypeInt, Nullable: true},
 	}
-	// GuideProcessesTable holds the schema information for the "guide_processes" table.
-	GuideProcessesTable = &schema.Table{
-		Name:       "guide_processes",
-		Columns:    GuideProcessesColumns,
-		PrimaryKey: []*schema.Column{GuideProcessesColumns[0]},
+	// GuidesTable holds the schema information for the "guides" table.
+	GuidesTable = &schema.Table{
+		Name:       "guides",
+		Columns:    GuidesColumns,
+		PrimaryKey: []*schema.Column{GuidesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "guide_processes_operators_guide_processes",
-				Columns:    []*schema.Column{GuideProcessesColumns[6]},
+				Symbol:     "guides_operators_guide",
+				Columns:    []*schema.Column{GuidesColumns[6]},
 				RefColumns: []*schema.Column{OperatorsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
 	}
-	// GuideProcessHistoriesColumns holds the columns for the "guide_process_histories" table.
-	GuideProcessHistoriesColumns = []*schema.Column{
+	// GuideHistoriesColumns holds the columns for the "guide_histories" table.
+	GuideHistoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "status", Type: field.TypeString, Nullable: true, Size: 30},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "guide_process_history", Type: field.TypeInt},
-		{Name: "operator_guide_process_histories", Type: field.TypeInt, Nullable: true},
+		{Name: "guide_history", Type: field.TypeInt},
+		{Name: "operator_guide_history", Type: field.TypeInt, Nullable: true},
 	}
-	// GuideProcessHistoriesTable holds the schema information for the "guide_process_histories" table.
-	GuideProcessHistoriesTable = &schema.Table{
-		Name:       "guide_process_histories",
-		Columns:    GuideProcessHistoriesColumns,
-		PrimaryKey: []*schema.Column{GuideProcessHistoriesColumns[0]},
+	// GuideHistoriesTable holds the schema information for the "guide_histories" table.
+	GuideHistoriesTable = &schema.Table{
+		Name:       "guide_histories",
+		Columns:    GuideHistoriesColumns,
+		PrimaryKey: []*schema.Column{GuideHistoriesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "guide_process_histories_guide_processes_history",
-				Columns:    []*schema.Column{GuideProcessHistoriesColumns[3]},
-				RefColumns: []*schema.Column{GuideProcessesColumns[0]},
+				Symbol:     "guide_histories_guides_history",
+				Columns:    []*schema.Column{GuideHistoriesColumns[3]},
+				RefColumns: []*schema.Column{GuidesColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
-				Symbol:     "guide_process_histories_operators_guide_process_histories",
-				Columns:    []*schema.Column{GuideProcessHistoriesColumns[4]},
+				Symbol:     "guide_histories_operators_guide_history",
+				Columns:    []*schema.Column{GuideHistoriesColumns[4]},
 				RefColumns: []*schema.Column{OperatorsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
@@ -76,14 +76,14 @@ var (
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
-		GuideProcessesTable,
-		GuideProcessHistoriesTable,
+		GuidesTable,
+		GuideHistoriesTable,
 		OperatorsTable,
 	}
 )
 
 func init() {
-	GuideProcessesTable.ForeignKeys[0].RefTable = OperatorsTable
-	GuideProcessHistoriesTable.ForeignKeys[0].RefTable = GuideProcessesTable
-	GuideProcessHistoriesTable.ForeignKeys[1].RefTable = OperatorsTable
+	GuidesTable.ForeignKeys[0].RefTable = OperatorsTable
+	GuideHistoriesTable.ForeignKeys[0].RefTable = GuidesTable
+	GuideHistoriesTable.ForeignKeys[1].RefTable = OperatorsTable
 }

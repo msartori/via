@@ -7,7 +7,8 @@ import (
 )
 
 type GuideProvider interface {
-	GetGuide(ctx context.Context, id string) (model.Guide, error)
+	GetGuideByCode(ctx context.Context, code string) (model.GuideProcess, error)
+	CreateGuide(ctx context.Context, guide model.ViaGuide) (int, error)
 }
 
 var (
@@ -21,8 +22,8 @@ func Get() GuideProvider {
 	return instance
 }
 
-func Set(logger GuideProvider) {
+func Set(guideProcessProvider GuideProvider) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	instance = logger
+	instance = guideProcessProvider
 }

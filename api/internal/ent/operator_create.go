@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -62,34 +62,34 @@ func (oc *OperatorCreate) SetNillableUpdatedAt(t *time.Time) *OperatorCreate {
 	return oc
 }
 
-// AddGuideProcessIDs adds the "guide_processes" edge to the GuideProcess entity by IDs.
-func (oc *OperatorCreate) AddGuideProcessIDs(ids ...int) *OperatorCreate {
-	oc.mutation.AddGuideProcessIDs(ids...)
+// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+func (oc *OperatorCreate) AddGuideIDs(ids ...int) *OperatorCreate {
+	oc.mutation.AddGuideIDs(ids...)
 	return oc
 }
 
-// AddGuideProcesses adds the "guide_processes" edges to the GuideProcess entity.
-func (oc *OperatorCreate) AddGuideProcesses(g ...*GuideProcess) *OperatorCreate {
+// AddGuide adds the "guide" edges to the Guide entity.
+func (oc *OperatorCreate) AddGuide(g ...*Guide) *OperatorCreate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return oc.AddGuideProcessIDs(ids...)
+	return oc.AddGuideIDs(ids...)
 }
 
-// AddGuideProcessHistoryIDs adds the "guide_process_histories" edge to the GuideProcessHistory entity by IDs.
-func (oc *OperatorCreate) AddGuideProcessHistoryIDs(ids ...int) *OperatorCreate {
-	oc.mutation.AddGuideProcessHistoryIDs(ids...)
+// AddGuideHistoryIDs adds the "guide_history" edge to the GuideHistory entity by IDs.
+func (oc *OperatorCreate) AddGuideHistoryIDs(ids ...int) *OperatorCreate {
+	oc.mutation.AddGuideHistoryIDs(ids...)
 	return oc
 }
 
-// AddGuideProcessHistories adds the "guide_process_histories" edges to the GuideProcessHistory entity.
-func (oc *OperatorCreate) AddGuideProcessHistories(g ...*GuideProcessHistory) *OperatorCreate {
+// AddGuideHistory adds the "guide_history" edges to the GuideHistory entity.
+func (oc *OperatorCreate) AddGuideHistory(g ...*GuideHistory) *OperatorCreate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
 	}
-	return oc.AddGuideProcessHistoryIDs(ids...)
+	return oc.AddGuideHistoryIDs(ids...)
 }
 
 // Mutation returns the OperatorMutation object of the builder.
@@ -198,15 +198,15 @@ func (oc *OperatorCreate) createSpec() (*Operator, *sqlgraph.CreateSpec) {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := oc.mutation.GuideProcessesIDs(); len(nodes) > 0 {
+	if nodes := oc.mutation.GuideIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessesTable,
-			Columns: []string{operator.GuideProcessesColumn},
+			Table:   operator.GuideTable,
+			Columns: []string{operator.GuideColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocess.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {
@@ -214,15 +214,15 @@ func (oc *OperatorCreate) createSpec() (*Operator, *sqlgraph.CreateSpec) {
 		}
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := oc.mutation.GuideProcessHistoriesIDs(); len(nodes) > 0 {
+	if nodes := oc.mutation.GuideHistoryIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideProcessHistoriesTable,
-			Columns: []string{operator.GuideProcessHistoriesColumn},
+			Table:   operator.GuideHistoryTable,
+			Columns: []string{operator.GuideHistoryColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guideprocesshistory.FieldID, field.TypeInt),
+				IDSpec: sqlgraph.NewFieldSpec(guidehistory.FieldID, field.TypeInt),
 			},
 		}
 		for _, k := range nodes {

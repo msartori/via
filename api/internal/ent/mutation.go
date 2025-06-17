@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"via/internal/ent/guideprocess"
-	"via/internal/ent/guideprocesshistory"
+	"via/internal/ent/guide"
+	"via/internal/ent/guidehistory"
 	"via/internal/ent/operator"
 	"via/internal/ent/predicate"
 
@@ -26,13 +26,13 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeGuideProcess        = "GuideProcess"
-	TypeGuideProcessHistory = "GuideProcessHistory"
-	TypeOperator            = "Operator"
+	TypeGuide        = "Guide"
+	TypeGuideHistory = "GuideHistory"
+	TypeOperator     = "Operator"
 )
 
-// GuideProcessMutation represents an operation that mutates the GuideProcess nodes in the graph.
-type GuideProcessMutation struct {
+// GuideMutation represents an operation that mutates the Guide nodes in the graph.
+type GuideMutation struct {
 	config
 	op              Op
 	typ             string
@@ -49,21 +49,21 @@ type GuideProcessMutation struct {
 	removedhistory  map[int]struct{}
 	clearedhistory  bool
 	done            bool
-	oldValue        func(context.Context) (*GuideProcess, error)
-	predicates      []predicate.GuideProcess
+	oldValue        func(context.Context) (*Guide, error)
+	predicates      []predicate.Guide
 }
 
-var _ ent.Mutation = (*GuideProcessMutation)(nil)
+var _ ent.Mutation = (*GuideMutation)(nil)
 
-// guideprocessOption allows management of the mutation configuration using functional options.
-type guideprocessOption func(*GuideProcessMutation)
+// guideOption allows management of the mutation configuration using functional options.
+type guideOption func(*GuideMutation)
 
-// newGuideProcessMutation creates new mutation for the GuideProcess entity.
-func newGuideProcessMutation(c config, op Op, opts ...guideprocessOption) *GuideProcessMutation {
-	m := &GuideProcessMutation{
+// newGuideMutation creates new mutation for the Guide entity.
+func newGuideMutation(c config, op Op, opts ...guideOption) *GuideMutation {
+	m := &GuideMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeGuideProcess,
+		typ:           TypeGuide,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -72,20 +72,20 @@ func newGuideProcessMutation(c config, op Op, opts ...guideprocessOption) *Guide
 	return m
 }
 
-// withGuideProcessID sets the ID field of the mutation.
-func withGuideProcessID(id int) guideprocessOption {
-	return func(m *GuideProcessMutation) {
+// withGuideID sets the ID field of the mutation.
+func withGuideID(id int) guideOption {
+	return func(m *GuideMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *GuideProcess
+			value *Guide
 		)
-		m.oldValue = func(ctx context.Context) (*GuideProcess, error) {
+		m.oldValue = func(ctx context.Context) (*Guide, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().GuideProcess.Get(ctx, id)
+					value, err = m.Client().Guide.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -94,10 +94,10 @@ func withGuideProcessID(id int) guideprocessOption {
 	}
 }
 
-// withGuideProcess sets the old GuideProcess of the mutation.
-func withGuideProcess(node *GuideProcess) guideprocessOption {
-	return func(m *GuideProcessMutation) {
-		m.oldValue = func(context.Context) (*GuideProcess, error) {
+// withGuide sets the old Guide of the mutation.
+func withGuide(node *Guide) guideOption {
+	return func(m *GuideMutation) {
+		m.oldValue = func(context.Context) (*Guide, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -106,7 +106,7 @@ func withGuideProcess(node *GuideProcess) guideprocessOption {
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m GuideProcessMutation) Client() *Client {
+func (m GuideMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -114,7 +114,7 @@ func (m GuideProcessMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m GuideProcessMutation) Tx() (*Tx, error) {
+func (m GuideMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -125,7 +125,7 @@ func (m GuideProcessMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *GuideProcessMutation) ID() (id int, exists bool) {
+func (m *GuideMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -136,7 +136,7 @@ func (m *GuideProcessMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *GuideProcessMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *GuideMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -145,19 +145,19 @@ func (m *GuideProcessMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().GuideProcess.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().Guide.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetCode sets the "code" field.
-func (m *GuideProcessMutation) SetCode(s string) {
+func (m *GuideMutation) SetCode(s string) {
 	m.code = &s
 }
 
 // Code returns the value of the "code" field in the mutation.
-func (m *GuideProcessMutation) Code() (r string, exists bool) {
+func (m *GuideMutation) Code() (r string, exists bool) {
 	v := m.code
 	if v == nil {
 		return
@@ -165,10 +165,10 @@ func (m *GuideProcessMutation) Code() (r string, exists bool) {
 	return *v, true
 }
 
-// OldCode returns the old "code" field's value of the GuideProcess entity.
-// If the GuideProcess object wasn't provided to the builder, the object is fetched from the database.
+// OldCode returns the old "code" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessMutation) OldCode(ctx context.Context) (v string, err error) {
+func (m *GuideMutation) OldCode(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCode is only allowed on UpdateOne operations")
 	}
@@ -183,17 +183,17 @@ func (m *GuideProcessMutation) OldCode(ctx context.Context) (v string, err error
 }
 
 // ResetCode resets all changes to the "code" field.
-func (m *GuideProcessMutation) ResetCode() {
+func (m *GuideMutation) ResetCode() {
 	m.code = nil
 }
 
 // SetRecipient sets the "recipient" field.
-func (m *GuideProcessMutation) SetRecipient(s string) {
+func (m *GuideMutation) SetRecipient(s string) {
 	m.recipient = &s
 }
 
 // Recipient returns the value of the "recipient" field in the mutation.
-func (m *GuideProcessMutation) Recipient() (r string, exists bool) {
+func (m *GuideMutation) Recipient() (r string, exists bool) {
 	v := m.recipient
 	if v == nil {
 		return
@@ -201,10 +201,10 @@ func (m *GuideProcessMutation) Recipient() (r string, exists bool) {
 	return *v, true
 }
 
-// OldRecipient returns the old "recipient" field's value of the GuideProcess entity.
-// If the GuideProcess object wasn't provided to the builder, the object is fetched from the database.
+// OldRecipient returns the old "recipient" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessMutation) OldRecipient(ctx context.Context) (v string, err error) {
+func (m *GuideMutation) OldRecipient(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldRecipient is only allowed on UpdateOne operations")
 	}
@@ -219,30 +219,30 @@ func (m *GuideProcessMutation) OldRecipient(ctx context.Context) (v string, err 
 }
 
 // ClearRecipient clears the value of the "recipient" field.
-func (m *GuideProcessMutation) ClearRecipient() {
+func (m *GuideMutation) ClearRecipient() {
 	m.recipient = nil
-	m.clearedFields[guideprocess.FieldRecipient] = struct{}{}
+	m.clearedFields[guide.FieldRecipient] = struct{}{}
 }
 
 // RecipientCleared returns if the "recipient" field was cleared in this mutation.
-func (m *GuideProcessMutation) RecipientCleared() bool {
-	_, ok := m.clearedFields[guideprocess.FieldRecipient]
+func (m *GuideMutation) RecipientCleared() bool {
+	_, ok := m.clearedFields[guide.FieldRecipient]
 	return ok
 }
 
 // ResetRecipient resets all changes to the "recipient" field.
-func (m *GuideProcessMutation) ResetRecipient() {
+func (m *GuideMutation) ResetRecipient() {
 	m.recipient = nil
-	delete(m.clearedFields, guideprocess.FieldRecipient)
+	delete(m.clearedFields, guide.FieldRecipient)
 }
 
 // SetStatus sets the "status" field.
-func (m *GuideProcessMutation) SetStatus(s string) {
+func (m *GuideMutation) SetStatus(s string) {
 	m.status = &s
 }
 
 // Status returns the value of the "status" field in the mutation.
-func (m *GuideProcessMutation) Status() (r string, exists bool) {
+func (m *GuideMutation) Status() (r string, exists bool) {
 	v := m.status
 	if v == nil {
 		return
@@ -250,10 +250,10 @@ func (m *GuideProcessMutation) Status() (r string, exists bool) {
 	return *v, true
 }
 
-// OldStatus returns the old "status" field's value of the GuideProcess entity.
-// If the GuideProcess object wasn't provided to the builder, the object is fetched from the database.
+// OldStatus returns the old "status" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessMutation) OldStatus(ctx context.Context) (v string, err error) {
+func (m *GuideMutation) OldStatus(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
 	}
@@ -268,30 +268,30 @@ func (m *GuideProcessMutation) OldStatus(ctx context.Context) (v string, err err
 }
 
 // ClearStatus clears the value of the "status" field.
-func (m *GuideProcessMutation) ClearStatus() {
+func (m *GuideMutation) ClearStatus() {
 	m.status = nil
-	m.clearedFields[guideprocess.FieldStatus] = struct{}{}
+	m.clearedFields[guide.FieldStatus] = struct{}{}
 }
 
 // StatusCleared returns if the "status" field was cleared in this mutation.
-func (m *GuideProcessMutation) StatusCleared() bool {
-	_, ok := m.clearedFields[guideprocess.FieldStatus]
+func (m *GuideMutation) StatusCleared() bool {
+	_, ok := m.clearedFields[guide.FieldStatus]
 	return ok
 }
 
 // ResetStatus resets all changes to the "status" field.
-func (m *GuideProcessMutation) ResetStatus() {
+func (m *GuideMutation) ResetStatus() {
 	m.status = nil
-	delete(m.clearedFields, guideprocess.FieldStatus)
+	delete(m.clearedFields, guide.FieldStatus)
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *GuideProcessMutation) SetCreatedAt(t time.Time) {
+func (m *GuideMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *GuideProcessMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *GuideMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -299,10 +299,10 @@ func (m *GuideProcessMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the GuideProcess entity.
-// If the GuideProcess object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *GuideMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -317,17 +317,17 @@ func (m *GuideProcessMutation) OldCreatedAt(ctx context.Context) (v time.Time, e
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *GuideProcessMutation) ResetCreatedAt() {
+func (m *GuideMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (m *GuideProcessMutation) SetUpdatedAt(t time.Time) {
+func (m *GuideMutation) SetUpdatedAt(t time.Time) {
 	m.updated_at = &t
 }
 
 // UpdatedAt returns the value of the "updated_at" field in the mutation.
-func (m *GuideProcessMutation) UpdatedAt() (r time.Time, exists bool) {
+func (m *GuideMutation) UpdatedAt() (r time.Time, exists bool) {
 	v := m.updated_at
 	if v == nil {
 		return
@@ -335,10 +335,10 @@ func (m *GuideProcessMutation) UpdatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldUpdatedAt returns the old "updated_at" field's value of the GuideProcess entity.
-// If the GuideProcess object wasn't provided to the builder, the object is fetched from the database.
+// OldUpdatedAt returns the old "updated_at" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *GuideMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
 	}
@@ -353,27 +353,27 @@ func (m *GuideProcessMutation) OldUpdatedAt(ctx context.Context) (v time.Time, e
 }
 
 // ResetUpdatedAt resets all changes to the "updated_at" field.
-func (m *GuideProcessMutation) ResetUpdatedAt() {
+func (m *GuideMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
 // SetOperatorID sets the "operator" edge to the Operator entity by id.
-func (m *GuideProcessMutation) SetOperatorID(id int) {
+func (m *GuideMutation) SetOperatorID(id int) {
 	m.operator = &id
 }
 
 // ClearOperator clears the "operator" edge to the Operator entity.
-func (m *GuideProcessMutation) ClearOperator() {
+func (m *GuideMutation) ClearOperator() {
 	m.clearedoperator = true
 }
 
 // OperatorCleared reports if the "operator" edge to the Operator entity was cleared.
-func (m *GuideProcessMutation) OperatorCleared() bool {
+func (m *GuideMutation) OperatorCleared() bool {
 	return m.clearedoperator
 }
 
 // OperatorID returns the "operator" edge ID in the mutation.
-func (m *GuideProcessMutation) OperatorID() (id int, exists bool) {
+func (m *GuideMutation) OperatorID() (id int, exists bool) {
 	if m.operator != nil {
 		return *m.operator, true
 	}
@@ -383,7 +383,7 @@ func (m *GuideProcessMutation) OperatorID() (id int, exists bool) {
 // OperatorIDs returns the "operator" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // OperatorID instead. It exists only for internal usage by the builders.
-func (m *GuideProcessMutation) OperatorIDs() (ids []int) {
+func (m *GuideMutation) OperatorIDs() (ids []int) {
 	if id := m.operator; id != nil {
 		ids = append(ids, *id)
 	}
@@ -391,13 +391,13 @@ func (m *GuideProcessMutation) OperatorIDs() (ids []int) {
 }
 
 // ResetOperator resets all changes to the "operator" edge.
-func (m *GuideProcessMutation) ResetOperator() {
+func (m *GuideMutation) ResetOperator() {
 	m.operator = nil
 	m.clearedoperator = false
 }
 
-// AddHistoryIDs adds the "history" edge to the GuideProcessHistory entity by ids.
-func (m *GuideProcessMutation) AddHistoryIDs(ids ...int) {
+// AddHistoryIDs adds the "history" edge to the GuideHistory entity by ids.
+func (m *GuideMutation) AddHistoryIDs(ids ...int) {
 	if m.history == nil {
 		m.history = make(map[int]struct{})
 	}
@@ -406,18 +406,18 @@ func (m *GuideProcessMutation) AddHistoryIDs(ids ...int) {
 	}
 }
 
-// ClearHistory clears the "history" edge to the GuideProcessHistory entity.
-func (m *GuideProcessMutation) ClearHistory() {
+// ClearHistory clears the "history" edge to the GuideHistory entity.
+func (m *GuideMutation) ClearHistory() {
 	m.clearedhistory = true
 }
 
-// HistoryCleared reports if the "history" edge to the GuideProcessHistory entity was cleared.
-func (m *GuideProcessMutation) HistoryCleared() bool {
+// HistoryCleared reports if the "history" edge to the GuideHistory entity was cleared.
+func (m *GuideMutation) HistoryCleared() bool {
 	return m.clearedhistory
 }
 
-// RemoveHistoryIDs removes the "history" edge to the GuideProcessHistory entity by IDs.
-func (m *GuideProcessMutation) RemoveHistoryIDs(ids ...int) {
+// RemoveHistoryIDs removes the "history" edge to the GuideHistory entity by IDs.
+func (m *GuideMutation) RemoveHistoryIDs(ids ...int) {
 	if m.removedhistory == nil {
 		m.removedhistory = make(map[int]struct{})
 	}
@@ -427,8 +427,8 @@ func (m *GuideProcessMutation) RemoveHistoryIDs(ids ...int) {
 	}
 }
 
-// RemovedHistory returns the removed IDs of the "history" edge to the GuideProcessHistory entity.
-func (m *GuideProcessMutation) RemovedHistoryIDs() (ids []int) {
+// RemovedHistory returns the removed IDs of the "history" edge to the GuideHistory entity.
+func (m *GuideMutation) RemovedHistoryIDs() (ids []int) {
 	for id := range m.removedhistory {
 		ids = append(ids, id)
 	}
@@ -436,7 +436,7 @@ func (m *GuideProcessMutation) RemovedHistoryIDs() (ids []int) {
 }
 
 // HistoryIDs returns the "history" edge IDs in the mutation.
-func (m *GuideProcessMutation) HistoryIDs() (ids []int) {
+func (m *GuideMutation) HistoryIDs() (ids []int) {
 	for id := range m.history {
 		ids = append(ids, id)
 	}
@@ -444,21 +444,21 @@ func (m *GuideProcessMutation) HistoryIDs() (ids []int) {
 }
 
 // ResetHistory resets all changes to the "history" edge.
-func (m *GuideProcessMutation) ResetHistory() {
+func (m *GuideMutation) ResetHistory() {
 	m.history = nil
 	m.clearedhistory = false
 	m.removedhistory = nil
 }
 
-// Where appends a list predicates to the GuideProcessMutation builder.
-func (m *GuideProcessMutation) Where(ps ...predicate.GuideProcess) {
+// Where appends a list predicates to the GuideMutation builder.
+func (m *GuideMutation) Where(ps ...predicate.Guide) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the GuideProcessMutation builder. Using this method,
+// WhereP appends storage-level predicates to the GuideMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *GuideProcessMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.GuideProcess, len(ps))
+func (m *GuideMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.Guide, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -466,39 +466,39 @@ func (m *GuideProcessMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *GuideProcessMutation) Op() Op {
+func (m *GuideMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *GuideProcessMutation) SetOp(op Op) {
+func (m *GuideMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (GuideProcess).
-func (m *GuideProcessMutation) Type() string {
+// Type returns the node type of this mutation (Guide).
+func (m *GuideMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *GuideProcessMutation) Fields() []string {
+func (m *GuideMutation) Fields() []string {
 	fields := make([]string, 0, 5)
 	if m.code != nil {
-		fields = append(fields, guideprocess.FieldCode)
+		fields = append(fields, guide.FieldCode)
 	}
 	if m.recipient != nil {
-		fields = append(fields, guideprocess.FieldRecipient)
+		fields = append(fields, guide.FieldRecipient)
 	}
 	if m.status != nil {
-		fields = append(fields, guideprocess.FieldStatus)
+		fields = append(fields, guide.FieldStatus)
 	}
 	if m.created_at != nil {
-		fields = append(fields, guideprocess.FieldCreatedAt)
+		fields = append(fields, guide.FieldCreatedAt)
 	}
 	if m.updated_at != nil {
-		fields = append(fields, guideprocess.FieldUpdatedAt)
+		fields = append(fields, guide.FieldUpdatedAt)
 	}
 	return fields
 }
@@ -506,17 +506,17 @@ func (m *GuideProcessMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *GuideProcessMutation) Field(name string) (ent.Value, bool) {
+func (m *GuideMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case guideprocess.FieldCode:
+	case guide.FieldCode:
 		return m.Code()
-	case guideprocess.FieldRecipient:
+	case guide.FieldRecipient:
 		return m.Recipient()
-	case guideprocess.FieldStatus:
+	case guide.FieldStatus:
 		return m.Status()
-	case guideprocess.FieldCreatedAt:
+	case guide.FieldCreatedAt:
 		return m.CreatedAt()
-	case guideprocess.FieldUpdatedAt:
+	case guide.FieldUpdatedAt:
 		return m.UpdatedAt()
 	}
 	return nil, false
@@ -525,56 +525,56 @@ func (m *GuideProcessMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *GuideProcessMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *GuideMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case guideprocess.FieldCode:
+	case guide.FieldCode:
 		return m.OldCode(ctx)
-	case guideprocess.FieldRecipient:
+	case guide.FieldRecipient:
 		return m.OldRecipient(ctx)
-	case guideprocess.FieldStatus:
+	case guide.FieldStatus:
 		return m.OldStatus(ctx)
-	case guideprocess.FieldCreatedAt:
+	case guide.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
-	case guideprocess.FieldUpdatedAt:
+	case guide.FieldUpdatedAt:
 		return m.OldUpdatedAt(ctx)
 	}
-	return nil, fmt.Errorf("unknown GuideProcess field %s", name)
+	return nil, fmt.Errorf("unknown Guide field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *GuideProcessMutation) SetField(name string, value ent.Value) error {
+func (m *GuideMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case guideprocess.FieldCode:
+	case guide.FieldCode:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCode(v)
 		return nil
-	case guideprocess.FieldRecipient:
+	case guide.FieldRecipient:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRecipient(v)
 		return nil
-	case guideprocess.FieldStatus:
+	case guide.FieldStatus:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
 		return nil
-	case guideprocess.FieldCreatedAt:
+	case guide.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetCreatedAt(v)
 		return nil
-	case guideprocess.FieldUpdatedAt:
+	case guide.FieldUpdatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -582,109 +582,109 @@ func (m *GuideProcessMutation) SetField(name string, value ent.Value) error {
 		m.SetUpdatedAt(v)
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcess field %s", name)
+	return fmt.Errorf("unknown Guide field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *GuideProcessMutation) AddedFields() []string {
+func (m *GuideMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *GuideProcessMutation) AddedField(name string) (ent.Value, bool) {
+func (m *GuideMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *GuideProcessMutation) AddField(name string, value ent.Value) error {
+func (m *GuideMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown GuideProcess numeric field %s", name)
+	return fmt.Errorf("unknown Guide numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *GuideProcessMutation) ClearedFields() []string {
+func (m *GuideMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(guideprocess.FieldRecipient) {
-		fields = append(fields, guideprocess.FieldRecipient)
+	if m.FieldCleared(guide.FieldRecipient) {
+		fields = append(fields, guide.FieldRecipient)
 	}
-	if m.FieldCleared(guideprocess.FieldStatus) {
-		fields = append(fields, guideprocess.FieldStatus)
+	if m.FieldCleared(guide.FieldStatus) {
+		fields = append(fields, guide.FieldStatus)
 	}
 	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *GuideProcessMutation) FieldCleared(name string) bool {
+func (m *GuideMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *GuideProcessMutation) ClearField(name string) error {
+func (m *GuideMutation) ClearField(name string) error {
 	switch name {
-	case guideprocess.FieldRecipient:
+	case guide.FieldRecipient:
 		m.ClearRecipient()
 		return nil
-	case guideprocess.FieldStatus:
+	case guide.FieldStatus:
 		m.ClearStatus()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcess nullable field %s", name)
+	return fmt.Errorf("unknown Guide nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *GuideProcessMutation) ResetField(name string) error {
+func (m *GuideMutation) ResetField(name string) error {
 	switch name {
-	case guideprocess.FieldCode:
+	case guide.FieldCode:
 		m.ResetCode()
 		return nil
-	case guideprocess.FieldRecipient:
+	case guide.FieldRecipient:
 		m.ResetRecipient()
 		return nil
-	case guideprocess.FieldStatus:
+	case guide.FieldStatus:
 		m.ResetStatus()
 		return nil
-	case guideprocess.FieldCreatedAt:
+	case guide.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
-	case guideprocess.FieldUpdatedAt:
+	case guide.FieldUpdatedAt:
 		m.ResetUpdatedAt()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcess field %s", name)
+	return fmt.Errorf("unknown Guide field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *GuideProcessMutation) AddedEdges() []string {
+func (m *GuideMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.operator != nil {
-		edges = append(edges, guideprocess.EdgeOperator)
+		edges = append(edges, guide.EdgeOperator)
 	}
 	if m.history != nil {
-		edges = append(edges, guideprocess.EdgeHistory)
+		edges = append(edges, guide.EdgeHistory)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *GuideProcessMutation) AddedIDs(name string) []ent.Value {
+func (m *GuideMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case guideprocess.EdgeOperator:
+	case guide.EdgeOperator:
 		if id := m.operator; id != nil {
 			return []ent.Value{*id}
 		}
-	case guideprocess.EdgeHistory:
+	case guide.EdgeHistory:
 		ids := make([]ent.Value, 0, len(m.history))
 		for id := range m.history {
 			ids = append(ids, id)
@@ -695,19 +695,19 @@ func (m *GuideProcessMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *GuideProcessMutation) RemovedEdges() []string {
+func (m *GuideMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.removedhistory != nil {
-		edges = append(edges, guideprocess.EdgeHistory)
+		edges = append(edges, guide.EdgeHistory)
 	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *GuideProcessMutation) RemovedIDs(name string) []ent.Value {
+func (m *GuideMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case guideprocess.EdgeHistory:
+	case guide.EdgeHistory:
 		ids := make([]ent.Value, 0, len(m.removedhistory))
 		for id := range m.removedhistory {
 			ids = append(ids, id)
@@ -718,24 +718,24 @@ func (m *GuideProcessMutation) RemovedIDs(name string) []ent.Value {
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *GuideProcessMutation) ClearedEdges() []string {
+func (m *GuideMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
 	if m.clearedoperator {
-		edges = append(edges, guideprocess.EdgeOperator)
+		edges = append(edges, guide.EdgeOperator)
 	}
 	if m.clearedhistory {
-		edges = append(edges, guideprocess.EdgeHistory)
+		edges = append(edges, guide.EdgeHistory)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *GuideProcessMutation) EdgeCleared(name string) bool {
+func (m *GuideMutation) EdgeCleared(name string) bool {
 	switch name {
-	case guideprocess.EdgeOperator:
+	case guide.EdgeOperator:
 		return m.clearedoperator
-	case guideprocess.EdgeHistory:
+	case guide.EdgeHistory:
 		return m.clearedhistory
 	}
 	return false
@@ -743,58 +743,58 @@ func (m *GuideProcessMutation) EdgeCleared(name string) bool {
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *GuideProcessMutation) ClearEdge(name string) error {
+func (m *GuideMutation) ClearEdge(name string) error {
 	switch name {
-	case guideprocess.EdgeOperator:
+	case guide.EdgeOperator:
 		m.ClearOperator()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcess unique edge %s", name)
+	return fmt.Errorf("unknown Guide unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *GuideProcessMutation) ResetEdge(name string) error {
+func (m *GuideMutation) ResetEdge(name string) error {
 	switch name {
-	case guideprocess.EdgeOperator:
+	case guide.EdgeOperator:
 		m.ResetOperator()
 		return nil
-	case guideprocess.EdgeHistory:
+	case guide.EdgeHistory:
 		m.ResetHistory()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcess edge %s", name)
+	return fmt.Errorf("unknown Guide edge %s", name)
 }
 
-// GuideProcessHistoryMutation represents an operation that mutates the GuideProcessHistory nodes in the graph.
-type GuideProcessHistoryMutation struct {
+// GuideHistoryMutation represents an operation that mutates the GuideHistory nodes in the graph.
+type GuideHistoryMutation struct {
 	config
-	op                   Op
-	typ                  string
-	id                   *int
-	status               *string
-	created_at           *time.Time
-	clearedFields        map[string]struct{}
-	guide_process        *int
-	clearedguide_process bool
-	operator             *int
-	clearedoperator      bool
-	done                 bool
-	oldValue             func(context.Context) (*GuideProcessHistory, error)
-	predicates           []predicate.GuideProcessHistory
+	op              Op
+	typ             string
+	id              *int
+	status          *string
+	created_at      *time.Time
+	clearedFields   map[string]struct{}
+	guide           *int
+	clearedguide    bool
+	operator        *int
+	clearedoperator bool
+	done            bool
+	oldValue        func(context.Context) (*GuideHistory, error)
+	predicates      []predicate.GuideHistory
 }
 
-var _ ent.Mutation = (*GuideProcessHistoryMutation)(nil)
+var _ ent.Mutation = (*GuideHistoryMutation)(nil)
 
-// guideprocesshistoryOption allows management of the mutation configuration using functional options.
-type guideprocesshistoryOption func(*GuideProcessHistoryMutation)
+// guidehistoryOption allows management of the mutation configuration using functional options.
+type guidehistoryOption func(*GuideHistoryMutation)
 
-// newGuideProcessHistoryMutation creates new mutation for the GuideProcessHistory entity.
-func newGuideProcessHistoryMutation(c config, op Op, opts ...guideprocesshistoryOption) *GuideProcessHistoryMutation {
-	m := &GuideProcessHistoryMutation{
+// newGuideHistoryMutation creates new mutation for the GuideHistory entity.
+func newGuideHistoryMutation(c config, op Op, opts ...guidehistoryOption) *GuideHistoryMutation {
+	m := &GuideHistoryMutation{
 		config:        c,
 		op:            op,
-		typ:           TypeGuideProcessHistory,
+		typ:           TypeGuideHistory,
 		clearedFields: make(map[string]struct{}),
 	}
 	for _, opt := range opts {
@@ -803,20 +803,20 @@ func newGuideProcessHistoryMutation(c config, op Op, opts ...guideprocesshistory
 	return m
 }
 
-// withGuideProcessHistoryID sets the ID field of the mutation.
-func withGuideProcessHistoryID(id int) guideprocesshistoryOption {
-	return func(m *GuideProcessHistoryMutation) {
+// withGuideHistoryID sets the ID field of the mutation.
+func withGuideHistoryID(id int) guidehistoryOption {
+	return func(m *GuideHistoryMutation) {
 		var (
 			err   error
 			once  sync.Once
-			value *GuideProcessHistory
+			value *GuideHistory
 		)
-		m.oldValue = func(ctx context.Context) (*GuideProcessHistory, error) {
+		m.oldValue = func(ctx context.Context) (*GuideHistory, error) {
 			once.Do(func() {
 				if m.done {
 					err = errors.New("querying old values post mutation is not allowed")
 				} else {
-					value, err = m.Client().GuideProcessHistory.Get(ctx, id)
+					value, err = m.Client().GuideHistory.Get(ctx, id)
 				}
 			})
 			return value, err
@@ -825,10 +825,10 @@ func withGuideProcessHistoryID(id int) guideprocesshistoryOption {
 	}
 }
 
-// withGuideProcessHistory sets the old GuideProcessHistory of the mutation.
-func withGuideProcessHistory(node *GuideProcessHistory) guideprocesshistoryOption {
-	return func(m *GuideProcessHistoryMutation) {
-		m.oldValue = func(context.Context) (*GuideProcessHistory, error) {
+// withGuideHistory sets the old GuideHistory of the mutation.
+func withGuideHistory(node *GuideHistory) guidehistoryOption {
+	return func(m *GuideHistoryMutation) {
+		m.oldValue = func(context.Context) (*GuideHistory, error) {
 			return node, nil
 		}
 		m.id = &node.ID
@@ -837,7 +837,7 @@ func withGuideProcessHistory(node *GuideProcessHistory) guideprocesshistoryOptio
 
 // Client returns a new `ent.Client` from the mutation. If the mutation was
 // executed in a transaction (ent.Tx), a transactional client is returned.
-func (m GuideProcessHistoryMutation) Client() *Client {
+func (m GuideHistoryMutation) Client() *Client {
 	client := &Client{config: m.config}
 	client.init()
 	return client
@@ -845,7 +845,7 @@ func (m GuideProcessHistoryMutation) Client() *Client {
 
 // Tx returns an `ent.Tx` for mutations that were executed in transactions;
 // it returns an error otherwise.
-func (m GuideProcessHistoryMutation) Tx() (*Tx, error) {
+func (m GuideHistoryMutation) Tx() (*Tx, error) {
 	if _, ok := m.driver.(*txDriver); !ok {
 		return nil, errors.New("ent: mutation is not running in a transaction")
 	}
@@ -856,7 +856,7 @@ func (m GuideProcessHistoryMutation) Tx() (*Tx, error) {
 
 // ID returns the ID value in the mutation. Note that the ID is only available
 // if it was provided to the builder or after it was returned from the database.
-func (m *GuideProcessHistoryMutation) ID() (id int, exists bool) {
+func (m *GuideHistoryMutation) ID() (id int, exists bool) {
 	if m.id == nil {
 		return
 	}
@@ -867,7 +867,7 @@ func (m *GuideProcessHistoryMutation) ID() (id int, exists bool) {
 // That means, if the mutation is applied within a transaction with an isolation level such
 // as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
 // or updated by the mutation.
-func (m *GuideProcessHistoryMutation) IDs(ctx context.Context) ([]int, error) {
+func (m *GuideHistoryMutation) IDs(ctx context.Context) ([]int, error) {
 	switch {
 	case m.op.Is(OpUpdateOne | OpDeleteOne):
 		id, exists := m.ID()
@@ -876,19 +876,19 @@ func (m *GuideProcessHistoryMutation) IDs(ctx context.Context) ([]int, error) {
 		}
 		fallthrough
 	case m.op.Is(OpUpdate | OpDelete):
-		return m.Client().GuideProcessHistory.Query().Where(m.predicates...).IDs(ctx)
+		return m.Client().GuideHistory.Query().Where(m.predicates...).IDs(ctx)
 	default:
 		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
 	}
 }
 
 // SetStatus sets the "status" field.
-func (m *GuideProcessHistoryMutation) SetStatus(s string) {
+func (m *GuideHistoryMutation) SetStatus(s string) {
 	m.status = &s
 }
 
 // Status returns the value of the "status" field in the mutation.
-func (m *GuideProcessHistoryMutation) Status() (r string, exists bool) {
+func (m *GuideHistoryMutation) Status() (r string, exists bool) {
 	v := m.status
 	if v == nil {
 		return
@@ -896,10 +896,10 @@ func (m *GuideProcessHistoryMutation) Status() (r string, exists bool) {
 	return *v, true
 }
 
-// OldStatus returns the old "status" field's value of the GuideProcessHistory entity.
-// If the GuideProcessHistory object wasn't provided to the builder, the object is fetched from the database.
+// OldStatus returns the old "status" field's value of the GuideHistory entity.
+// If the GuideHistory object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessHistoryMutation) OldStatus(ctx context.Context) (v string, err error) {
+func (m *GuideHistoryMutation) OldStatus(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldStatus is only allowed on UpdateOne operations")
 	}
@@ -914,30 +914,30 @@ func (m *GuideProcessHistoryMutation) OldStatus(ctx context.Context) (v string, 
 }
 
 // ClearStatus clears the value of the "status" field.
-func (m *GuideProcessHistoryMutation) ClearStatus() {
+func (m *GuideHistoryMutation) ClearStatus() {
 	m.status = nil
-	m.clearedFields[guideprocesshistory.FieldStatus] = struct{}{}
+	m.clearedFields[guidehistory.FieldStatus] = struct{}{}
 }
 
 // StatusCleared returns if the "status" field was cleared in this mutation.
-func (m *GuideProcessHistoryMutation) StatusCleared() bool {
-	_, ok := m.clearedFields[guideprocesshistory.FieldStatus]
+func (m *GuideHistoryMutation) StatusCleared() bool {
+	_, ok := m.clearedFields[guidehistory.FieldStatus]
 	return ok
 }
 
 // ResetStatus resets all changes to the "status" field.
-func (m *GuideProcessHistoryMutation) ResetStatus() {
+func (m *GuideHistoryMutation) ResetStatus() {
 	m.status = nil
-	delete(m.clearedFields, guideprocesshistory.FieldStatus)
+	delete(m.clearedFields, guidehistory.FieldStatus)
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (m *GuideProcessHistoryMutation) SetCreatedAt(t time.Time) {
+func (m *GuideHistoryMutation) SetCreatedAt(t time.Time) {
 	m.created_at = &t
 }
 
 // CreatedAt returns the value of the "created_at" field in the mutation.
-func (m *GuideProcessHistoryMutation) CreatedAt() (r time.Time, exists bool) {
+func (m *GuideHistoryMutation) CreatedAt() (r time.Time, exists bool) {
 	v := m.created_at
 	if v == nil {
 		return
@@ -945,10 +945,10 @@ func (m *GuideProcessHistoryMutation) CreatedAt() (r time.Time, exists bool) {
 	return *v, true
 }
 
-// OldCreatedAt returns the old "created_at" field's value of the GuideProcessHistory entity.
-// If the GuideProcessHistory object wasn't provided to the builder, the object is fetched from the database.
+// OldCreatedAt returns the old "created_at" field's value of the GuideHistory entity.
+// If the GuideHistory object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideProcessHistoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+func (m *GuideHistoryMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
 	}
@@ -963,66 +963,66 @@ func (m *GuideProcessHistoryMutation) OldCreatedAt(ctx context.Context) (v time.
 }
 
 // ResetCreatedAt resets all changes to the "created_at" field.
-func (m *GuideProcessHistoryMutation) ResetCreatedAt() {
+func (m *GuideHistoryMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetGuideProcessID sets the "guide_process" edge to the GuideProcess entity by id.
-func (m *GuideProcessHistoryMutation) SetGuideProcessID(id int) {
-	m.guide_process = &id
+// SetGuideID sets the "guide" edge to the Guide entity by id.
+func (m *GuideHistoryMutation) SetGuideID(id int) {
+	m.guide = &id
 }
 
-// ClearGuideProcess clears the "guide_process" edge to the GuideProcess entity.
-func (m *GuideProcessHistoryMutation) ClearGuideProcess() {
-	m.clearedguide_process = true
+// ClearGuide clears the "guide" edge to the Guide entity.
+func (m *GuideHistoryMutation) ClearGuide() {
+	m.clearedguide = true
 }
 
-// GuideProcessCleared reports if the "guide_process" edge to the GuideProcess entity was cleared.
-func (m *GuideProcessHistoryMutation) GuideProcessCleared() bool {
-	return m.clearedguide_process
+// GuideCleared reports if the "guide" edge to the Guide entity was cleared.
+func (m *GuideHistoryMutation) GuideCleared() bool {
+	return m.clearedguide
 }
 
-// GuideProcessID returns the "guide_process" edge ID in the mutation.
-func (m *GuideProcessHistoryMutation) GuideProcessID() (id int, exists bool) {
-	if m.guide_process != nil {
-		return *m.guide_process, true
+// GuideID returns the "guide" edge ID in the mutation.
+func (m *GuideHistoryMutation) GuideID() (id int, exists bool) {
+	if m.guide != nil {
+		return *m.guide, true
 	}
 	return
 }
 
-// GuideProcessIDs returns the "guide_process" edge IDs in the mutation.
+// GuideIDs returns the "guide" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
-// GuideProcessID instead. It exists only for internal usage by the builders.
-func (m *GuideProcessHistoryMutation) GuideProcessIDs() (ids []int) {
-	if id := m.guide_process; id != nil {
+// GuideID instead. It exists only for internal usage by the builders.
+func (m *GuideHistoryMutation) GuideIDs() (ids []int) {
+	if id := m.guide; id != nil {
 		ids = append(ids, *id)
 	}
 	return
 }
 
-// ResetGuideProcess resets all changes to the "guide_process" edge.
-func (m *GuideProcessHistoryMutation) ResetGuideProcess() {
-	m.guide_process = nil
-	m.clearedguide_process = false
+// ResetGuide resets all changes to the "guide" edge.
+func (m *GuideHistoryMutation) ResetGuide() {
+	m.guide = nil
+	m.clearedguide = false
 }
 
 // SetOperatorID sets the "operator" edge to the Operator entity by id.
-func (m *GuideProcessHistoryMutation) SetOperatorID(id int) {
+func (m *GuideHistoryMutation) SetOperatorID(id int) {
 	m.operator = &id
 }
 
 // ClearOperator clears the "operator" edge to the Operator entity.
-func (m *GuideProcessHistoryMutation) ClearOperator() {
+func (m *GuideHistoryMutation) ClearOperator() {
 	m.clearedoperator = true
 }
 
 // OperatorCleared reports if the "operator" edge to the Operator entity was cleared.
-func (m *GuideProcessHistoryMutation) OperatorCleared() bool {
+func (m *GuideHistoryMutation) OperatorCleared() bool {
 	return m.clearedoperator
 }
 
 // OperatorID returns the "operator" edge ID in the mutation.
-func (m *GuideProcessHistoryMutation) OperatorID() (id int, exists bool) {
+func (m *GuideHistoryMutation) OperatorID() (id int, exists bool) {
 	if m.operator != nil {
 		return *m.operator, true
 	}
@@ -1032,7 +1032,7 @@ func (m *GuideProcessHistoryMutation) OperatorID() (id int, exists bool) {
 // OperatorIDs returns the "operator" edge IDs in the mutation.
 // Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
 // OperatorID instead. It exists only for internal usage by the builders.
-func (m *GuideProcessHistoryMutation) OperatorIDs() (ids []int) {
+func (m *GuideHistoryMutation) OperatorIDs() (ids []int) {
 	if id := m.operator; id != nil {
 		ids = append(ids, *id)
 	}
@@ -1040,20 +1040,20 @@ func (m *GuideProcessHistoryMutation) OperatorIDs() (ids []int) {
 }
 
 // ResetOperator resets all changes to the "operator" edge.
-func (m *GuideProcessHistoryMutation) ResetOperator() {
+func (m *GuideHistoryMutation) ResetOperator() {
 	m.operator = nil
 	m.clearedoperator = false
 }
 
-// Where appends a list predicates to the GuideProcessHistoryMutation builder.
-func (m *GuideProcessHistoryMutation) Where(ps ...predicate.GuideProcessHistory) {
+// Where appends a list predicates to the GuideHistoryMutation builder.
+func (m *GuideHistoryMutation) Where(ps ...predicate.GuideHistory) {
 	m.predicates = append(m.predicates, ps...)
 }
 
-// WhereP appends storage-level predicates to the GuideProcessHistoryMutation builder. Using this method,
+// WhereP appends storage-level predicates to the GuideHistoryMutation builder. Using this method,
 // users can use type-assertion to append predicates that do not depend on any generated package.
-func (m *GuideProcessHistoryMutation) WhereP(ps ...func(*sql.Selector)) {
-	p := make([]predicate.GuideProcessHistory, len(ps))
+func (m *GuideHistoryMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.GuideHistory, len(ps))
 	for i := range ps {
 		p[i] = ps[i]
 	}
@@ -1061,30 +1061,30 @@ func (m *GuideProcessHistoryMutation) WhereP(ps ...func(*sql.Selector)) {
 }
 
 // Op returns the operation name.
-func (m *GuideProcessHistoryMutation) Op() Op {
+func (m *GuideHistoryMutation) Op() Op {
 	return m.op
 }
 
 // SetOp allows setting the mutation operation.
-func (m *GuideProcessHistoryMutation) SetOp(op Op) {
+func (m *GuideHistoryMutation) SetOp(op Op) {
 	m.op = op
 }
 
-// Type returns the node type of this mutation (GuideProcessHistory).
-func (m *GuideProcessHistoryMutation) Type() string {
+// Type returns the node type of this mutation (GuideHistory).
+func (m *GuideHistoryMutation) Type() string {
 	return m.typ
 }
 
 // Fields returns all fields that were changed during this mutation. Note that in
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
-func (m *GuideProcessHistoryMutation) Fields() []string {
+func (m *GuideHistoryMutation) Fields() []string {
 	fields := make([]string, 0, 2)
 	if m.status != nil {
-		fields = append(fields, guideprocesshistory.FieldStatus)
+		fields = append(fields, guidehistory.FieldStatus)
 	}
 	if m.created_at != nil {
-		fields = append(fields, guideprocesshistory.FieldCreatedAt)
+		fields = append(fields, guidehistory.FieldCreatedAt)
 	}
 	return fields
 }
@@ -1092,11 +1092,11 @@ func (m *GuideProcessHistoryMutation) Fields() []string {
 // Field returns the value of a field with the given name. The second boolean
 // return value indicates that this field was not set, or was not defined in the
 // schema.
-func (m *GuideProcessHistoryMutation) Field(name string) (ent.Value, bool) {
+func (m *GuideHistoryMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case guideprocesshistory.FieldStatus:
+	case guidehistory.FieldStatus:
 		return m.Status()
-	case guideprocesshistory.FieldCreatedAt:
+	case guidehistory.FieldCreatedAt:
 		return m.CreatedAt()
 	}
 	return nil, false
@@ -1105,29 +1105,29 @@ func (m *GuideProcessHistoryMutation) Field(name string) (ent.Value, bool) {
 // OldField returns the old value of the field from the database. An error is
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
-func (m *GuideProcessHistoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+func (m *GuideHistoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case guideprocesshistory.FieldStatus:
+	case guidehistory.FieldStatus:
 		return m.OldStatus(ctx)
-	case guideprocesshistory.FieldCreatedAt:
+	case guidehistory.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
-	return nil, fmt.Errorf("unknown GuideProcessHistory field %s", name)
+	return nil, fmt.Errorf("unknown GuideHistory field %s", name)
 }
 
 // SetField sets the value of a field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *GuideProcessHistoryMutation) SetField(name string, value ent.Value) error {
+func (m *GuideHistoryMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case guideprocesshistory.FieldStatus:
+	case guidehistory.FieldStatus:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
 		return nil
-	case guideprocesshistory.FieldCreatedAt:
+	case guidehistory.FieldCreatedAt:
 		v, ok := value.(time.Time)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
@@ -1135,94 +1135,94 @@ func (m *GuideProcessHistoryMutation) SetField(name string, value ent.Value) err
 		m.SetCreatedAt(v)
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcessHistory field %s", name)
+	return fmt.Errorf("unknown GuideHistory field %s", name)
 }
 
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
-func (m *GuideProcessHistoryMutation) AddedFields() []string {
+func (m *GuideHistoryMutation) AddedFields() []string {
 	return nil
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
-func (m *GuideProcessHistoryMutation) AddedField(name string) (ent.Value, bool) {
+func (m *GuideHistoryMutation) AddedField(name string) (ent.Value, bool) {
 	return nil, false
 }
 
 // AddField adds the value to the field with the given name. It returns an error if
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
-func (m *GuideProcessHistoryMutation) AddField(name string, value ent.Value) error {
+func (m *GuideHistoryMutation) AddField(name string, value ent.Value) error {
 	switch name {
 	}
-	return fmt.Errorf("unknown GuideProcessHistory numeric field %s", name)
+	return fmt.Errorf("unknown GuideHistory numeric field %s", name)
 }
 
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
-func (m *GuideProcessHistoryMutation) ClearedFields() []string {
+func (m *GuideHistoryMutation) ClearedFields() []string {
 	var fields []string
-	if m.FieldCleared(guideprocesshistory.FieldStatus) {
-		fields = append(fields, guideprocesshistory.FieldStatus)
+	if m.FieldCleared(guidehistory.FieldStatus) {
+		fields = append(fields, guidehistory.FieldStatus)
 	}
 	return fields
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
 // cleared in this mutation.
-func (m *GuideProcessHistoryMutation) FieldCleared(name string) bool {
+func (m *GuideHistoryMutation) FieldCleared(name string) bool {
 	_, ok := m.clearedFields[name]
 	return ok
 }
 
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
-func (m *GuideProcessHistoryMutation) ClearField(name string) error {
+func (m *GuideHistoryMutation) ClearField(name string) error {
 	switch name {
-	case guideprocesshistory.FieldStatus:
+	case guidehistory.FieldStatus:
 		m.ClearStatus()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcessHistory nullable field %s", name)
+	return fmt.Errorf("unknown GuideHistory nullable field %s", name)
 }
 
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
-func (m *GuideProcessHistoryMutation) ResetField(name string) error {
+func (m *GuideHistoryMutation) ResetField(name string) error {
 	switch name {
-	case guideprocesshistory.FieldStatus:
+	case guidehistory.FieldStatus:
 		m.ResetStatus()
 		return nil
-	case guideprocesshistory.FieldCreatedAt:
+	case guidehistory.FieldCreatedAt:
 		m.ResetCreatedAt()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcessHistory field %s", name)
+	return fmt.Errorf("unknown GuideHistory field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
-func (m *GuideProcessHistoryMutation) AddedEdges() []string {
+func (m *GuideHistoryMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.guide_process != nil {
-		edges = append(edges, guideprocesshistory.EdgeGuideProcess)
+	if m.guide != nil {
+		edges = append(edges, guidehistory.EdgeGuide)
 	}
 	if m.operator != nil {
-		edges = append(edges, guideprocesshistory.EdgeOperator)
+		edges = append(edges, guidehistory.EdgeOperator)
 	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
-func (m *GuideProcessHistoryMutation) AddedIDs(name string) []ent.Value {
+func (m *GuideHistoryMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case guideprocesshistory.EdgeGuideProcess:
-		if id := m.guide_process; id != nil {
+	case guidehistory.EdgeGuide:
+		if id := m.guide; id != nil {
 			return []ent.Value{*id}
 		}
-	case guideprocesshistory.EdgeOperator:
+	case guidehistory.EdgeOperator:
 		if id := m.operator; id != nil {
 			return []ent.Value{*id}
 		}
@@ -1231,36 +1231,36 @@ func (m *GuideProcessHistoryMutation) AddedIDs(name string) []ent.Value {
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
-func (m *GuideProcessHistoryMutation) RemovedEdges() []string {
+func (m *GuideHistoryMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
-func (m *GuideProcessHistoryMutation) RemovedIDs(name string) []ent.Value {
+func (m *GuideHistoryMutation) RemovedIDs(name string) []ent.Value {
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
-func (m *GuideProcessHistoryMutation) ClearedEdges() []string {
+func (m *GuideHistoryMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedguide_process {
-		edges = append(edges, guideprocesshistory.EdgeGuideProcess)
+	if m.clearedguide {
+		edges = append(edges, guidehistory.EdgeGuide)
 	}
 	if m.clearedoperator {
-		edges = append(edges, guideprocesshistory.EdgeOperator)
+		edges = append(edges, guidehistory.EdgeOperator)
 	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
-func (m *GuideProcessHistoryMutation) EdgeCleared(name string) bool {
+func (m *GuideHistoryMutation) EdgeCleared(name string) bool {
 	switch name {
-	case guideprocesshistory.EdgeGuideProcess:
-		return m.clearedguide_process
-	case guideprocesshistory.EdgeOperator:
+	case guidehistory.EdgeGuide:
+		return m.clearedguide
+	case guidehistory.EdgeOperator:
 		return m.clearedoperator
 	}
 	return false
@@ -1268,52 +1268,52 @@ func (m *GuideProcessHistoryMutation) EdgeCleared(name string) bool {
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
-func (m *GuideProcessHistoryMutation) ClearEdge(name string) error {
+func (m *GuideHistoryMutation) ClearEdge(name string) error {
 	switch name {
-	case guideprocesshistory.EdgeGuideProcess:
-		m.ClearGuideProcess()
+	case guidehistory.EdgeGuide:
+		m.ClearGuide()
 		return nil
-	case guideprocesshistory.EdgeOperator:
+	case guidehistory.EdgeOperator:
 		m.ClearOperator()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcessHistory unique edge %s", name)
+	return fmt.Errorf("unknown GuideHistory unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
-func (m *GuideProcessHistoryMutation) ResetEdge(name string) error {
+func (m *GuideHistoryMutation) ResetEdge(name string) error {
 	switch name {
-	case guideprocesshistory.EdgeGuideProcess:
-		m.ResetGuideProcess()
+	case guidehistory.EdgeGuide:
+		m.ResetGuide()
 		return nil
-	case guideprocesshistory.EdgeOperator:
+	case guidehistory.EdgeOperator:
 		m.ResetOperator()
 		return nil
 	}
-	return fmt.Errorf("unknown GuideProcessHistory edge %s", name)
+	return fmt.Errorf("unknown GuideHistory edge %s", name)
 }
 
 // OperatorMutation represents an operation that mutates the Operator nodes in the graph.
 type OperatorMutation struct {
 	config
-	op                             Op
-	typ                            string
-	id                             *int
-	account                        *string
-	enabled                        *bool
-	created_at                     *time.Time
-	updated_at                     *time.Time
-	clearedFields                  map[string]struct{}
-	guide_processes                map[int]struct{}
-	removedguide_processes         map[int]struct{}
-	clearedguide_processes         bool
-	guide_process_histories        map[int]struct{}
-	removedguide_process_histories map[int]struct{}
-	clearedguide_process_histories bool
-	done                           bool
-	oldValue                       func(context.Context) (*Operator, error)
-	predicates                     []predicate.Operator
+	op                   Op
+	typ                  string
+	id                   *int
+	account              *string
+	enabled              *bool
+	created_at           *time.Time
+	updated_at           *time.Time
+	clearedFields        map[string]struct{}
+	guide                map[int]struct{}
+	removedguide         map[int]struct{}
+	clearedguide         bool
+	guide_history        map[int]struct{}
+	removedguide_history map[int]struct{}
+	clearedguide_history bool
+	done                 bool
+	oldValue             func(context.Context) (*Operator, error)
+	predicates           []predicate.Operator
 }
 
 var _ ent.Mutation = (*OperatorMutation)(nil)
@@ -1558,112 +1558,112 @@ func (m *OperatorMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// AddGuideProcessIDs adds the "guide_processes" edge to the GuideProcess entity by ids.
-func (m *OperatorMutation) AddGuideProcessIDs(ids ...int) {
-	if m.guide_processes == nil {
-		m.guide_processes = make(map[int]struct{})
+// AddGuideIDs adds the "guide" edge to the Guide entity by ids.
+func (m *OperatorMutation) AddGuideIDs(ids ...int) {
+	if m.guide == nil {
+		m.guide = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.guide_processes[ids[i]] = struct{}{}
+		m.guide[ids[i]] = struct{}{}
 	}
 }
 
-// ClearGuideProcesses clears the "guide_processes" edge to the GuideProcess entity.
-func (m *OperatorMutation) ClearGuideProcesses() {
-	m.clearedguide_processes = true
+// ClearGuide clears the "guide" edge to the Guide entity.
+func (m *OperatorMutation) ClearGuide() {
+	m.clearedguide = true
 }
 
-// GuideProcessesCleared reports if the "guide_processes" edge to the GuideProcess entity was cleared.
-func (m *OperatorMutation) GuideProcessesCleared() bool {
-	return m.clearedguide_processes
+// GuideCleared reports if the "guide" edge to the Guide entity was cleared.
+func (m *OperatorMutation) GuideCleared() bool {
+	return m.clearedguide
 }
 
-// RemoveGuideProcessIDs removes the "guide_processes" edge to the GuideProcess entity by IDs.
-func (m *OperatorMutation) RemoveGuideProcessIDs(ids ...int) {
-	if m.removedguide_processes == nil {
-		m.removedguide_processes = make(map[int]struct{})
+// RemoveGuideIDs removes the "guide" edge to the Guide entity by IDs.
+func (m *OperatorMutation) RemoveGuideIDs(ids ...int) {
+	if m.removedguide == nil {
+		m.removedguide = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.guide_processes, ids[i])
-		m.removedguide_processes[ids[i]] = struct{}{}
+		delete(m.guide, ids[i])
+		m.removedguide[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedGuideProcesses returns the removed IDs of the "guide_processes" edge to the GuideProcess entity.
-func (m *OperatorMutation) RemovedGuideProcessesIDs() (ids []int) {
-	for id := range m.removedguide_processes {
+// RemovedGuide returns the removed IDs of the "guide" edge to the Guide entity.
+func (m *OperatorMutation) RemovedGuideIDs() (ids []int) {
+	for id := range m.removedguide {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// GuideProcessesIDs returns the "guide_processes" edge IDs in the mutation.
-func (m *OperatorMutation) GuideProcessesIDs() (ids []int) {
-	for id := range m.guide_processes {
+// GuideIDs returns the "guide" edge IDs in the mutation.
+func (m *OperatorMutation) GuideIDs() (ids []int) {
+	for id := range m.guide {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetGuideProcesses resets all changes to the "guide_processes" edge.
-func (m *OperatorMutation) ResetGuideProcesses() {
-	m.guide_processes = nil
-	m.clearedguide_processes = false
-	m.removedguide_processes = nil
+// ResetGuide resets all changes to the "guide" edge.
+func (m *OperatorMutation) ResetGuide() {
+	m.guide = nil
+	m.clearedguide = false
+	m.removedguide = nil
 }
 
-// AddGuideProcessHistoryIDs adds the "guide_process_histories" edge to the GuideProcessHistory entity by ids.
-func (m *OperatorMutation) AddGuideProcessHistoryIDs(ids ...int) {
-	if m.guide_process_histories == nil {
-		m.guide_process_histories = make(map[int]struct{})
+// AddGuideHistoryIDs adds the "guide_history" edge to the GuideHistory entity by ids.
+func (m *OperatorMutation) AddGuideHistoryIDs(ids ...int) {
+	if m.guide_history == nil {
+		m.guide_history = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.guide_process_histories[ids[i]] = struct{}{}
+		m.guide_history[ids[i]] = struct{}{}
 	}
 }
 
-// ClearGuideProcessHistories clears the "guide_process_histories" edge to the GuideProcessHistory entity.
-func (m *OperatorMutation) ClearGuideProcessHistories() {
-	m.clearedguide_process_histories = true
+// ClearGuideHistory clears the "guide_history" edge to the GuideHistory entity.
+func (m *OperatorMutation) ClearGuideHistory() {
+	m.clearedguide_history = true
 }
 
-// GuideProcessHistoriesCleared reports if the "guide_process_histories" edge to the GuideProcessHistory entity was cleared.
-func (m *OperatorMutation) GuideProcessHistoriesCleared() bool {
-	return m.clearedguide_process_histories
+// GuideHistoryCleared reports if the "guide_history" edge to the GuideHistory entity was cleared.
+func (m *OperatorMutation) GuideHistoryCleared() bool {
+	return m.clearedguide_history
 }
 
-// RemoveGuideProcessHistoryIDs removes the "guide_process_histories" edge to the GuideProcessHistory entity by IDs.
-func (m *OperatorMutation) RemoveGuideProcessHistoryIDs(ids ...int) {
-	if m.removedguide_process_histories == nil {
-		m.removedguide_process_histories = make(map[int]struct{})
+// RemoveGuideHistoryIDs removes the "guide_history" edge to the GuideHistory entity by IDs.
+func (m *OperatorMutation) RemoveGuideHistoryIDs(ids ...int) {
+	if m.removedguide_history == nil {
+		m.removedguide_history = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.guide_process_histories, ids[i])
-		m.removedguide_process_histories[ids[i]] = struct{}{}
+		delete(m.guide_history, ids[i])
+		m.removedguide_history[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedGuideProcessHistories returns the removed IDs of the "guide_process_histories" edge to the GuideProcessHistory entity.
-func (m *OperatorMutation) RemovedGuideProcessHistoriesIDs() (ids []int) {
-	for id := range m.removedguide_process_histories {
+// RemovedGuideHistory returns the removed IDs of the "guide_history" edge to the GuideHistory entity.
+func (m *OperatorMutation) RemovedGuideHistoryIDs() (ids []int) {
+	for id := range m.removedguide_history {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// GuideProcessHistoriesIDs returns the "guide_process_histories" edge IDs in the mutation.
-func (m *OperatorMutation) GuideProcessHistoriesIDs() (ids []int) {
-	for id := range m.guide_process_histories {
+// GuideHistoryIDs returns the "guide_history" edge IDs in the mutation.
+func (m *OperatorMutation) GuideHistoryIDs() (ids []int) {
+	for id := range m.guide_history {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetGuideProcessHistories resets all changes to the "guide_process_histories" edge.
-func (m *OperatorMutation) ResetGuideProcessHistories() {
-	m.guide_process_histories = nil
-	m.clearedguide_process_histories = false
-	m.removedguide_process_histories = nil
+// ResetGuideHistory resets all changes to the "guide_history" edge.
+func (m *OperatorMutation) ResetGuideHistory() {
+	m.guide_history = nil
+	m.clearedguide_history = false
+	m.removedguide_history = nil
 }
 
 // Where appends a list predicates to the OperatorMutation builder.
@@ -1851,11 +1851,11 @@ func (m *OperatorMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OperatorMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.guide_processes != nil {
-		edges = append(edges, operator.EdgeGuideProcesses)
+	if m.guide != nil {
+		edges = append(edges, operator.EdgeGuide)
 	}
-	if m.guide_process_histories != nil {
-		edges = append(edges, operator.EdgeGuideProcessHistories)
+	if m.guide_history != nil {
+		edges = append(edges, operator.EdgeGuideHistory)
 	}
 	return edges
 }
@@ -1864,15 +1864,15 @@ func (m *OperatorMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *OperatorMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case operator.EdgeGuideProcesses:
-		ids := make([]ent.Value, 0, len(m.guide_processes))
-		for id := range m.guide_processes {
+	case operator.EdgeGuide:
+		ids := make([]ent.Value, 0, len(m.guide))
+		for id := range m.guide {
 			ids = append(ids, id)
 		}
 		return ids
-	case operator.EdgeGuideProcessHistories:
-		ids := make([]ent.Value, 0, len(m.guide_process_histories))
-		for id := range m.guide_process_histories {
+	case operator.EdgeGuideHistory:
+		ids := make([]ent.Value, 0, len(m.guide_history))
+		for id := range m.guide_history {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1883,11 +1883,11 @@ func (m *OperatorMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OperatorMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedguide_processes != nil {
-		edges = append(edges, operator.EdgeGuideProcesses)
+	if m.removedguide != nil {
+		edges = append(edges, operator.EdgeGuide)
 	}
-	if m.removedguide_process_histories != nil {
-		edges = append(edges, operator.EdgeGuideProcessHistories)
+	if m.removedguide_history != nil {
+		edges = append(edges, operator.EdgeGuideHistory)
 	}
 	return edges
 }
@@ -1896,15 +1896,15 @@ func (m *OperatorMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *OperatorMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case operator.EdgeGuideProcesses:
-		ids := make([]ent.Value, 0, len(m.removedguide_processes))
-		for id := range m.removedguide_processes {
+	case operator.EdgeGuide:
+		ids := make([]ent.Value, 0, len(m.removedguide))
+		for id := range m.removedguide {
 			ids = append(ids, id)
 		}
 		return ids
-	case operator.EdgeGuideProcessHistories:
-		ids := make([]ent.Value, 0, len(m.removedguide_process_histories))
-		for id := range m.removedguide_process_histories {
+	case operator.EdgeGuideHistory:
+		ids := make([]ent.Value, 0, len(m.removedguide_history))
+		for id := range m.removedguide_history {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1915,11 +1915,11 @@ func (m *OperatorMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OperatorMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedguide_processes {
-		edges = append(edges, operator.EdgeGuideProcesses)
+	if m.clearedguide {
+		edges = append(edges, operator.EdgeGuide)
 	}
-	if m.clearedguide_process_histories {
-		edges = append(edges, operator.EdgeGuideProcessHistories)
+	if m.clearedguide_history {
+		edges = append(edges, operator.EdgeGuideHistory)
 	}
 	return edges
 }
@@ -1928,10 +1928,10 @@ func (m *OperatorMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *OperatorMutation) EdgeCleared(name string) bool {
 	switch name {
-	case operator.EdgeGuideProcesses:
-		return m.clearedguide_processes
-	case operator.EdgeGuideProcessHistories:
-		return m.clearedguide_process_histories
+	case operator.EdgeGuide:
+		return m.clearedguide
+	case operator.EdgeGuideHistory:
+		return m.clearedguide_history
 	}
 	return false
 }
@@ -1948,11 +1948,11 @@ func (m *OperatorMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *OperatorMutation) ResetEdge(name string) error {
 	switch name {
-	case operator.EdgeGuideProcesses:
-		m.ResetGuideProcesses()
+	case operator.EdgeGuide:
+		m.ResetGuide()
 		return nil
-	case operator.EdgeGuideProcessHistories:
-		m.ResetGuideProcessHistories()
+	case operator.EdgeGuideHistory:
+		m.ResetGuideHistory()
 		return nil
 	}
 	return fmt.Errorf("unknown Operator edge %s", name)

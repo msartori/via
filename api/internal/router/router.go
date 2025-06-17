@@ -3,15 +3,13 @@ package router
 import (
 	"net/http"
 	"time"
-
 	"via/internal/config"
 	"via/internal/handler"
 	"via/internal/middleware"
-
 	guide_provider "via/internal/provider/guide"
-	guide_process_provider "via/internal/provider/guide/process"
-	guide_ent_process_provider "via/internal/provider/guide/process/ent"
-	guide_web_provider "via/internal/provider/guide/web"
+	guide_ent_provider "via/internal/provider/guide/ent"
+	via_guide_provider "via/internal/provider/via/guide"
+	via_guide_web_provider "via/internal/provider/via/guide/web"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -29,11 +27,8 @@ func New(cfg config.Config) http.Handler {
 	r.Post("/process/guide", handler.CreateGuideProcess().ServeHTTP)
 
 	// Set up dependencies
-	guideProvider := guide_web_provider.New(cfg.GuideWebClient, guide_web_provider.HistoricalQueryResponseParser{})
-	guide_provider.Set(guideProvider)
-
-	GuideProcessProvider := guide_ent_process_provider.New()
-	guide_process_provider.Set(GuideProcessProvider)
+	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))
+	guide_provider.Set(guide_ent_provider.New())
 
 	return r
 }

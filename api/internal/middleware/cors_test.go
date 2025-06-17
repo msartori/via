@@ -1,14 +1,12 @@
-package middleware_test
+package middleware
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"via/internal/config"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
-	"via/internal/middleware"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -27,14 +25,14 @@ func TestCORSMiddleware(t *testing.T) {
 	log.Set(mockLog)
 
 	// middleware configuration
-	cfg := config.CORS{
+	cfg := CORSCfg{
 		Origins: "http://localhost",
 		Methods: "GET,POST,OPTIONS",
 		Headers: "Content-Type,Authorization",
 	}
 
 	// handler setup with CORS middleware
-	handler := middleware.CORS(cfg)
+	handler := CORS(cfg)
 
 	//handler := middleware.CORS(http.HandlerFunc(testHandler), cfg)
 
@@ -78,8 +76,8 @@ func TestCORSMiddleware(t *testing.T) {
 	})
 
 	t.Run("handles empty config gracefully", func(t *testing.T) {
-		emptyCfg := config.CORS{}
-		handlerEmpty := middleware.CORS(emptyCfg)
+		emptyCfg := CORSCfg{}
+		handlerEmpty := CORS(emptyCfg)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
 		rec := httptest.NewRecorder()

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 	"time"
-	"via/internal/config"
 	"via/internal/secret"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -17,7 +16,15 @@ var (
 	once     sync.Once
 )
 
-func New(cfg config.Database) (*sql.DB, error) {
+type DatabaseCfg struct {
+	PasswordFile string `env:"PASSWORD_FILE" envDefault:"" json:"passwordFile"`
+	User         string `env:"USER" envDefault:"" json:"-"`
+	Base         string `env:"BASE" envDefault:"" json:"-"`
+	Port         string `env:"PORT" envDefault:"" json:"port"`
+	Host         string `env:"HOST" envDefault:"" json:"host"`
+}
+
+func New(cfg DatabaseCfg) (*sql.DB, error) {
 	var err error
 	once.Do(func() {
 		dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, secret.ReadSecret(cfg.PasswordFile), cfg.Host, cfg.Port, cfg.Base)

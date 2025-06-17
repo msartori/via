@@ -22,7 +22,6 @@ export GOCACHE=${TEMP}
 test:
 	@mkdir -p $(GOBUILD) $(TEMP)
 	@cd api && \
-	#PKG_LIST=$$(go list ./... | grep -v '/mock') && \
 	PKG_LIST=$$(go list ./... | grep -v -E '/mock|/internal/ent') && \
 	go test $$PKG_LIST -coverpkg=$$(echo $$PKG_LIST | tr ' ' ',') -coverprofile=$(TEMP)/coverage.out
 	@echo "Total test coverage:"
