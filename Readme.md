@@ -11,3 +11,9 @@ ent new Guide
 ent new GuideHistory
 # go to api directory
 ent generate ./ent/schema
+
+
+psql -h localhost -p 5432 -U viauser -d viadb
+
+
+pkill -f "localtunnel"

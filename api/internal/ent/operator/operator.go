@@ -22,26 +22,26 @@ const (
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
 	FieldUpdatedAt = "updated_at"
-	// EdgeGuide holds the string denoting the guide edge name in mutations.
-	EdgeGuide = "guide"
+	// EdgeGuides holds the string denoting the guides edge name in mutations.
+	EdgeGuides = "guides"
 	// EdgeGuideHistory holds the string denoting the guide_history edge name in mutations.
 	EdgeGuideHistory = "guide_history"
 	// Table holds the table name of the operator in the database.
 	Table = "operators"
-	// GuideTable is the table that holds the guide relation/edge.
-	GuideTable = "guides"
-	// GuideInverseTable is the table name for the Guide entity.
+	// GuidesTable is the table that holds the guides relation/edge.
+	GuidesTable = "guides"
+	// GuidesInverseTable is the table name for the Guide entity.
 	// It exists in this package in order to avoid circular dependency with the "guide" package.
-	GuideInverseTable = "guides"
-	// GuideColumn is the table column denoting the guide relation/edge.
-	GuideColumn = "operator_guide"
+	GuidesInverseTable = "guides"
+	// GuidesColumn is the table column denoting the guides relation/edge.
+	GuidesColumn = "operator_id"
 	// GuideHistoryTable is the table that holds the guide_history relation/edge.
 	GuideHistoryTable = "guide_histories"
 	// GuideHistoryInverseTable is the table name for the GuideHistory entity.
 	// It exists in this package in order to avoid circular dependency with the "guidehistory" package.
 	GuideHistoryInverseTable = "guide_histories"
 	// GuideHistoryColumn is the table column denoting the guide_history relation/edge.
-	GuideHistoryColumn = "operator_guide_history"
+	GuideHistoryColumn = "operator_id"
 )
 
 // Columns holds all SQL columns for operator fields.
@@ -66,6 +66,8 @@ func ValidColumn(column string) bool {
 var (
 	// AccountValidator is a validator for the "account" field. It is called by the builders before save.
 	AccountValidator func(string) error
+	// DefaultEnabled holds the default value on creation for the "enabled" field.
+	DefaultEnabled bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -102,17 +104,17 @@ func ByUpdatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldUpdatedAt, opts...).ToFunc()
 }
 
-// ByGuideCount orders the results by guide count.
-func ByGuideCount(opts ...sql.OrderTermOption) OrderOption {
+// ByGuidesCount orders the results by guides count.
+func ByGuidesCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborsCount(s, newGuideStep(), opts...)
+		sqlgraph.OrderByNeighborsCount(s, newGuidesStep(), opts...)
 	}
 }
 
-// ByGuide orders the results by guide terms.
-func ByGuide(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+// ByGuides orders the results by guides terms.
+func ByGuides(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	return func(s *sql.Selector) {
-		sqlgraph.OrderByNeighborTerms(s, newGuideStep(), append([]sql.OrderTerm{term}, terms...)...)
+		sqlgraph.OrderByNeighborTerms(s, newGuidesStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
 
@@ -129,11 +131,11 @@ func ByGuideHistory(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newGuideHistoryStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
-func newGuideStep() *sqlgraph.Step {
+func newGuidesStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
-		sqlgraph.To(GuideInverseTable, FieldID),
-		sqlgraph.Edge(sqlgraph.O2M, false, GuideTable, GuideColumn),
+		sqlgraph.To(GuidesInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, GuidesTable, GuidesColumn),
 	)
 }
 func newGuideHistoryStep() *sqlgraph.Step {

@@ -230,21 +230,21 @@ func UpdatedAtLTE(v time.Time) predicate.Operator {
 	return predicate.Operator(sql.FieldLTE(FieldUpdatedAt, v))
 }
 
-// HasGuide applies the HasEdge predicate on the "guide" edge.
-func HasGuide() predicate.Operator {
+// HasGuides applies the HasEdge predicate on the "guides" edge.
+func HasGuides() predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
 		step := sqlgraph.NewStep(
 			sqlgraph.From(Table, FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, GuideTable, GuideColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, GuidesTable, GuidesColumn),
 		)
 		sqlgraph.HasNeighbors(s, step)
 	})
 }
 
-// HasGuideWith applies the HasEdge predicate on the "guide" edge with a given conditions (other predicates).
-func HasGuideWith(preds ...predicate.Guide) predicate.Operator {
+// HasGuidesWith applies the HasEdge predicate on the "guides" edge with a given conditions (other predicates).
+func HasGuidesWith(preds ...predicate.Guide) predicate.Operator {
 	return predicate.Operator(func(s *sql.Selector) {
-		step := newGuideStep()
+		step := newGuidesStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

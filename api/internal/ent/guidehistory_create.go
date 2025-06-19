@@ -22,17 +22,21 @@ type GuideHistoryCreate struct {
 	hooks    []Hook
 }
 
+// SetGuideID sets the "guide_id" field.
+func (ghc *GuideHistoryCreate) SetGuideID(i int) *GuideHistoryCreate {
+	ghc.mutation.SetGuideID(i)
+	return ghc
+}
+
 // SetStatus sets the "status" field.
 func (ghc *GuideHistoryCreate) SetStatus(s string) *GuideHistoryCreate {
 	ghc.mutation.SetStatus(s)
 	return ghc
 }
 
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (ghc *GuideHistoryCreate) SetNillableStatus(s *string) *GuideHistoryCreate {
-	if s != nil {
-		ghc.SetStatus(*s)
-	}
+// SetOperatorID sets the "operator_id" field.
+func (ghc *GuideHistoryCreate) SetOperatorID(i int) *GuideHistoryCreate {
+	ghc.mutation.SetOperatorID(i)
 	return ghc
 }
 
@@ -50,29 +54,9 @@ func (ghc *GuideHistoryCreate) SetNillableCreatedAt(t *time.Time) *GuideHistoryC
 	return ghc
 }
 
-// SetGuideID sets the "guide" edge to the Guide entity by ID.
-func (ghc *GuideHistoryCreate) SetGuideID(id int) *GuideHistoryCreate {
-	ghc.mutation.SetGuideID(id)
-	return ghc
-}
-
 // SetGuide sets the "guide" edge to the Guide entity.
 func (ghc *GuideHistoryCreate) SetGuide(g *Guide) *GuideHistoryCreate {
 	return ghc.SetGuideID(g.ID)
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (ghc *GuideHistoryCreate) SetOperatorID(id int) *GuideHistoryCreate {
-	ghc.mutation.SetOperatorID(id)
-	return ghc
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (ghc *GuideHistoryCreate) SetNillableOperatorID(id *int) *GuideHistoryCreate {
-	if id != nil {
-		ghc = ghc.SetOperatorID(*id)
-	}
-	return ghc
 }
 
 // SetOperator sets the "operator" edge to the Operator entity.
@@ -123,9 +107,23 @@ func (ghc *GuideHistoryCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (ghc *GuideHistoryCreate) check() error {
+	if _, ok := ghc.mutation.GuideID(); !ok {
+		return &ValidationError{Name: "guide_id", err: errors.New(`ent: missing required field "GuideHistory.guide_id"`)}
+	}
+	if _, ok := ghc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "GuideHistory.status"`)}
+	}
 	if v, ok := ghc.mutation.Status(); ok {
 		if err := guidehistory.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "GuideHistory.status": %w`, err)}
+		}
+	}
+	if _, ok := ghc.mutation.OperatorID(); !ok {
+		return &ValidationError{Name: "operator_id", err: errors.New(`ent: missing required field "GuideHistory.operator_id"`)}
+	}
+	if v, ok := ghc.mutation.OperatorID(); ok {
+		if err := guidehistory.OperatorIDValidator(v); err != nil {
+			return &ValidationError{Name: "operator_id", err: fmt.Errorf(`ent: validator failed for field "GuideHistory.operator_id": %w`, err)}
 		}
 	}
 	if _, ok := ghc.mutation.CreatedAt(); !ok {
@@ -133,6 +131,9 @@ func (ghc *GuideHistoryCreate) check() error {
 	}
 	if len(ghc.mutation.GuideIDs()) == 0 {
 		return &ValidationError{Name: "guide", err: errors.New(`ent: missing required edge "GuideHistory.guide"`)}
+	}
+	if len(ghc.mutation.OperatorIDs()) == 0 {
+		return &ValidationError{Name: "operator", err: errors.New(`ent: missing required edge "GuideHistory.operator"`)}
 	}
 	return nil
 }
@@ -182,7 +183,7 @@ func (ghc *GuideHistoryCreate) createSpec() (*GuideHistory, *sqlgraph.CreateSpec
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.guide_history = &nodes[0]
+		_node.GuideID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := ghc.mutation.OperatorIDs(); len(nodes) > 0 {
@@ -199,7 +200,7 @@ func (ghc *GuideHistoryCreate) createSpec() (*GuideHistory, *sqlgraph.CreateSpec
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.operator_guide_history = &nodes[0]
+		_node.OperatorID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

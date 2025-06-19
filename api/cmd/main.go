@@ -23,9 +23,10 @@ func main() {
 	}
 	entClient := ent_client.New(dbPool)
 	// Run the auto migration tool.
-	if err := entClient.Schema.Create(context.Background()); err != nil {
-		logger.Fatal(context.Background(), err, "msg", "failed creating schema resources")
-	}
+	/*
+		if err := entClient.Schema.Create(context.Background()); err != nil {
+			logger.Fatal(context.Background(), err, "msg", "failed creating schema resources")
+		}*/
 	defer entClient.Close()
 	defer dbPool.Close()
 

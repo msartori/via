@@ -178,10 +178,12 @@ func (l AppLogger) addContextFields(ctx context.Context, pairs ...any) []any {
 	if ctx == nil {
 		return pairs
 	}
-	fields, ok := ctx.Value(logContextKey).(LogFields)
-	if !ok || len(fields) == 0 {
+	fieldsInContext, ok := ctx.Value(logContextKey).(LogFields)
+	if !ok || len(fieldsInContext) == 0 {
 		return pairs
 	}
+	fields := make(LogFields)
+	maps.Copy(fields, fieldsInContext)
 	maps.Copy(fields, l.pairsToLogFields(pairs...))
 	result := make([]any, 0, len(fields)*2)
 	for k, v := range fields {

@@ -14,8 +14,12 @@ const (
 	Label = "guide_history"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
+	// FieldGuideID holds the string denoting the guide_id field in the database.
+	FieldGuideID = "guide_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldOperatorID holds the string denoting the operator_id field in the database.
+	FieldOperatorID = "operator_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeGuide holds the string denoting the guide edge name in mutations.
@@ -30,28 +34,23 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "guide" package.
 	GuideInverseTable = "guides"
 	// GuideColumn is the table column denoting the guide relation/edge.
-	GuideColumn = "guide_history"
+	GuideColumn = "guide_id"
 	// OperatorTable is the table that holds the operator relation/edge.
 	OperatorTable = "guide_histories"
 	// OperatorInverseTable is the table name for the Operator entity.
 	// It exists in this package in order to avoid circular dependency with the "operator" package.
 	OperatorInverseTable = "operators"
 	// OperatorColumn is the table column denoting the operator relation/edge.
-	OperatorColumn = "operator_guide_history"
+	OperatorColumn = "operator_id"
 )
 
 // Columns holds all SQL columns for guidehistory fields.
 var Columns = []string{
 	FieldID,
+	FieldGuideID,
 	FieldStatus,
+	FieldOperatorID,
 	FieldCreatedAt,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "guide_histories"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"guide_history",
-	"operator_guide_history",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -61,17 +60,14 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
-			return true
-		}
-	}
 	return false
 }
 
 var (
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
+	// OperatorIDValidator is a validator for the "operator_id" field. It is called by the builders before save.
+	OperatorIDValidator func(int) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 )
@@ -84,9 +80,19 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
+// ByGuideID orders the results by the guide_id field.
+func ByGuideID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldGuideID, opts...).ToFunc()
+}
+
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByOperatorID orders the results by the operator_id field.
+func ByOperatorID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOperatorID, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

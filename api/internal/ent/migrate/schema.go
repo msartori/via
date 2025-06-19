@@ -11,12 +11,12 @@ var (
 	// GuidesColumns holds the columns for the "guides" table.
 	GuidesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "code", Type: field.TypeString, Unique: true, Size: 12},
-		{Name: "recipient", Type: field.TypeString, Nullable: true, Size: 100},
-		{Name: "status", Type: field.TypeString, Nullable: true, Size: 30},
+		{Name: "via_guide_id", Type: field.TypeString, Size: 12},
+		{Name: "recipient", Type: field.TypeString, Size: 100},
+		{Name: "status", Type: field.TypeString, Size: 30},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
-		{Name: "operator_guide", Type: field.TypeInt, Nullable: true},
+		{Name: "operator_id", Type: field.TypeInt},
 	}
 	// GuidesTable holds the schema information for the "guides" table.
 	GuidesTable = &schema.Table{
@@ -25,20 +25,20 @@ var (
 		PrimaryKey: []*schema.Column{GuidesColumns[0]},
 		ForeignKeys: []*schema.ForeignKey{
 			{
-				Symbol:     "guides_operators_guide",
+				Symbol:     "guides_operators_guides",
 				Columns:    []*schema.Column{GuidesColumns[6]},
 				RefColumns: []*schema.Column{OperatorsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
 	// GuideHistoriesColumns holds the columns for the "guide_histories" table.
 	GuideHistoriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "status", Type: field.TypeString, Nullable: true, Size: 30},
+		{Name: "status", Type: field.TypeString, Size: 30},
 		{Name: "created_at", Type: field.TypeTime},
-		{Name: "guide_history", Type: field.TypeInt},
-		{Name: "operator_guide_history", Type: field.TypeInt, Nullable: true},
+		{Name: "guide_id", Type: field.TypeInt},
+		{Name: "operator_id", Type: field.TypeInt},
 	}
 	// GuideHistoriesTable holds the schema information for the "guide_histories" table.
 	GuideHistoriesTable = &schema.Table{
@@ -56,15 +56,15 @@ var (
 				Symbol:     "guide_histories_operators_guide_history",
 				Columns:    []*schema.Column{GuideHistoriesColumns[4]},
 				RefColumns: []*schema.Column{OperatorsColumns[0]},
-				OnDelete:   schema.SetNull,
+				OnDelete:   schema.NoAction,
 			},
 		},
 	}
 	// OperatorsColumns holds the columns for the "operators" table.
 	OperatorsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "account", Type: field.TypeString, Unique: true},
-		{Name: "enabled", Type: field.TypeBool},
+		{Name: "account", Type: field.TypeString, Unique: true, Size: 200},
+		{Name: "enabled", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 	}

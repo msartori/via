@@ -29,9 +29,6 @@ func New(cfg http_client.HttpClientCfg, guideParser ViaResponseParser) *ViaGuide
 
 func (p *ViaGuideWebProvider) GetGuide(ctx context.Context, id string) (model.ViaGuide, error) {
 	logger := log.Get()
-	logger.Info(ctx, "msg", "guide_web_provider.GetGuide_start")
-	defer logger.Info(ctx, "msg", "guide_web_provider.GetGuide_end")
-
 	params := url.Values{"nenvio": {id}, "pagina": {"1"}}
 	reqRes := fmt.Sprintf("%s/atencion_cliente/historico/consulta_historico_resultado.do", p.client.BaseURL)
 	logger.Info(ctx, "msg", "http request", "resource", reqRes, "params", params)

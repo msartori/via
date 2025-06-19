@@ -16,18 +16,19 @@ import (
 func init() {
 	guideFields := schema.Guide{}.Fields()
 	_ = guideFields
-	// guideDescCode is the schema descriptor for code field.
-	guideDescCode := guideFields[0].Descriptor()
-	// guide.CodeValidator is a validator for the "code" field. It is called by the builders before save.
-	guide.CodeValidator = func() func(string) error {
-		validators := guideDescCode.Validators
+	// guideDescViaGuideID is the schema descriptor for via_guide_id field.
+	guideDescViaGuideID := guideFields[0].Descriptor()
+	// guide.ViaGuideIDValidator is a validator for the "via_guide_id" field. It is called by the builders before save.
+	guide.ViaGuideIDValidator = func() func(string) error {
+		validators := guideDescViaGuideID.Validators
 		fns := [...]func(string) error{
 			validators[0].(func(string) error),
 			validators[1].(func(string) error),
+			validators[2].(func(string) error),
 		}
-		return func(code string) error {
+		return func(via_guide_id string) error {
 			for _, fn := range fns {
-				if err := fn(code); err != nil {
+				if err := fn(via_guide_id); err != nil {
 					return err
 				}
 			}
@@ -37,17 +38,45 @@ func init() {
 	// guideDescRecipient is the schema descriptor for recipient field.
 	guideDescRecipient := guideFields[1].Descriptor()
 	// guide.RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
-	guide.RecipientValidator = guideDescRecipient.Validators[0].(func(string) error)
+	guide.RecipientValidator = func() func(string) error {
+		validators := guideDescRecipient.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(recipient string) error {
+			for _, fn := range fns {
+				if err := fn(recipient); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// guideDescStatus is the schema descriptor for status field.
 	guideDescStatus := guideFields[2].Descriptor()
 	// guide.StatusValidator is a validator for the "status" field. It is called by the builders before save.
-	guide.StatusValidator = guideDescStatus.Validators[0].(func(string) error)
+	guide.StatusValidator = func() func(string) error {
+		validators := guideDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// guideDescCreatedAt is the schema descriptor for created_at field.
-	guideDescCreatedAt := guideFields[3].Descriptor()
+	guideDescCreatedAt := guideFields[4].Descriptor()
 	// guide.DefaultCreatedAt holds the default value on creation for the created_at field.
 	guide.DefaultCreatedAt = guideDescCreatedAt.Default.(func() time.Time)
 	// guideDescUpdatedAt is the schema descriptor for updated_at field.
-	guideDescUpdatedAt := guideFields[4].Descriptor()
+	guideDescUpdatedAt := guideFields[5].Descriptor()
 	// guide.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	guide.DefaultUpdatedAt = guideDescUpdatedAt.Default.(func() time.Time)
 	// guide.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -55,11 +84,29 @@ func init() {
 	guidehistoryFields := schema.GuideHistory{}.Fields()
 	_ = guidehistoryFields
 	// guidehistoryDescStatus is the schema descriptor for status field.
-	guidehistoryDescStatus := guidehistoryFields[0].Descriptor()
+	guidehistoryDescStatus := guidehistoryFields[1].Descriptor()
 	// guidehistory.StatusValidator is a validator for the "status" field. It is called by the builders before save.
-	guidehistory.StatusValidator = guidehistoryDescStatus.Validators[0].(func(string) error)
+	guidehistory.StatusValidator = func() func(string) error {
+		validators := guidehistoryDescStatus.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(status string) error {
+			for _, fn := range fns {
+				if err := fn(status); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// guidehistoryDescOperatorID is the schema descriptor for operator_id field.
+	guidehistoryDescOperatorID := guidehistoryFields[2].Descriptor()
+	// guidehistory.OperatorIDValidator is a validator for the "operator_id" field. It is called by the builders before save.
+	guidehistory.OperatorIDValidator = guidehistoryDescOperatorID.Validators[0].(func(int) error)
 	// guidehistoryDescCreatedAt is the schema descriptor for created_at field.
-	guidehistoryDescCreatedAt := guidehistoryFields[1].Descriptor()
+	guidehistoryDescCreatedAt := guidehistoryFields[3].Descriptor()
 	// guidehistory.DefaultCreatedAt holds the default value on creation for the created_at field.
 	guidehistory.DefaultCreatedAt = guidehistoryDescCreatedAt.Default.(func() time.Time)
 	operatorFields := schema.Operator{}.Fields()
@@ -67,7 +114,25 @@ func init() {
 	// operatorDescAccount is the schema descriptor for account field.
 	operatorDescAccount := operatorFields[0].Descriptor()
 	// operator.AccountValidator is a validator for the "account" field. It is called by the builders before save.
-	operator.AccountValidator = operatorDescAccount.Validators[0].(func(string) error)
+	operator.AccountValidator = func() func(string) error {
+		validators := operatorDescAccount.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(account string) error {
+			for _, fn := range fns {
+				if err := fn(account); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// operatorDescEnabled is the schema descriptor for enabled field.
+	operatorDescEnabled := operatorFields[1].Descriptor()
+	// operator.DefaultEnabled holds the default value on creation for the enabled field.
+	operator.DefaultEnabled = operatorDescEnabled.Default.(bool)
 	// operatorDescCreatedAt is the schema descriptor for created_at field.
 	operatorDescCreatedAt := operatorFields[2].Descriptor()
 	// operator.DefaultCreatedAt holds the default value on creation for the created_at field.

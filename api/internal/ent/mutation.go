@@ -37,7 +37,7 @@ type GuideMutation struct {
 	op              Op
 	typ             string
 	id              *int
-	code            *string
+	via_guide_id    *string
 	recipient       *string
 	status          *string
 	created_at      *time.Time
@@ -151,40 +151,40 @@ func (m *GuideMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
-// SetCode sets the "code" field.
-func (m *GuideMutation) SetCode(s string) {
-	m.code = &s
+// SetViaGuideID sets the "via_guide_id" field.
+func (m *GuideMutation) SetViaGuideID(s string) {
+	m.via_guide_id = &s
 }
 
-// Code returns the value of the "code" field in the mutation.
-func (m *GuideMutation) Code() (r string, exists bool) {
-	v := m.code
+// ViaGuideID returns the value of the "via_guide_id" field in the mutation.
+func (m *GuideMutation) ViaGuideID() (r string, exists bool) {
+	v := m.via_guide_id
 	if v == nil {
 		return
 	}
 	return *v, true
 }
 
-// OldCode returns the old "code" field's value of the Guide entity.
+// OldViaGuideID returns the old "via_guide_id" field's value of the Guide entity.
 // If the Guide object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *GuideMutation) OldCode(ctx context.Context) (v string, err error) {
+func (m *GuideMutation) OldViaGuideID(ctx context.Context) (v string, err error) {
 	if !m.op.Is(OpUpdateOne) {
-		return v, errors.New("OldCode is only allowed on UpdateOne operations")
+		return v, errors.New("OldViaGuideID is only allowed on UpdateOne operations")
 	}
 	if m.id == nil || m.oldValue == nil {
-		return v, errors.New("OldCode requires an ID field in the mutation")
+		return v, errors.New("OldViaGuideID requires an ID field in the mutation")
 	}
 	oldValue, err := m.oldValue(ctx)
 	if err != nil {
-		return v, fmt.Errorf("querying old value for OldCode: %w", err)
+		return v, fmt.Errorf("querying old value for OldViaGuideID: %w", err)
 	}
-	return oldValue.Code, nil
+	return oldValue.ViaGuideID, nil
 }
 
-// ResetCode resets all changes to the "code" field.
-func (m *GuideMutation) ResetCode() {
-	m.code = nil
+// ResetViaGuideID resets all changes to the "via_guide_id" field.
+func (m *GuideMutation) ResetViaGuideID() {
+	m.via_guide_id = nil
 }
 
 // SetRecipient sets the "recipient" field.
@@ -218,22 +218,9 @@ func (m *GuideMutation) OldRecipient(ctx context.Context) (v string, err error) 
 	return oldValue.Recipient, nil
 }
 
-// ClearRecipient clears the value of the "recipient" field.
-func (m *GuideMutation) ClearRecipient() {
-	m.recipient = nil
-	m.clearedFields[guide.FieldRecipient] = struct{}{}
-}
-
-// RecipientCleared returns if the "recipient" field was cleared in this mutation.
-func (m *GuideMutation) RecipientCleared() bool {
-	_, ok := m.clearedFields[guide.FieldRecipient]
-	return ok
-}
-
 // ResetRecipient resets all changes to the "recipient" field.
 func (m *GuideMutation) ResetRecipient() {
 	m.recipient = nil
-	delete(m.clearedFields, guide.FieldRecipient)
 }
 
 // SetStatus sets the "status" field.
@@ -267,22 +254,45 @@ func (m *GuideMutation) OldStatus(ctx context.Context) (v string, err error) {
 	return oldValue.Status, nil
 }
 
-// ClearStatus clears the value of the "status" field.
-func (m *GuideMutation) ClearStatus() {
-	m.status = nil
-	m.clearedFields[guide.FieldStatus] = struct{}{}
-}
-
-// StatusCleared returns if the "status" field was cleared in this mutation.
-func (m *GuideMutation) StatusCleared() bool {
-	_, ok := m.clearedFields[guide.FieldStatus]
-	return ok
-}
-
 // ResetStatus resets all changes to the "status" field.
 func (m *GuideMutation) ResetStatus() {
 	m.status = nil
-	delete(m.clearedFields, guide.FieldStatus)
+}
+
+// SetOperatorID sets the "operator_id" field.
+func (m *GuideMutation) SetOperatorID(i int) {
+	m.operator = &i
+}
+
+// OperatorID returns the value of the "operator_id" field in the mutation.
+func (m *GuideMutation) OperatorID() (r int, exists bool) {
+	v := m.operator
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOperatorID returns the old "operator_id" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GuideMutation) OldOperatorID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOperatorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOperatorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOperatorID: %w", err)
+	}
+	return oldValue.OperatorID, nil
+}
+
+// ResetOperatorID resets all changes to the "operator_id" field.
+func (m *GuideMutation) ResetOperatorID() {
+	m.operator = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -357,27 +367,15 @@ func (m *GuideMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// SetOperatorID sets the "operator" edge to the Operator entity by id.
-func (m *GuideMutation) SetOperatorID(id int) {
-	m.operator = &id
-}
-
 // ClearOperator clears the "operator" edge to the Operator entity.
 func (m *GuideMutation) ClearOperator() {
 	m.clearedoperator = true
+	m.clearedFields[guide.FieldOperatorID] = struct{}{}
 }
 
 // OperatorCleared reports if the "operator" edge to the Operator entity was cleared.
 func (m *GuideMutation) OperatorCleared() bool {
 	return m.clearedoperator
-}
-
-// OperatorID returns the "operator" edge ID in the mutation.
-func (m *GuideMutation) OperatorID() (id int, exists bool) {
-	if m.operator != nil {
-		return *m.operator, true
-	}
-	return
 }
 
 // OperatorIDs returns the "operator" edge IDs in the mutation.
@@ -484,15 +482,18 @@ func (m *GuideMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GuideMutation) Fields() []string {
-	fields := make([]string, 0, 5)
-	if m.code != nil {
-		fields = append(fields, guide.FieldCode)
+	fields := make([]string, 0, 6)
+	if m.via_guide_id != nil {
+		fields = append(fields, guide.FieldViaGuideID)
 	}
 	if m.recipient != nil {
 		fields = append(fields, guide.FieldRecipient)
 	}
 	if m.status != nil {
 		fields = append(fields, guide.FieldStatus)
+	}
+	if m.operator != nil {
+		fields = append(fields, guide.FieldOperatorID)
 	}
 	if m.created_at != nil {
 		fields = append(fields, guide.FieldCreatedAt)
@@ -508,12 +509,14 @@ func (m *GuideMutation) Fields() []string {
 // schema.
 func (m *GuideMutation) Field(name string) (ent.Value, bool) {
 	switch name {
-	case guide.FieldCode:
-		return m.Code()
+	case guide.FieldViaGuideID:
+		return m.ViaGuideID()
 	case guide.FieldRecipient:
 		return m.Recipient()
 	case guide.FieldStatus:
 		return m.Status()
+	case guide.FieldOperatorID:
+		return m.OperatorID()
 	case guide.FieldCreatedAt:
 		return m.CreatedAt()
 	case guide.FieldUpdatedAt:
@@ -527,12 +530,14 @@ func (m *GuideMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *GuideMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
-	case guide.FieldCode:
-		return m.OldCode(ctx)
+	case guide.FieldViaGuideID:
+		return m.OldViaGuideID(ctx)
 	case guide.FieldRecipient:
 		return m.OldRecipient(ctx)
 	case guide.FieldStatus:
 		return m.OldStatus(ctx)
+	case guide.FieldOperatorID:
+		return m.OldOperatorID(ctx)
 	case guide.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	case guide.FieldUpdatedAt:
@@ -546,12 +551,12 @@ func (m *GuideMutation) OldField(ctx context.Context, name string) (ent.Value, e
 // type.
 func (m *GuideMutation) SetField(name string, value ent.Value) error {
 	switch name {
-	case guide.FieldCode:
+	case guide.FieldViaGuideID:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
-		m.SetCode(v)
+		m.SetViaGuideID(v)
 		return nil
 	case guide.FieldRecipient:
 		v, ok := value.(string)
@@ -566,6 +571,13 @@ func (m *GuideMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case guide.FieldOperatorID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOperatorID(v)
 		return nil
 	case guide.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -588,13 +600,16 @@ func (m *GuideMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *GuideMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *GuideMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -610,14 +625,7 @@ func (m *GuideMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *GuideMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(guide.FieldRecipient) {
-		fields = append(fields, guide.FieldRecipient)
-	}
-	if m.FieldCleared(guide.FieldStatus) {
-		fields = append(fields, guide.FieldStatus)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -630,14 +638,6 @@ func (m *GuideMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *GuideMutation) ClearField(name string) error {
-	switch name {
-	case guide.FieldRecipient:
-		m.ClearRecipient()
-		return nil
-	case guide.FieldStatus:
-		m.ClearStatus()
-		return nil
-	}
 	return fmt.Errorf("unknown Guide nullable field %s", name)
 }
 
@@ -645,14 +645,17 @@ func (m *GuideMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *GuideMutation) ResetField(name string) error {
 	switch name {
-	case guide.FieldCode:
-		m.ResetCode()
+	case guide.FieldViaGuideID:
+		m.ResetViaGuideID()
 		return nil
 	case guide.FieldRecipient:
 		m.ResetRecipient()
 		return nil
 	case guide.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case guide.FieldOperatorID:
+		m.ResetOperatorID()
 		return nil
 	case guide.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -882,6 +885,42 @@ func (m *GuideHistoryMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetGuideID sets the "guide_id" field.
+func (m *GuideHistoryMutation) SetGuideID(i int) {
+	m.guide = &i
+}
+
+// GuideID returns the value of the "guide_id" field in the mutation.
+func (m *GuideHistoryMutation) GuideID() (r int, exists bool) {
+	v := m.guide
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGuideID returns the old "guide_id" field's value of the GuideHistory entity.
+// If the GuideHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GuideHistoryMutation) OldGuideID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGuideID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGuideID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGuideID: %w", err)
+	}
+	return oldValue.GuideID, nil
+}
+
+// ResetGuideID resets all changes to the "guide_id" field.
+func (m *GuideHistoryMutation) ResetGuideID() {
+	m.guide = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *GuideHistoryMutation) SetStatus(s string) {
 	m.status = &s
@@ -913,22 +952,45 @@ func (m *GuideHistoryMutation) OldStatus(ctx context.Context) (v string, err err
 	return oldValue.Status, nil
 }
 
-// ClearStatus clears the value of the "status" field.
-func (m *GuideHistoryMutation) ClearStatus() {
-	m.status = nil
-	m.clearedFields[guidehistory.FieldStatus] = struct{}{}
-}
-
-// StatusCleared returns if the "status" field was cleared in this mutation.
-func (m *GuideHistoryMutation) StatusCleared() bool {
-	_, ok := m.clearedFields[guidehistory.FieldStatus]
-	return ok
-}
-
 // ResetStatus resets all changes to the "status" field.
 func (m *GuideHistoryMutation) ResetStatus() {
 	m.status = nil
-	delete(m.clearedFields, guidehistory.FieldStatus)
+}
+
+// SetOperatorID sets the "operator_id" field.
+func (m *GuideHistoryMutation) SetOperatorID(i int) {
+	m.operator = &i
+}
+
+// OperatorID returns the value of the "operator_id" field in the mutation.
+func (m *GuideHistoryMutation) OperatorID() (r int, exists bool) {
+	v := m.operator
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldOperatorID returns the old "operator_id" field's value of the GuideHistory entity.
+// If the GuideHistory object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GuideHistoryMutation) OldOperatorID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldOperatorID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldOperatorID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldOperatorID: %w", err)
+	}
+	return oldValue.OperatorID, nil
+}
+
+// ResetOperatorID resets all changes to the "operator_id" field.
+func (m *GuideHistoryMutation) ResetOperatorID() {
+	m.operator = nil
 }
 
 // SetCreatedAt sets the "created_at" field.
@@ -967,27 +1029,15 @@ func (m *GuideHistoryMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
-// SetGuideID sets the "guide" edge to the Guide entity by id.
-func (m *GuideHistoryMutation) SetGuideID(id int) {
-	m.guide = &id
-}
-
 // ClearGuide clears the "guide" edge to the Guide entity.
 func (m *GuideHistoryMutation) ClearGuide() {
 	m.clearedguide = true
+	m.clearedFields[guidehistory.FieldGuideID] = struct{}{}
 }
 
 // GuideCleared reports if the "guide" edge to the Guide entity was cleared.
 func (m *GuideHistoryMutation) GuideCleared() bool {
 	return m.clearedguide
-}
-
-// GuideID returns the "guide" edge ID in the mutation.
-func (m *GuideHistoryMutation) GuideID() (id int, exists bool) {
-	if m.guide != nil {
-		return *m.guide, true
-	}
-	return
 }
 
 // GuideIDs returns the "guide" edge IDs in the mutation.
@@ -1006,27 +1056,15 @@ func (m *GuideHistoryMutation) ResetGuide() {
 	m.clearedguide = false
 }
 
-// SetOperatorID sets the "operator" edge to the Operator entity by id.
-func (m *GuideHistoryMutation) SetOperatorID(id int) {
-	m.operator = &id
-}
-
 // ClearOperator clears the "operator" edge to the Operator entity.
 func (m *GuideHistoryMutation) ClearOperator() {
 	m.clearedoperator = true
+	m.clearedFields[guidehistory.FieldOperatorID] = struct{}{}
 }
 
 // OperatorCleared reports if the "operator" edge to the Operator entity was cleared.
 func (m *GuideHistoryMutation) OperatorCleared() bool {
 	return m.clearedoperator
-}
-
-// OperatorID returns the "operator" edge ID in the mutation.
-func (m *GuideHistoryMutation) OperatorID() (id int, exists bool) {
-	if m.operator != nil {
-		return *m.operator, true
-	}
-	return
 }
 
 // OperatorIDs returns the "operator" edge IDs in the mutation.
@@ -1079,9 +1117,15 @@ func (m *GuideHistoryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GuideHistoryMutation) Fields() []string {
-	fields := make([]string, 0, 2)
+	fields := make([]string, 0, 4)
+	if m.guide != nil {
+		fields = append(fields, guidehistory.FieldGuideID)
+	}
 	if m.status != nil {
 		fields = append(fields, guidehistory.FieldStatus)
+	}
+	if m.operator != nil {
+		fields = append(fields, guidehistory.FieldOperatorID)
 	}
 	if m.created_at != nil {
 		fields = append(fields, guidehistory.FieldCreatedAt)
@@ -1094,8 +1138,12 @@ func (m *GuideHistoryMutation) Fields() []string {
 // schema.
 func (m *GuideHistoryMutation) Field(name string) (ent.Value, bool) {
 	switch name {
+	case guidehistory.FieldGuideID:
+		return m.GuideID()
 	case guidehistory.FieldStatus:
 		return m.Status()
+	case guidehistory.FieldOperatorID:
+		return m.OperatorID()
 	case guidehistory.FieldCreatedAt:
 		return m.CreatedAt()
 	}
@@ -1107,8 +1155,12 @@ func (m *GuideHistoryMutation) Field(name string) (ent.Value, bool) {
 // database failed.
 func (m *GuideHistoryMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
 	switch name {
+	case guidehistory.FieldGuideID:
+		return m.OldGuideID(ctx)
 	case guidehistory.FieldStatus:
 		return m.OldStatus(ctx)
+	case guidehistory.FieldOperatorID:
+		return m.OldOperatorID(ctx)
 	case guidehistory.FieldCreatedAt:
 		return m.OldCreatedAt(ctx)
 	}
@@ -1120,12 +1172,26 @@ func (m *GuideHistoryMutation) OldField(ctx context.Context, name string) (ent.V
 // type.
 func (m *GuideHistoryMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case guidehistory.FieldGuideID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGuideID(v)
+		return nil
 	case guidehistory.FieldStatus:
 		v, ok := value.(string)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case guidehistory.FieldOperatorID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetOperatorID(v)
 		return nil
 	case guidehistory.FieldCreatedAt:
 		v, ok := value.(time.Time)
@@ -1141,13 +1207,16 @@ func (m *GuideHistoryMutation) SetField(name string, value ent.Value) error {
 // AddedFields returns all numeric fields that were incremented/decremented during
 // this mutation.
 func (m *GuideHistoryMutation) AddedFields() []string {
-	return nil
+	var fields []string
+	return fields
 }
 
 // AddedField returns the numeric value that was incremented/decremented on a field
 // with the given name. The second boolean return value indicates that this field
 // was not set, or was not defined in the schema.
 func (m *GuideHistoryMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	}
 	return nil, false
 }
 
@@ -1163,11 +1232,7 @@ func (m *GuideHistoryMutation) AddField(name string, value ent.Value) error {
 // ClearedFields returns all nullable fields that were cleared during this
 // mutation.
 func (m *GuideHistoryMutation) ClearedFields() []string {
-	var fields []string
-	if m.FieldCleared(guidehistory.FieldStatus) {
-		fields = append(fields, guidehistory.FieldStatus)
-	}
-	return fields
+	return nil
 }
 
 // FieldCleared returns a boolean indicating if a field with the given name was
@@ -1180,11 +1245,6 @@ func (m *GuideHistoryMutation) FieldCleared(name string) bool {
 // ClearField clears the value of the field with the given name. It returns an
 // error if the field is not defined in the schema.
 func (m *GuideHistoryMutation) ClearField(name string) error {
-	switch name {
-	case guidehistory.FieldStatus:
-		m.ClearStatus()
-		return nil
-	}
 	return fmt.Errorf("unknown GuideHistory nullable field %s", name)
 }
 
@@ -1192,8 +1252,14 @@ func (m *GuideHistoryMutation) ClearField(name string) error {
 // It returns an error if the field is not defined in the schema.
 func (m *GuideHistoryMutation) ResetField(name string) error {
 	switch name {
+	case guidehistory.FieldGuideID:
+		m.ResetGuideID()
+		return nil
 	case guidehistory.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case guidehistory.FieldOperatorID:
+		m.ResetOperatorID()
 		return nil
 	case guidehistory.FieldCreatedAt:
 		m.ResetCreatedAt()
@@ -1305,9 +1371,9 @@ type OperatorMutation struct {
 	created_at           *time.Time
 	updated_at           *time.Time
 	clearedFields        map[string]struct{}
-	guide                map[int]struct{}
-	removedguide         map[int]struct{}
-	clearedguide         bool
+	guides               map[int]struct{}
+	removedguides        map[int]struct{}
+	clearedguides        bool
 	guide_history        map[int]struct{}
 	removedguide_history map[int]struct{}
 	clearedguide_history bool
@@ -1558,58 +1624,58 @@ func (m *OperatorMutation) ResetUpdatedAt() {
 	m.updated_at = nil
 }
 
-// AddGuideIDs adds the "guide" edge to the Guide entity by ids.
+// AddGuideIDs adds the "guides" edge to the Guide entity by ids.
 func (m *OperatorMutation) AddGuideIDs(ids ...int) {
-	if m.guide == nil {
-		m.guide = make(map[int]struct{})
+	if m.guides == nil {
+		m.guides = make(map[int]struct{})
 	}
 	for i := range ids {
-		m.guide[ids[i]] = struct{}{}
+		m.guides[ids[i]] = struct{}{}
 	}
 }
 
-// ClearGuide clears the "guide" edge to the Guide entity.
-func (m *OperatorMutation) ClearGuide() {
-	m.clearedguide = true
+// ClearGuides clears the "guides" edge to the Guide entity.
+func (m *OperatorMutation) ClearGuides() {
+	m.clearedguides = true
 }
 
-// GuideCleared reports if the "guide" edge to the Guide entity was cleared.
-func (m *OperatorMutation) GuideCleared() bool {
-	return m.clearedguide
+// GuidesCleared reports if the "guides" edge to the Guide entity was cleared.
+func (m *OperatorMutation) GuidesCleared() bool {
+	return m.clearedguides
 }
 
-// RemoveGuideIDs removes the "guide" edge to the Guide entity by IDs.
+// RemoveGuideIDs removes the "guides" edge to the Guide entity by IDs.
 func (m *OperatorMutation) RemoveGuideIDs(ids ...int) {
-	if m.removedguide == nil {
-		m.removedguide = make(map[int]struct{})
+	if m.removedguides == nil {
+		m.removedguides = make(map[int]struct{})
 	}
 	for i := range ids {
-		delete(m.guide, ids[i])
-		m.removedguide[ids[i]] = struct{}{}
+		delete(m.guides, ids[i])
+		m.removedguides[ids[i]] = struct{}{}
 	}
 }
 
-// RemovedGuide returns the removed IDs of the "guide" edge to the Guide entity.
-func (m *OperatorMutation) RemovedGuideIDs() (ids []int) {
-	for id := range m.removedguide {
+// RemovedGuides returns the removed IDs of the "guides" edge to the Guide entity.
+func (m *OperatorMutation) RemovedGuidesIDs() (ids []int) {
+	for id := range m.removedguides {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// GuideIDs returns the "guide" edge IDs in the mutation.
-func (m *OperatorMutation) GuideIDs() (ids []int) {
-	for id := range m.guide {
+// GuidesIDs returns the "guides" edge IDs in the mutation.
+func (m *OperatorMutation) GuidesIDs() (ids []int) {
+	for id := range m.guides {
 		ids = append(ids, id)
 	}
 	return
 }
 
-// ResetGuide resets all changes to the "guide" edge.
-func (m *OperatorMutation) ResetGuide() {
-	m.guide = nil
-	m.clearedguide = false
-	m.removedguide = nil
+// ResetGuides resets all changes to the "guides" edge.
+func (m *OperatorMutation) ResetGuides() {
+	m.guides = nil
+	m.clearedguides = false
+	m.removedguides = nil
 }
 
 // AddGuideHistoryIDs adds the "guide_history" edge to the GuideHistory entity by ids.
@@ -1851,8 +1917,8 @@ func (m *OperatorMutation) ResetField(name string) error {
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *OperatorMutation) AddedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.guide != nil {
-		edges = append(edges, operator.EdgeGuide)
+	if m.guides != nil {
+		edges = append(edges, operator.EdgeGuides)
 	}
 	if m.guide_history != nil {
 		edges = append(edges, operator.EdgeGuideHistory)
@@ -1864,9 +1930,9 @@ func (m *OperatorMutation) AddedEdges() []string {
 // name in this mutation.
 func (m *OperatorMutation) AddedIDs(name string) []ent.Value {
 	switch name {
-	case operator.EdgeGuide:
-		ids := make([]ent.Value, 0, len(m.guide))
-		for id := range m.guide {
+	case operator.EdgeGuides:
+		ids := make([]ent.Value, 0, len(m.guides))
+		for id := range m.guides {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1883,8 +1949,8 @@ func (m *OperatorMutation) AddedIDs(name string) []ent.Value {
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *OperatorMutation) RemovedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.removedguide != nil {
-		edges = append(edges, operator.EdgeGuide)
+	if m.removedguides != nil {
+		edges = append(edges, operator.EdgeGuides)
 	}
 	if m.removedguide_history != nil {
 		edges = append(edges, operator.EdgeGuideHistory)
@@ -1896,9 +1962,9 @@ func (m *OperatorMutation) RemovedEdges() []string {
 // the given name in this mutation.
 func (m *OperatorMutation) RemovedIDs(name string) []ent.Value {
 	switch name {
-	case operator.EdgeGuide:
-		ids := make([]ent.Value, 0, len(m.removedguide))
-		for id := range m.removedguide {
+	case operator.EdgeGuides:
+		ids := make([]ent.Value, 0, len(m.removedguides))
+		for id := range m.removedguides {
 			ids = append(ids, id)
 		}
 		return ids
@@ -1915,8 +1981,8 @@ func (m *OperatorMutation) RemovedIDs(name string) []ent.Value {
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *OperatorMutation) ClearedEdges() []string {
 	edges := make([]string, 0, 2)
-	if m.clearedguide {
-		edges = append(edges, operator.EdgeGuide)
+	if m.clearedguides {
+		edges = append(edges, operator.EdgeGuides)
 	}
 	if m.clearedguide_history {
 		edges = append(edges, operator.EdgeGuideHistory)
@@ -1928,8 +1994,8 @@ func (m *OperatorMutation) ClearedEdges() []string {
 // was cleared in this mutation.
 func (m *OperatorMutation) EdgeCleared(name string) bool {
 	switch name {
-	case operator.EdgeGuide:
-		return m.clearedguide
+	case operator.EdgeGuides:
+		return m.clearedguides
 	case operator.EdgeGuideHistory:
 		return m.clearedguide_history
 	}
@@ -1948,8 +2014,8 @@ func (m *OperatorMutation) ClearEdge(name string) error {
 // It returns an error if the edge is not defined in the schema.
 func (m *OperatorMutation) ResetEdge(name string) error {
 	switch name {
-	case operator.EdgeGuide:
-		m.ResetGuide()
+	case operator.EdgeGuides:
+		m.ResetGuides()
 		return nil
 	case operator.EdgeGuideHistory:
 		m.ResetGuideHistory()

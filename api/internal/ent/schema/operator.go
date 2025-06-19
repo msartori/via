@@ -16,17 +16,25 @@ type Operator struct {
 // Fields of the Operator.
 func (Operator) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("account").Unique().NotEmpty(),
-		field.Bool("enabled"),
-		field.Time("created_at").Default(time.Now),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
+		field.String("account").
+			Immutable().
+			NotEmpty().
+			MaxLen(200).
+			Unique(),
+		field.Bool("enabled").
+			Default(false),
+		field.Time("created_at").
+			Default(time.Now),
+		field.Time("updated_at").
+			Default(time.Now).
+			UpdateDefault(time.Now),
 	}
 }
 
-// Edges of the Operator.
+// In operator.go > Edges()
 func (Operator) Edges() []ent.Edge {
 	return []ent.Edge{
-		edge.To("guide", Guide.Type),
+		edge.To("guides", Guide.Type),
 		edge.To("guide_history", GuideHistory.Type),
 	}
 }

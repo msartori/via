@@ -19,16 +19,18 @@ type GuideHistory struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
+	// GuideID holds the value of the "guide_id" field.
+	GuideID int `json:"guide_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
+	// OperatorID holds the value of the "operator_id" field.
+	OperatorID int `json:"operator_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GuideHistoryQuery when eager-loading is set.
-	Edges                  GuideHistoryEdges `json:"edges"`
-	guide_history          *int
-	operator_guide_history *int
-	selectValues           sql.SelectValues
+	Edges        GuideHistoryEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // GuideHistoryEdges holds the relations/edges for other nodes in the graph.
@@ -69,16 +71,12 @@ func (*GuideHistory) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case guidehistory.FieldID:
+		case guidehistory.FieldID, guidehistory.FieldGuideID, guidehistory.FieldOperatorID:
 			values[i] = new(sql.NullInt64)
 		case guidehistory.FieldStatus:
 			values[i] = new(sql.NullString)
 		case guidehistory.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case guidehistory.ForeignKeys[0]: // guide_history
-			values[i] = new(sql.NullInt64)
-		case guidehistory.ForeignKeys[1]: // operator_guide_history
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -100,31 +98,29 @@ func (gh *GuideHistory) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			gh.ID = int(value.Int64)
+		case guidehistory.FieldGuideID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field guide_id", values[i])
+			} else if value.Valid {
+				gh.GuideID = int(value.Int64)
+			}
 		case guidehistory.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				gh.Status = value.String
 			}
+		case guidehistory.FieldOperatorID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field operator_id", values[i])
+			} else if value.Valid {
+				gh.OperatorID = int(value.Int64)
+			}
 		case guidehistory.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
 				gh.CreatedAt = value.Time
-			}
-		case guidehistory.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field guide_history", value)
-			} else if value.Valid {
-				gh.guide_history = new(int)
-				*gh.guide_history = int(value.Int64)
-			}
-		case guidehistory.ForeignKeys[1]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field operator_guide_history", value)
-			} else if value.Valid {
-				gh.operator_guide_history = new(int)
-				*gh.operator_guide_history = int(value.Int64)
 			}
 		default:
 			gh.selectValues.Set(columns[i], values[i])
@@ -172,8 +168,14 @@ func (gh *GuideHistory) String() string {
 	var builder strings.Builder
 	builder.WriteString("GuideHistory(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", gh.ID))
+	builder.WriteString("guide_id=")
+	builder.WriteString(fmt.Sprintf("%v", gh.GuideID))
+	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(gh.Status)
+	builder.WriteString(", ")
+	builder.WriteString("operator_id=")
+	builder.WriteString(fmt.Sprintf("%v", gh.OperatorID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(gh.CreatedAt.Format(time.ANSIC))

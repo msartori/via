@@ -55,9 +55,9 @@ func IDLTE(id int) predicate.Guide {
 	return predicate.Guide(sql.FieldLTE(FieldID, id))
 }
 
-// Code applies equality check predicate on the "code" field. It's identical to CodeEQ.
-func Code(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldEQ(FieldCode, v))
+// ViaGuideID applies equality check predicate on the "via_guide_id" field. It's identical to ViaGuideIDEQ.
+func ViaGuideID(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldViaGuideID, v))
 }
 
 // Recipient applies equality check predicate on the "recipient" field. It's identical to RecipientEQ.
@@ -70,6 +70,11 @@ func Status(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldEQ(FieldStatus, v))
 }
 
+// OperatorID applies equality check predicate on the "operator_id" field. It's identical to OperatorIDEQ.
+func OperatorID(v int) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldOperatorID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Guide {
 	return predicate.Guide(sql.FieldEQ(FieldCreatedAt, v))
@@ -80,69 +85,69 @@ func UpdatedAt(v time.Time) predicate.Guide {
 	return predicate.Guide(sql.FieldEQ(FieldUpdatedAt, v))
 }
 
-// CodeEQ applies the EQ predicate on the "code" field.
-func CodeEQ(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldEQ(FieldCode, v))
+// ViaGuideIDEQ applies the EQ predicate on the "via_guide_id" field.
+func ViaGuideIDEQ(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldViaGuideID, v))
 }
 
-// CodeNEQ applies the NEQ predicate on the "code" field.
-func CodeNEQ(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldNEQ(FieldCode, v))
+// ViaGuideIDNEQ applies the NEQ predicate on the "via_guide_id" field.
+func ViaGuideIDNEQ(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldNEQ(FieldViaGuideID, v))
 }
 
-// CodeIn applies the In predicate on the "code" field.
-func CodeIn(vs ...string) predicate.Guide {
-	return predicate.Guide(sql.FieldIn(FieldCode, vs...))
+// ViaGuideIDIn applies the In predicate on the "via_guide_id" field.
+func ViaGuideIDIn(vs ...string) predicate.Guide {
+	return predicate.Guide(sql.FieldIn(FieldViaGuideID, vs...))
 }
 
-// CodeNotIn applies the NotIn predicate on the "code" field.
-func CodeNotIn(vs ...string) predicate.Guide {
-	return predicate.Guide(sql.FieldNotIn(FieldCode, vs...))
+// ViaGuideIDNotIn applies the NotIn predicate on the "via_guide_id" field.
+func ViaGuideIDNotIn(vs ...string) predicate.Guide {
+	return predicate.Guide(sql.FieldNotIn(FieldViaGuideID, vs...))
 }
 
-// CodeGT applies the GT predicate on the "code" field.
-func CodeGT(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldGT(FieldCode, v))
+// ViaGuideIDGT applies the GT predicate on the "via_guide_id" field.
+func ViaGuideIDGT(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldGT(FieldViaGuideID, v))
 }
 
-// CodeGTE applies the GTE predicate on the "code" field.
-func CodeGTE(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldGTE(FieldCode, v))
+// ViaGuideIDGTE applies the GTE predicate on the "via_guide_id" field.
+func ViaGuideIDGTE(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldGTE(FieldViaGuideID, v))
 }
 
-// CodeLT applies the LT predicate on the "code" field.
-func CodeLT(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldLT(FieldCode, v))
+// ViaGuideIDLT applies the LT predicate on the "via_guide_id" field.
+func ViaGuideIDLT(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldLT(FieldViaGuideID, v))
 }
 
-// CodeLTE applies the LTE predicate on the "code" field.
-func CodeLTE(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldLTE(FieldCode, v))
+// ViaGuideIDLTE applies the LTE predicate on the "via_guide_id" field.
+func ViaGuideIDLTE(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldLTE(FieldViaGuideID, v))
 }
 
-// CodeContains applies the Contains predicate on the "code" field.
-func CodeContains(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldContains(FieldCode, v))
+// ViaGuideIDContains applies the Contains predicate on the "via_guide_id" field.
+func ViaGuideIDContains(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldContains(FieldViaGuideID, v))
 }
 
-// CodeHasPrefix applies the HasPrefix predicate on the "code" field.
-func CodeHasPrefix(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldHasPrefix(FieldCode, v))
+// ViaGuideIDHasPrefix applies the HasPrefix predicate on the "via_guide_id" field.
+func ViaGuideIDHasPrefix(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldHasPrefix(FieldViaGuideID, v))
 }
 
-// CodeHasSuffix applies the HasSuffix predicate on the "code" field.
-func CodeHasSuffix(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldHasSuffix(FieldCode, v))
+// ViaGuideIDHasSuffix applies the HasSuffix predicate on the "via_guide_id" field.
+func ViaGuideIDHasSuffix(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldHasSuffix(FieldViaGuideID, v))
 }
 
-// CodeEqualFold applies the EqualFold predicate on the "code" field.
-func CodeEqualFold(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldEqualFold(FieldCode, v))
+// ViaGuideIDEqualFold applies the EqualFold predicate on the "via_guide_id" field.
+func ViaGuideIDEqualFold(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEqualFold(FieldViaGuideID, v))
 }
 
-// CodeContainsFold applies the ContainsFold predicate on the "code" field.
-func CodeContainsFold(v string) predicate.Guide {
-	return predicate.Guide(sql.FieldContainsFold(FieldCode, v))
+// ViaGuideIDContainsFold applies the ContainsFold predicate on the "via_guide_id" field.
+func ViaGuideIDContainsFold(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldContainsFold(FieldViaGuideID, v))
 }
 
 // RecipientEQ applies the EQ predicate on the "recipient" field.
@@ -198,16 +203,6 @@ func RecipientHasPrefix(v string) predicate.Guide {
 // RecipientHasSuffix applies the HasSuffix predicate on the "recipient" field.
 func RecipientHasSuffix(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldHasSuffix(FieldRecipient, v))
-}
-
-// RecipientIsNil applies the IsNil predicate on the "recipient" field.
-func RecipientIsNil() predicate.Guide {
-	return predicate.Guide(sql.FieldIsNull(FieldRecipient))
-}
-
-// RecipientNotNil applies the NotNil predicate on the "recipient" field.
-func RecipientNotNil() predicate.Guide {
-	return predicate.Guide(sql.FieldNotNull(FieldRecipient))
 }
 
 // RecipientEqualFold applies the EqualFold predicate on the "recipient" field.
@@ -275,16 +270,6 @@ func StatusHasSuffix(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldHasSuffix(FieldStatus, v))
 }
 
-// StatusIsNil applies the IsNil predicate on the "status" field.
-func StatusIsNil() predicate.Guide {
-	return predicate.Guide(sql.FieldIsNull(FieldStatus))
-}
-
-// StatusNotNil applies the NotNil predicate on the "status" field.
-func StatusNotNil() predicate.Guide {
-	return predicate.Guide(sql.FieldNotNull(FieldStatus))
-}
-
 // StatusEqualFold applies the EqualFold predicate on the "status" field.
 func StatusEqualFold(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldEqualFold(FieldStatus, v))
@@ -293,6 +278,26 @@ func StatusEqualFold(v string) predicate.Guide {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// OperatorIDEQ applies the EQ predicate on the "operator_id" field.
+func OperatorIDEQ(v int) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldOperatorID, v))
+}
+
+// OperatorIDNEQ applies the NEQ predicate on the "operator_id" field.
+func OperatorIDNEQ(v int) predicate.Guide {
+	return predicate.Guide(sql.FieldNEQ(FieldOperatorID, v))
+}
+
+// OperatorIDIn applies the In predicate on the "operator_id" field.
+func OperatorIDIn(vs ...int) predicate.Guide {
+	return predicate.Guide(sql.FieldIn(FieldOperatorID, vs...))
+}
+
+// OperatorIDNotIn applies the NotIn predicate on the "operator_id" field.
+func OperatorIDNotIn(vs ...int) predicate.Guide {
+	return predicate.Guide(sql.FieldNotIn(FieldOperatorID, vs...))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

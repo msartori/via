@@ -7,85 +7,113 @@ import (
 )
 
 func TestGetWithLang(t *testing.T) {
-	t.Run("should return spanish message without args", func(t *testing.T) {
-		got := GetWithLang("es", MsgGuideRequired)
-		want := "El código de guía es requerido."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
+	tests := []struct {
+		name     string
+		lang     string
+		key      string
+		args     []interface{}
+		expected string
+	}{
+		{
+			name:     "known key in es",
+			lang:     "es",
+			key:      MsgGuideRequired,
+			expected: "El código de guía es requerido.",
+		},
+		{
+			name:     "known key in en",
+			lang:     "en",
+			key:      MsgRequestTimeout,
+			expected: "Request timeout.",
+		},
+		{
+			name:     "unknown key in known lang",
+			lang:     "es",
+			key:      "unknown_key",
+			expected: "unknown_key",
+		},
+		{
+			name:     "unknown lang",
+			lang:     "fr",
+			key:      MsgGuideRequired,
+			expected: "guide_required",
+		},
+		{
+			name:     "format string with args",
+			lang:     "es",
+			key:      MsgInternalServerError,
+			args:     []any{"extra"},
+			expected: "Error interno del servidor.", // still matches, no placeholder
+		},
+	}
 
-	t.Run("should return spanish message with args", func(t *testing.T) {
-		got := GetWithLang("es", MsgOtherBranch, "Rosario")
-		want := "La guía solicitada corresponde a la sucursal Rosario."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
-
-	t.Run("should return english message", func(t *testing.T) {
-		got := GetWithLang("en", MsgRequestTimeout)
-		want := "Request timeout."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
-
-	t.Run("should fallback to key if lang unknown", func(t *testing.T) {
-		got := GetWithLang("fr", MsgGuideRequired)
-		if got != MsgGuideRequired {
-			t.Errorf("expected fallback key %q, got %q", MsgGuideRequired, got)
-		}
-	})
-
-	t.Run("should fallback to key if key unknown", func(t *testing.T) {
-		got := GetWithLang("es", "nonexistent_key")
-		if got != "nonexistent_key" {
-			t.Errorf("expected fallback to key, got %q", got)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetWithLang(tt.lang, tt.key, tt.args...)
+			if got != tt.expected {
+				t.Errorf("expected '%s', got '%s'", tt.expected, got)
+			}
+		})
+	}
 }
 
 func TestGet(t *testing.T) {
-	t.Run("should return message based on Accept-Language header", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Accept-Language", "es")
+	tests := []struct {
+		name     string
+		lang     string
+		key      string
+		args     []interface{}
+		expected string
+	}{
+		{
+			name:     "from header - es",
+			lang:     "es",
+			key:      MsgGuideInvalid,
+			expected: "El código de guía es inválido.",
+		},
+		{
+			name:     "from header - en",
+			lang:     "en",
+			key:      MsgRequestCanceledByClient,
+			expected: "Request canceled by client.",
+		},
+		{
+			name:     "missing header",
+			lang:     "", // no Accept-Language
+			key:      MsgGuideNotFound,
+			expected: "Guía no econtrada.",
+		},
+		{
+			name:     "unknown key",
+			lang:     "es",
+			key:      "foo",
+			expected: "foo",
+		},
+		{
+			name:     "unknown language",
+			lang:     "de",
+			key:      MsgRequestTimeout,
+			expected: "request_timeout",
+		},
+		{
+			name:     "format string with args",
+			lang:     "en",
+			key:      MsgUnexpectedContextError,
+			args:     []interface{}{"ignored"},
+			expected: "Unexpected context error.",
+		},
+	}
 
-		got := Get(req, MsgDelivered)
-		want := "La guía solicitada ya se ha entregado."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
-
-	t.Run("should fallback to es if header missing", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-
-		got := Get(req, MsgWithdrawAvailable)
-		want := "La guía solicitada está disponible para su retiro."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
-
-	t.Run("should format with args", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Accept-Language", "es")
-
-		got := Get(req, MsgOtherBranch, "Bahía Blanca")
-		want := "La guía solicitada corresponde a la sucursal Bahía Blanca."
-		if got != want {
-			t.Errorf("expected %q, got %q", want, got)
-		}
-	})
-
-	t.Run("should fallback to key if not found", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.Header.Set("Accept-Language", "es")
-
-		got := Get(req, "nonexistent_key")
-		if got != "nonexistent_key" {
-			t.Errorf("expected fallback key, got %q", got)
-		}
-	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, "/", nil)
+			if tt.lang != "" {
+				req.Header.Set("Accept-Language", tt.lang)
+			}
+			got := Get(req, tt.key, tt.args...)
+			if got != tt.expected {
+				t.Errorf("expected '%s', got '%s'", tt.expected, got)
+			}
+		})
+	}
 }

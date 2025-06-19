@@ -3,10 +3,13 @@ import { ref, computed, onMounted } from 'vue';
 import { getGuide } from '../services/api';
 
 const code = ref('');
-const result = ref(null);
-const message = ref('');
+//const result = ref(null);
+const withdrawMessage = ref(null);
 const error = ref('');
+const requestId = ref('');
 const searching = ref(false);
+const enabledToWithdraw = ref(false);
+const inProcess = ref(false)
 
 onMounted(() => {
   document.title = 'Vía Cargo - Consulta de Guía';
@@ -16,18 +19,21 @@ const codeValido = computed(() => /^\d{12}$/.test(code.value));
 
 async function search() {
   error.value = '';
-  result.value = null;
-  message.value = '';
+  requestId.value = '';
+  withdrawMessage.value = null;
   searching.value = true;
+  enabledToWithdraw.value = false;
 
   try {
     const response = await getGuide(code.value);
     const { status, content } = response;
     if (status === 200) {
-      result.value = content.data;
-      message.value = content.message;
+      //result.value = content.data;
+      withdrawMessage.value = content.data.withdrawMessage;
+      enabledToWithdraw.value = content.data.enabledToWithdraw;
     } else {
       error.value = content.message;
+      requestId.value = content.requestId;
     }
   } finally {
     searching.value = false;
@@ -35,12 +41,12 @@ async function search() {
 }
 
 function clearResult() {
-  result.value = null;
-  message.value = '';
+  withdrawMessage.value = null;
+  enabledToWithdraw.value = false;
   error.value = '';
 }
 function onInput(event) {
-  // Permitir solo dígitos y limitar a 12 caracteres
+  // Allow only digits and limit of 12 chars
   code.value = event.target.value.replace(/\D/g, '').slice(0, 12)
 }
 
@@ -49,6 +55,23 @@ function onEnter() {
     search()
   }
 }
+
+function accept() {
+  withdrawMessage.value = null
+  //TODO call api to put the guide in process 
+  //TODO manage error
+  if (enabledToWithdraw.value) {
+    inProcess.value = true
+    setTimeout(() => {
+      inProcess.value = false
+    }, 5000)
+  } 
+}
+
+function cancel() {
+  withdrawMessage.value = null
+}
+
 </script>
 
 <template>
@@ -64,7 +87,7 @@ function onEnter() {
     </div>
 
     <!-- Formulario -->
-    <div class="w-full max-w-md border border-green-300 bg-green-50 p-6 rounded shadow">
+    <div v-if="!withdrawMessage && !inProcess" class="w-full max-w-lg border border-green-300 bg-green-50 p-6 rounded shadow">
       <label class="block text-green-700 font-semibold mb-2 text-sm">Código de Guía</label>
       <input
         v-model="code"
@@ -94,17 +117,67 @@ function onEnter() {
     </div>
 
     <!-- Error -->
-    <div v-if="error" class="mt-4 text-red-600 font-medium max-w-md text-center">
-      {{ error }}
+    <div v-if="error" class="mt-4 text-red-600 font-medium max-w-lg text-center">
+      {{ error }} <br> req id: <b>{{ requestId }}</b>
     </div>
 
-    <!-- Result -->
-    <div v-if="result" class="mt-6 w-full max-w-md">
+    <!-- WithdrawMessage -->
+    <div v-if="withdrawMessage" class="mt-6 w-full max-w-lg text-justify">
       <div class="bg-white shadow-md p-4 border rounded">
-        <h3 class="font-semibold text-gray-700">Resultado:</h3>
-        <pre class="text-sm text-gray-800">{{ result }}</pre>
-        <p class="text-green-600 mt-2">{{ message }}</p>
+        <p :class="[
+            enabledToWithdraw ? 'text-green-600 mt-2' : 'text-red-600 mt-2'
+          ]" 
+        >
+          {{ withdrawMessage }}
+        </p>
+      </div>
+
+      <div class="flex justify-end space-x-4 mt-6">
+        <button
+          @click="accept"
+          :class="[
+            enabledToWithdraw ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700',
+            'text-white px-5 py-2 rounded disabled:opacity-50'
+          ]"
+        >
+          Aceptar
+        </button>
+        <button
+          v-if="enabledToWithdraw"
+          @click="cancel"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-5 py-2 rounded disabled:opacity-50"
+        >
+          Cancelar
+        </button>
       </div>
     </div>
+
+    <div v-if="inProcess" class="mt-6 w-full max-w-xl">
+      <div class="bg-white shadow-md p-4 border rounded flex items-center gap-3">
+        <svg
+          class="animate-spin h-5 w-5 text-green-600"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          />
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+          />
+        </svg>
+        <p class="text-green-600">
+          La guía está en proceso. Por favor aguarde a ser atendido.
+        </p>
+      </div>
+    </div>  
   </div>
 </template>

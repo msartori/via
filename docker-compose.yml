@@ -54,7 +54,7 @@ services:
     secrets:
       - db_password
     ports:
-      - "5432:5432"  # opcional si necesitas acceder desde el host
+      - "${DB_PORT}:5432"  # opcional si necesitas acceder desde el host
 
 networks:
   via-network:

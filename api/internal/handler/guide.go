@@ -1,11 +1,10 @@
 package handler
 
 import (
-	"encoding/json"
 	"net/http"
-	"regexp"
 	"via/internal/i18n"
 	"via/internal/log"
+	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	via_guide_provider "via/internal/provider/via/guide"
 	response "via/internal/response"
@@ -13,114 +12,71 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetGuideProcessByCode() http.Handler {
+func GetGuideByViaGuideId() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+
+		res := response.Response[model.Guide]{}
+		viaGuideId := chi.URLParam(r, "viaGuideId")
+
+		if ok := isValidViaGuideId(w, r, viaGuideId); !ok {
+			return
+		}
+
 		logger := log.Get()
-		logger.Info(r.Context(), "msg", "handler.GetGuideProcessByCode_start")
-		defer logger.Info(r.Context(), "msg", "handler.GetGuideByCode_end")
+		logger.WithLogFieldsInRequest(r, "via_guide_id", viaGuideId)
 
-		res := response.Response{}
-		code := chi.URLParam(r, "code")
+		guide, err := guide_provider.Get().GetGuideByViaGuideId(r.Context(), viaGuideId)
 
-		if code == "" {
-			logger.Warn(r.Context(), "msg", "missing guide code")
-			res.Message = i18n.Get(r, i18n.MsgGuideRequired)
-			response.WriteJSON(w, r, res, http.StatusBadRequest)
+		if ok := isFailedToFetchGuide(w, r, err); ok {
 			return
 		}
 
-		if match, _ := regexp.MatchString(`^\d{12}$`, code); !match {
-			logger.Warn(r.Context(), "msg", "invalid guide code")
-			res.Message = i18n.Get(r, i18n.MsgGuideInvalid)
-			response.WriteJSON(w, r, res, http.StatusBadRequest)
+		if ok := isGuideNotFound(w, r, guide.ViaGuideID); !ok {
 			return
 		}
 
-		logger.WithLogFieldsInRequest(r, "guide_code", code)
-
-		gp, err := guide_provider.Get().GetGuideByCode(r.Context(), code)
-		if err != nil {
-			logger.Error(r.Context(), err, "msg", "failed to fetch guide process")
-			res.Message = i18n.Get(r, i18n.MsgInternalServerError)
-			status := http.StatusInternalServerError
-			response.WriteJSON(w, r, res, status)
-			return
-		}
-
-		if gp.ID == 0 {
-			logger.Info(r.Context(), "msg", "guide not found")
-			res.Message = i18n.Get(r, i18n.MsgGuideNotFound)
-			status := http.StatusNotFound
-			response.WriteJSON(w, r, res, status)
-			return
-		}
-
-		res.Data = gp
+		res.Data = guide
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }
 
-type GuideInput struct {
-	Code string `json:"code"`
+type CreateGuideToWidthdrawInput struct {
+	ViaGuideId string `json:"viaGuideId"`
 }
 
-type GuideOutput struct {
+type CreateGuideToWidthdrawOutput struct {
 	ID int `json:"id"`
 }
 
-func CreateGuideProcess() http.Handler {
+func CreateGuideToWidthdraw() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := response.Response[*CreateGuideToWidthdrawOutput]{}
+		var input CreateGuideToWidthdrawInput
+
+		if ok := getJsonBody(w, r, &input); !ok {
+			return
+		}
+
+		if ok := isValidViaGuideId(w, r, input.ViaGuideId); !ok {
+			return
+		}
 		logger := log.Get()
-		logger.Info(r.Context(), "msg", "handler.GetGuideProcessByCode_start")
-		defer logger.Info(r.Context(), "msg", "handler.GetGuideByCode_end")
+		logger.WithLogFieldsInRequest(r, "via_guide_id", input.ViaGuideId)
 
-		res := response.Response{}
-		var input GuideInput
-		// Decode JSON body into struct
-		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-			logger.Warn(r.Context(), "msg", "missing guide code")
-			res.Message = i18n.Get(r, i18n.MsgGuideRequired)
-			response.WriteJSON(w, r, res, http.StatusBadRequest)
+		viaGuide, err := via_guide_provider.Get().GetGuide(r.Context(), input.ViaGuideId)
+
+		if ok := isFailedToFetchGuide(w, r, err); ok {
 			return
 		}
 
-		// Optional: Validate fields
-		if input.Code == "" {
-			logger.Warn(r.Context(), "msg", "missing guide code")
-			res.Message = i18n.Get(r, i18n.MsgGuideRequired)
-			response.WriteJSON(w, r, res, http.StatusBadRequest)
-			return
-		}
-
-		if match, _ := regexp.MatchString(`^\d{12}$`, input.Code); !match {
-			logger.Warn(r.Context(), "msg", "invalid guide code")
-			res.Message = i18n.Get(r, i18n.MsgGuideInvalid)
-			response.WriteJSON(w, r, res, http.StatusBadRequest)
-			return
-		}
-
-		guide, err := via_guide_provider.Get().GetGuide(r.Context(), input.Code)
-
-		if err != nil {
-			logger.Error(r.Context(), err, "msg", "failed to fetch guide")
-			res.Message = i18n.Get(r, i18n.MsgInternalServerError)
-			status := http.StatusInternalServerError
-			response.WriteJSON(w, r, res, status)
-			return
-		}
-
-		data := &GuideOutput{}
+		data := &CreateGuideToWidthdrawOutput{}
 		res.Data = data
 
-		if guide.ID == "" {
-			logger.Info(r.Context(), "msg", "guide not found")
-			res.Message = i18n.Get(r, i18n.MsgGuideNotFound)
-			status := http.StatusNotFound
-			response.WriteJSON(w, r, res, status)
+		if ok := isGuideNotFound(w, r, viaGuide.ID); !ok {
 			return
 		}
 
-		id, err := guide_provider.Get().CreateGuide(r.Context(), guide)
+		id, err := guide_provider.Get().CreateGuide(r.Context(), viaGuide)
 
 		if err != nil {
 			logger.Error(r.Context(), err, "msg", "failed to create guide")

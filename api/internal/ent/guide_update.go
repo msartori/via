@@ -30,40 +30,6 @@ func (gu *GuideUpdate) Where(ps ...predicate.Guide) *GuideUpdate {
 	return gu
 }
 
-// SetCode sets the "code" field.
-func (gu *GuideUpdate) SetCode(s string) *GuideUpdate {
-	gu.mutation.SetCode(s)
-	return gu
-}
-
-// SetNillableCode sets the "code" field if the given value is not nil.
-func (gu *GuideUpdate) SetNillableCode(s *string) *GuideUpdate {
-	if s != nil {
-		gu.SetCode(*s)
-	}
-	return gu
-}
-
-// SetRecipient sets the "recipient" field.
-func (gu *GuideUpdate) SetRecipient(s string) *GuideUpdate {
-	gu.mutation.SetRecipient(s)
-	return gu
-}
-
-// SetNillableRecipient sets the "recipient" field if the given value is not nil.
-func (gu *GuideUpdate) SetNillableRecipient(s *string) *GuideUpdate {
-	if s != nil {
-		gu.SetRecipient(*s)
-	}
-	return gu
-}
-
-// ClearRecipient clears the value of the "recipient" field.
-func (gu *GuideUpdate) ClearRecipient() *GuideUpdate {
-	gu.mutation.ClearRecipient()
-	return gu
-}
-
 // SetStatus sets the "status" field.
 func (gu *GuideUpdate) SetStatus(s string) *GuideUpdate {
 	gu.mutation.SetStatus(s)
@@ -78,9 +44,17 @@ func (gu *GuideUpdate) SetNillableStatus(s *string) *GuideUpdate {
 	return gu
 }
 
-// ClearStatus clears the value of the "status" field.
-func (gu *GuideUpdate) ClearStatus() *GuideUpdate {
-	gu.mutation.ClearStatus()
+// SetOperatorID sets the "operator_id" field.
+func (gu *GuideUpdate) SetOperatorID(i int) *GuideUpdate {
+	gu.mutation.SetOperatorID(i)
+	return gu
+}
+
+// SetNillableOperatorID sets the "operator_id" field if the given value is not nil.
+func (gu *GuideUpdate) SetNillableOperatorID(i *int) *GuideUpdate {
+	if i != nil {
+		gu.SetOperatorID(*i)
+	}
 	return gu
 }
 
@@ -101,20 +75,6 @@ func (gu *GuideUpdate) SetNillableCreatedAt(t *time.Time) *GuideUpdate {
 // SetUpdatedAt sets the "updated_at" field.
 func (gu *GuideUpdate) SetUpdatedAt(t time.Time) *GuideUpdate {
 	gu.mutation.SetUpdatedAt(t)
-	return gu
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (gu *GuideUpdate) SetOperatorID(id int) *GuideUpdate {
-	gu.mutation.SetOperatorID(id)
-	return gu
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (gu *GuideUpdate) SetNillableOperatorID(id *int) *GuideUpdate {
-	if id != nil {
-		gu = gu.SetOperatorID(*id)
-	}
 	return gu
 }
 
@@ -208,20 +168,13 @@ func (gu *GuideUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (gu *GuideUpdate) check() error {
-	if v, ok := gu.mutation.Code(); ok {
-		if err := guide.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Guide.code": %w`, err)}
-		}
-	}
-	if v, ok := gu.mutation.Recipient(); ok {
-		if err := guide.RecipientValidator(v); err != nil {
-			return &ValidationError{Name: "recipient", err: fmt.Errorf(`ent: validator failed for field "Guide.recipient": %w`, err)}
-		}
-	}
 	if v, ok := gu.mutation.Status(); ok {
 		if err := guide.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Guide.status": %w`, err)}
 		}
+	}
+	if gu.mutation.OperatorCleared() && len(gu.mutation.OperatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Guide.operator"`)
 	}
 	return nil
 }
@@ -238,20 +191,8 @@ func (gu *GuideUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := gu.mutation.Code(); ok {
-		_spec.SetField(guide.FieldCode, field.TypeString, value)
-	}
-	if value, ok := gu.mutation.Recipient(); ok {
-		_spec.SetField(guide.FieldRecipient, field.TypeString, value)
-	}
-	if gu.mutation.RecipientCleared() {
-		_spec.ClearField(guide.FieldRecipient, field.TypeString)
-	}
 	if value, ok := gu.mutation.Status(); ok {
 		_spec.SetField(guide.FieldStatus, field.TypeString, value)
-	}
-	if gu.mutation.StatusCleared() {
-		_spec.ClearField(guide.FieldStatus, field.TypeString)
 	}
 	if value, ok := gu.mutation.CreatedAt(); ok {
 		_spec.SetField(guide.FieldCreatedAt, field.TypeTime, value)
@@ -353,40 +294,6 @@ type GuideUpdateOne struct {
 	mutation *GuideMutation
 }
 
-// SetCode sets the "code" field.
-func (guo *GuideUpdateOne) SetCode(s string) *GuideUpdateOne {
-	guo.mutation.SetCode(s)
-	return guo
-}
-
-// SetNillableCode sets the "code" field if the given value is not nil.
-func (guo *GuideUpdateOne) SetNillableCode(s *string) *GuideUpdateOne {
-	if s != nil {
-		guo.SetCode(*s)
-	}
-	return guo
-}
-
-// SetRecipient sets the "recipient" field.
-func (guo *GuideUpdateOne) SetRecipient(s string) *GuideUpdateOne {
-	guo.mutation.SetRecipient(s)
-	return guo
-}
-
-// SetNillableRecipient sets the "recipient" field if the given value is not nil.
-func (guo *GuideUpdateOne) SetNillableRecipient(s *string) *GuideUpdateOne {
-	if s != nil {
-		guo.SetRecipient(*s)
-	}
-	return guo
-}
-
-// ClearRecipient clears the value of the "recipient" field.
-func (guo *GuideUpdateOne) ClearRecipient() *GuideUpdateOne {
-	guo.mutation.ClearRecipient()
-	return guo
-}
-
 // SetStatus sets the "status" field.
 func (guo *GuideUpdateOne) SetStatus(s string) *GuideUpdateOne {
 	guo.mutation.SetStatus(s)
@@ -401,9 +308,17 @@ func (guo *GuideUpdateOne) SetNillableStatus(s *string) *GuideUpdateOne {
 	return guo
 }
 
-// ClearStatus clears the value of the "status" field.
-func (guo *GuideUpdateOne) ClearStatus() *GuideUpdateOne {
-	guo.mutation.ClearStatus()
+// SetOperatorID sets the "operator_id" field.
+func (guo *GuideUpdateOne) SetOperatorID(i int) *GuideUpdateOne {
+	guo.mutation.SetOperatorID(i)
+	return guo
+}
+
+// SetNillableOperatorID sets the "operator_id" field if the given value is not nil.
+func (guo *GuideUpdateOne) SetNillableOperatorID(i *int) *GuideUpdateOne {
+	if i != nil {
+		guo.SetOperatorID(*i)
+	}
 	return guo
 }
 
@@ -424,20 +339,6 @@ func (guo *GuideUpdateOne) SetNillableCreatedAt(t *time.Time) *GuideUpdateOne {
 // SetUpdatedAt sets the "updated_at" field.
 func (guo *GuideUpdateOne) SetUpdatedAt(t time.Time) *GuideUpdateOne {
 	guo.mutation.SetUpdatedAt(t)
-	return guo
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (guo *GuideUpdateOne) SetOperatorID(id int) *GuideUpdateOne {
-	guo.mutation.SetOperatorID(id)
-	return guo
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (guo *GuideUpdateOne) SetNillableOperatorID(id *int) *GuideUpdateOne {
-	if id != nil {
-		guo = guo.SetOperatorID(*id)
-	}
 	return guo
 }
 
@@ -544,20 +445,13 @@ func (guo *GuideUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (guo *GuideUpdateOne) check() error {
-	if v, ok := guo.mutation.Code(); ok {
-		if err := guide.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Guide.code": %w`, err)}
-		}
-	}
-	if v, ok := guo.mutation.Recipient(); ok {
-		if err := guide.RecipientValidator(v); err != nil {
-			return &ValidationError{Name: "recipient", err: fmt.Errorf(`ent: validator failed for field "Guide.recipient": %w`, err)}
-		}
-	}
 	if v, ok := guo.mutation.Status(); ok {
 		if err := guide.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Guide.status": %w`, err)}
 		}
+	}
+	if guo.mutation.OperatorCleared() && len(guo.mutation.OperatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "Guide.operator"`)
 	}
 	return nil
 }
@@ -591,20 +485,8 @@ func (guo *GuideUpdateOne) sqlSave(ctx context.Context) (_node *Guide, err error
 			}
 		}
 	}
-	if value, ok := guo.mutation.Code(); ok {
-		_spec.SetField(guide.FieldCode, field.TypeString, value)
-	}
-	if value, ok := guo.mutation.Recipient(); ok {
-		_spec.SetField(guide.FieldRecipient, field.TypeString, value)
-	}
-	if guo.mutation.RecipientCleared() {
-		_spec.ClearField(guide.FieldRecipient, field.TypeString)
-	}
 	if value, ok := guo.mutation.Status(); ok {
 		_spec.SetField(guide.FieldStatus, field.TypeString, value)
-	}
-	if guo.mutation.StatusCleared() {
-		_spec.ClearField(guide.FieldStatus, field.TypeString)
 	}
 	if value, ok := guo.mutation.CreatedAt(); ok {
 		_spec.SetField(guide.FieldCreatedAt, field.TypeTime, value)

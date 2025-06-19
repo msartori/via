@@ -30,20 +30,6 @@ func (ou *OperatorUpdate) Where(ps ...predicate.Operator) *OperatorUpdate {
 	return ou
 }
 
-// SetAccount sets the "account" field.
-func (ou *OperatorUpdate) SetAccount(s string) *OperatorUpdate {
-	ou.mutation.SetAccount(s)
-	return ou
-}
-
-// SetNillableAccount sets the "account" field if the given value is not nil.
-func (ou *OperatorUpdate) SetNillableAccount(s *string) *OperatorUpdate {
-	if s != nil {
-		ou.SetAccount(*s)
-	}
-	return ou
-}
-
 // SetEnabled sets the "enabled" field.
 func (ou *OperatorUpdate) SetEnabled(b bool) *OperatorUpdate {
 	ou.mutation.SetEnabled(b)
@@ -78,14 +64,14 @@ func (ou *OperatorUpdate) SetUpdatedAt(t time.Time) *OperatorUpdate {
 	return ou
 }
 
-// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+// AddGuideIDs adds the "guides" edge to the Guide entity by IDs.
 func (ou *OperatorUpdate) AddGuideIDs(ids ...int) *OperatorUpdate {
 	ou.mutation.AddGuideIDs(ids...)
 	return ou
 }
 
-// AddGuide adds the "guide" edges to the Guide entity.
-func (ou *OperatorUpdate) AddGuide(g ...*Guide) *OperatorUpdate {
+// AddGuides adds the "guides" edges to the Guide entity.
+func (ou *OperatorUpdate) AddGuides(g ...*Guide) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
@@ -113,20 +99,20 @@ func (ou *OperatorUpdate) Mutation() *OperatorMutation {
 	return ou.mutation
 }
 
-// ClearGuide clears all "guide" edges to the Guide entity.
-func (ou *OperatorUpdate) ClearGuide() *OperatorUpdate {
-	ou.mutation.ClearGuide()
+// ClearGuides clears all "guides" edges to the Guide entity.
+func (ou *OperatorUpdate) ClearGuides() *OperatorUpdate {
+	ou.mutation.ClearGuides()
 	return ou
 }
 
-// RemoveGuideIDs removes the "guide" edge to Guide entities by IDs.
+// RemoveGuideIDs removes the "guides" edge to Guide entities by IDs.
 func (ou *OperatorUpdate) RemoveGuideIDs(ids ...int) *OperatorUpdate {
 	ou.mutation.RemoveGuideIDs(ids...)
 	return ou
 }
 
-// RemoveGuide removes "guide" edges to Guide entities.
-func (ou *OperatorUpdate) RemoveGuide(g ...*Guide) *OperatorUpdate {
+// RemoveGuides removes "guides" edges to Guide entities.
+func (ou *OperatorUpdate) RemoveGuides(g ...*Guide) *OperatorUpdate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
@@ -191,20 +177,7 @@ func (ou *OperatorUpdate) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (ou *OperatorUpdate) check() error {
-	if v, ok := ou.mutation.Account(); ok {
-		if err := operator.AccountValidator(v); err != nil {
-			return &ValidationError{Name: "account", err: fmt.Errorf(`ent: validator failed for field "Operator.account": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := ou.check(); err != nil {
-		return n, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(operator.Table, operator.Columns, sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt))
 	if ps := ou.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
@@ -212,9 +185,6 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := ou.mutation.Account(); ok {
-		_spec.SetField(operator.FieldAccount, field.TypeString, value)
 	}
 	if value, ok := ou.mutation.Enabled(); ok {
 		_spec.SetField(operator.FieldEnabled, field.TypeBool, value)
@@ -225,12 +195,12 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := ou.mutation.UpdatedAt(); ok {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if ou.mutation.GuideCleared() {
+	if ou.mutation.GuidesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
@@ -238,12 +208,12 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.RemovedGuideIDs(); len(nodes) > 0 && !ou.mutation.GuideCleared() {
+	if nodes := ou.mutation.RemovedGuidesIDs(); len(nodes) > 0 && !ou.mutation.GuidesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
@@ -254,12 +224,12 @@ func (ou *OperatorUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ou.mutation.GuideIDs(); len(nodes) > 0 {
+	if nodes := ou.mutation.GuidesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
@@ -335,20 +305,6 @@ type OperatorUpdateOne struct {
 	mutation *OperatorMutation
 }
 
-// SetAccount sets the "account" field.
-func (ouo *OperatorUpdateOne) SetAccount(s string) *OperatorUpdateOne {
-	ouo.mutation.SetAccount(s)
-	return ouo
-}
-
-// SetNillableAccount sets the "account" field if the given value is not nil.
-func (ouo *OperatorUpdateOne) SetNillableAccount(s *string) *OperatorUpdateOne {
-	if s != nil {
-		ouo.SetAccount(*s)
-	}
-	return ouo
-}
-
 // SetEnabled sets the "enabled" field.
 func (ouo *OperatorUpdateOne) SetEnabled(b bool) *OperatorUpdateOne {
 	ouo.mutation.SetEnabled(b)
@@ -383,14 +339,14 @@ func (ouo *OperatorUpdateOne) SetUpdatedAt(t time.Time) *OperatorUpdateOne {
 	return ouo
 }
 
-// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+// AddGuideIDs adds the "guides" edge to the Guide entity by IDs.
 func (ouo *OperatorUpdateOne) AddGuideIDs(ids ...int) *OperatorUpdateOne {
 	ouo.mutation.AddGuideIDs(ids...)
 	return ouo
 }
 
-// AddGuide adds the "guide" edges to the Guide entity.
-func (ouo *OperatorUpdateOne) AddGuide(g ...*Guide) *OperatorUpdateOne {
+// AddGuides adds the "guides" edges to the Guide entity.
+func (ouo *OperatorUpdateOne) AddGuides(g ...*Guide) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
@@ -418,20 +374,20 @@ func (ouo *OperatorUpdateOne) Mutation() *OperatorMutation {
 	return ouo.mutation
 }
 
-// ClearGuide clears all "guide" edges to the Guide entity.
-func (ouo *OperatorUpdateOne) ClearGuide() *OperatorUpdateOne {
-	ouo.mutation.ClearGuide()
+// ClearGuides clears all "guides" edges to the Guide entity.
+func (ouo *OperatorUpdateOne) ClearGuides() *OperatorUpdateOne {
+	ouo.mutation.ClearGuides()
 	return ouo
 }
 
-// RemoveGuideIDs removes the "guide" edge to Guide entities by IDs.
+// RemoveGuideIDs removes the "guides" edge to Guide entities by IDs.
 func (ouo *OperatorUpdateOne) RemoveGuideIDs(ids ...int) *OperatorUpdateOne {
 	ouo.mutation.RemoveGuideIDs(ids...)
 	return ouo
 }
 
-// RemoveGuide removes "guide" edges to Guide entities.
-func (ouo *OperatorUpdateOne) RemoveGuide(g ...*Guide) *OperatorUpdateOne {
+// RemoveGuides removes "guides" edges to Guide entities.
+func (ouo *OperatorUpdateOne) RemoveGuides(g ...*Guide) *OperatorUpdateOne {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
@@ -509,20 +465,7 @@ func (ouo *OperatorUpdateOne) defaults() {
 	}
 }
 
-// check runs all checks and user-defined validators on the builder.
-func (ouo *OperatorUpdateOne) check() error {
-	if v, ok := ouo.mutation.Account(); ok {
-		if err := operator.AccountValidator(v); err != nil {
-			return &ValidationError{Name: "account", err: fmt.Errorf(`ent: validator failed for field "Operator.account": %w`, err)}
-		}
-	}
-	return nil
-}
-
 func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err error) {
-	if err := ouo.check(); err != nil {
-		return _node, err
-	}
 	_spec := sqlgraph.NewUpdateSpec(operator.Table, operator.Columns, sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt))
 	id, ok := ouo.mutation.ID()
 	if !ok {
@@ -548,9 +491,6 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 			}
 		}
 	}
-	if value, ok := ouo.mutation.Account(); ok {
-		_spec.SetField(operator.FieldAccount, field.TypeString, value)
-	}
 	if value, ok := ouo.mutation.Enabled(); ok {
 		_spec.SetField(operator.FieldEnabled, field.TypeBool, value)
 	}
@@ -560,12 +500,12 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 	if value, ok := ouo.mutation.UpdatedAt(); ok {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if ouo.mutation.GuideCleared() {
+	if ouo.mutation.GuidesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
@@ -573,12 +513,12 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.RemovedGuideIDs(); len(nodes) > 0 && !ouo.mutation.GuideCleared() {
+	if nodes := ouo.mutation.RemovedGuidesIDs(); len(nodes) > 0 && !ouo.mutation.GuidesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
@@ -589,12 +529,12 @@ func (ouo *OperatorUpdateOne) sqlSave(ctx context.Context) (_node *Operator, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := ouo.mutation.GuideIDs(); len(nodes) > 0 {
+	if nodes := ouo.mutation.GuidesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),

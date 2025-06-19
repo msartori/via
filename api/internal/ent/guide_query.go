@@ -27,7 +27,6 @@ type GuideQuery struct {
 	predicates   []predicate.Guide
 	withOperator *OperatorQuery
 	withHistory  *GuideHistoryQuery
-	withFKs      bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -336,12 +335,12 @@ func (gq *GuideQuery) WithHistory(opts ...func(*GuideHistoryQuery)) *GuideQuery 
 // Example:
 //
 //	var v []struct {
-//		Code string `json:"code,omitempty"`
+//		ViaGuideID string `json:"via_guide_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
 //	client.Guide.Query().
-//		GroupBy(guide.FieldCode).
+//		GroupBy(guide.FieldViaGuideID).
 //		Aggregate(ent.Count()).
 //		Scan(ctx, &v)
 func (gq *GuideQuery) GroupBy(field string, fields ...string) *GuideGroupBy {
@@ -359,11 +358,11 @@ func (gq *GuideQuery) GroupBy(field string, fields ...string) *GuideGroupBy {
 // Example:
 //
 //	var v []struct {
-//		Code string `json:"code,omitempty"`
+//		ViaGuideID string `json:"via_guide_id,omitempty"`
 //	}
 //
 //	client.Guide.Query().
-//		Select(guide.FieldCode).
+//		Select(guide.FieldViaGuideID).
 //		Scan(ctx, &v)
 func (gq *GuideQuery) Select(fields ...string) *GuideSelect {
 	gq.ctx.Fields = append(gq.ctx.Fields, fields...)
@@ -407,19 +406,12 @@ func (gq *GuideQuery) prepareQuery(ctx context.Context) error {
 func (gq *GuideQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Guide, error) {
 	var (
 		nodes       = []*Guide{}
-		withFKs     = gq.withFKs
 		_spec       = gq.querySpec()
 		loadedTypes = [2]bool{
 			gq.withOperator != nil,
 			gq.withHistory != nil,
 		}
 	)
-	if gq.withOperator != nil {
-		withFKs = true
-	}
-	if withFKs {
-		_spec.Node.Columns = append(_spec.Node.Columns, guide.ForeignKeys...)
-	}
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Guide).scanValues(nil, columns)
 	}
@@ -458,10 +450,7 @@ func (gq *GuideQuery) loadOperator(ctx context.Context, query *OperatorQuery, no
 	ids := make([]int, 0, len(nodes))
 	nodeids := make(map[int][]*Guide)
 	for i := range nodes {
-		if nodes[i].operator_guide == nil {
-			continue
-		}
-		fk := *nodes[i].operator_guide
+		fk := nodes[i].OperatorID
 		if _, ok := nodeids[fk]; !ok {
 			ids = append(ids, fk)
 		}
@@ -478,7 +467,7 @@ func (gq *GuideQuery) loadOperator(ctx context.Context, query *OperatorQuery, no
 	for _, n := range neighbors {
 		nodes, ok := nodeids[n.ID]
 		if !ok {
-			return fmt.Errorf(`unexpected foreign-key "operator_guide" returned %v`, n.ID)
+			return fmt.Errorf(`unexpected foreign-key "operator_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -496,7 +485,9 @@ func (gq *GuideQuery) loadHistory(ctx context.Context, query *GuideHistoryQuery,
 			init(nodes[i])
 		}
 	}
-	query.withFKs = true
+	if len(query.ctx.Fields) > 0 {
+		query.ctx.AppendFieldOnce(guidehistory.FieldGuideID)
+	}
 	query.Where(predicate.GuideHistory(func(s *sql.Selector) {
 		s.Where(sql.InValues(s.C(guide.HistoryColumn), fks...))
 	}))
@@ -505,13 +496,10 @@ func (gq *GuideQuery) loadHistory(ctx context.Context, query *GuideHistoryQuery,
 		return err
 	}
 	for _, n := range neighbors {
-		fk := n.guide_history
-		if fk == nil {
-			return fmt.Errorf(`foreign-key "guide_history" is nil for node %v`, n.ID)
-		}
-		node, ok := nodeids[*fk]
+		fk := n.GuideID
+		node, ok := nodeids[fk]
 		if !ok {
-			return fmt.Errorf(`unexpected referenced foreign-key "guide_history" returned %v for node %v`, *fk, n.ID)
+			return fmt.Errorf(`unexpected referenced foreign-key "guide_id" returned %v for node %v`, fk, n.ID)
 		}
 		assign(node, n)
 	}
@@ -542,6 +530,9 @@ func (gq *GuideQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != guide.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if gq.withOperator != nil {
+			_spec.Node.AddColumnOnce(guide.FieldOperatorID)
 		}
 	}
 	if ps := gq.predicates; len(ps) > 0 {

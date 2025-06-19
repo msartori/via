@@ -19,7 +19,7 @@ func TestWriteJSON_WithRequestID(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	res := Response{
+	res := Response[any]{
 		Data:    map[string]string{"foo": "bar"},
 		Message: "ok",
 	}
@@ -28,7 +28,7 @@ func TestWriteJSON_WithRequestID(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rr.Code)
 	assert.Equal(t, "application/json", rr.Header().Get("Content-Type"))
 
-	var got Response
+	var got Response[any]
 	body, _ := io.ReadAll(rr.Body)
 	err := json.Unmarshal(body, &got)
 	assert.NoError(t, err)
@@ -41,11 +41,11 @@ func TestWriteJSON_NoRequestID(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rr := httptest.NewRecorder()
 
-	res := Response{Message: "no ID"}
+	res := Response[any]{Message: "no ID"}
 	WriteJSON(rr, req, res, http.StatusAccepted)
 
 	assert.Equal(t, http.StatusAccepted, rr.Code)
-	var got Response
+	var got Response[any]
 	json.NewDecoder(rr.Body).Decode(&got)
 	assert.Equal(t, "no ID", got.Message)
 	assert.Empty(t, got.RequestID)
@@ -58,7 +58,7 @@ func TestWriteJSON_ContextCancelled(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil).WithContext(ctx)
 	rr := httptest.NewRecorder()
 
-	res := Response{Message: "should not be written"}
+	res := Response[any]{Message: "should not be written"}
 	WriteJSON(rr, req, res, http.StatusOK)
 
 	assert.Equal(t, "", rr.Body.String())
@@ -72,11 +72,11 @@ func TestWriteJSONError(t *testing.T) {
 
 	rr := httptest.NewRecorder()
 
-	res := Response{Message: "error"}
+	res := Response[any]{Message: "error"}
 	WriteJSONError(rr, req, res, http.StatusBadRequest)
 
 	assert.Equal(t, http.StatusBadRequest, rr.Code)
-	var got Response
+	var got Response[any]
 	json.NewDecoder(rr.Body).Decode(&got)
 	assert.Equal(t, "error", got.Message)
 	assert.Equal(t, "err-id", got.RequestID)

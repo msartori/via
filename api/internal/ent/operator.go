@@ -33,8 +33,8 @@ type Operator struct {
 
 // OperatorEdges holds the relations/edges for other nodes in the graph.
 type OperatorEdges struct {
-	// Guide holds the value of the guide edge.
-	Guide []*Guide `json:"guide,omitempty"`
+	// Guides holds the value of the guides edge.
+	Guides []*Guide `json:"guides,omitempty"`
 	// GuideHistory holds the value of the guide_history edge.
 	GuideHistory []*GuideHistory `json:"guide_history,omitempty"`
 	// loadedTypes holds the information for reporting if a
@@ -42,13 +42,13 @@ type OperatorEdges struct {
 	loadedTypes [2]bool
 }
 
-// GuideOrErr returns the Guide value or an error if the edge
+// GuidesOrErr returns the Guides value or an error if the edge
 // was not loaded in eager-loading.
-func (e OperatorEdges) GuideOrErr() ([]*Guide, error) {
+func (e OperatorEdges) GuidesOrErr() ([]*Guide, error) {
 	if e.loadedTypes[0] {
-		return e.Guide, nil
+		return e.Guides, nil
 	}
-	return nil, &NotLoadedError{edge: "guide"}
+	return nil, &NotLoadedError{edge: "guides"}
 }
 
 // GuideHistoryOrErr returns the GuideHistory value or an error if the edge
@@ -131,9 +131,9 @@ func (o *Operator) Value(name string) (ent.Value, error) {
 	return o.selectValues.Get(name)
 }
 
-// QueryGuide queries the "guide" edge of the Operator entity.
-func (o *Operator) QueryGuide() *GuideQuery {
-	return NewOperatorClient(o.config).QueryGuide(o)
+// QueryGuides queries the "guides" edge of the Operator entity.
+func (o *Operator) QueryGuides() *GuideQuery {
+	return NewOperatorClient(o.config).QueryGuides(o)
 }
 
 // QueryGuideHistory queries the "guide_history" edge of the Operator entity.

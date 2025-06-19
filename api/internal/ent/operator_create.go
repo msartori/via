@@ -34,6 +34,14 @@ func (oc *OperatorCreate) SetEnabled(b bool) *OperatorCreate {
 	return oc
 }
 
+// SetNillableEnabled sets the "enabled" field if the given value is not nil.
+func (oc *OperatorCreate) SetNillableEnabled(b *bool) *OperatorCreate {
+	if b != nil {
+		oc.SetEnabled(*b)
+	}
+	return oc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (oc *OperatorCreate) SetCreatedAt(t time.Time) *OperatorCreate {
 	oc.mutation.SetCreatedAt(t)
@@ -62,14 +70,14 @@ func (oc *OperatorCreate) SetNillableUpdatedAt(t *time.Time) *OperatorCreate {
 	return oc
 }
 
-// AddGuideIDs adds the "guide" edge to the Guide entity by IDs.
+// AddGuideIDs adds the "guides" edge to the Guide entity by IDs.
 func (oc *OperatorCreate) AddGuideIDs(ids ...int) *OperatorCreate {
 	oc.mutation.AddGuideIDs(ids...)
 	return oc
 }
 
-// AddGuide adds the "guide" edges to the Guide entity.
-func (oc *OperatorCreate) AddGuide(g ...*Guide) *OperatorCreate {
+// AddGuides adds the "guides" edges to the Guide entity.
+func (oc *OperatorCreate) AddGuides(g ...*Guide) *OperatorCreate {
 	ids := make([]int, len(g))
 	for i := range g {
 		ids[i] = g[i].ID
@@ -127,6 +135,10 @@ func (oc *OperatorCreate) ExecX(ctx context.Context) {
 
 // defaults sets the default values of the builder before save.
 func (oc *OperatorCreate) defaults() {
+	if _, ok := oc.mutation.Enabled(); !ok {
+		v := operator.DefaultEnabled
+		oc.mutation.SetEnabled(v)
+	}
 	if _, ok := oc.mutation.CreatedAt(); !ok {
 		v := operator.DefaultCreatedAt()
 		oc.mutation.SetCreatedAt(v)
@@ -198,12 +210,12 @@ func (oc *OperatorCreate) createSpec() (*Operator, *sqlgraph.CreateSpec) {
 		_spec.SetField(operator.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if nodes := oc.mutation.GuideIDs(); len(nodes) > 0 {
+	if nodes := oc.mutation.GuidesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: false,
-			Table:   operator.GuideTable,
-			Columns: []string{operator.GuideColumn},
+			Table:   operator.GuidesTable,
+			Columns: []string{operator.GuidesColumn},
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),

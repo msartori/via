@@ -14,12 +14,14 @@ const (
 	Label = "guide"
 	// FieldID holds the string denoting the id field in the database.
 	FieldID = "id"
-	// FieldCode holds the string denoting the code field in the database.
-	FieldCode = "code"
+	// FieldViaGuideID holds the string denoting the via_guide_id field in the database.
+	FieldViaGuideID = "via_guide_id"
 	// FieldRecipient holds the string denoting the recipient field in the database.
 	FieldRecipient = "recipient"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldOperatorID holds the string denoting the operator_id field in the database.
+	FieldOperatorID = "operator_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// FieldUpdatedAt holds the string denoting the updated_at field in the database.
@@ -36,30 +38,25 @@ const (
 	// It exists in this package in order to avoid circular dependency with the "operator" package.
 	OperatorInverseTable = "operators"
 	// OperatorColumn is the table column denoting the operator relation/edge.
-	OperatorColumn = "operator_guide"
+	OperatorColumn = "operator_id"
 	// HistoryTable is the table that holds the history relation/edge.
 	HistoryTable = "guide_histories"
 	// HistoryInverseTable is the table name for the GuideHistory entity.
 	// It exists in this package in order to avoid circular dependency with the "guidehistory" package.
 	HistoryInverseTable = "guide_histories"
 	// HistoryColumn is the table column denoting the history relation/edge.
-	HistoryColumn = "guide_history"
+	HistoryColumn = "guide_id"
 )
 
 // Columns holds all SQL columns for guide fields.
 var Columns = []string{
 	FieldID,
-	FieldCode,
+	FieldViaGuideID,
 	FieldRecipient,
 	FieldStatus,
+	FieldOperatorID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
-}
-
-// ForeignKeys holds the SQL foreign-keys that are owned by the "guides"
-// table and are not defined as standalone fields in the schema.
-var ForeignKeys = []string{
-	"operator_guide",
 }
 
 // ValidColumn reports if the column name is valid (part of the table columns).
@@ -69,17 +66,12 @@ func ValidColumn(column string) bool {
 			return true
 		}
 	}
-	for i := range ForeignKeys {
-		if column == ForeignKeys[i] {
-			return true
-		}
-	}
 	return false
 }
 
 var (
-	// CodeValidator is a validator for the "code" field. It is called by the builders before save.
-	CodeValidator func(string) error
+	// ViaGuideIDValidator is a validator for the "via_guide_id" field. It is called by the builders before save.
+	ViaGuideIDValidator func(string) error
 	// RecipientValidator is a validator for the "recipient" field. It is called by the builders before save.
 	RecipientValidator func(string) error
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
@@ -100,9 +92,9 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldID, opts...).ToFunc()
 }
 
-// ByCode orders the results by the code field.
-func ByCode(opts ...sql.OrderTermOption) OrderOption {
-	return sql.OrderByField(FieldCode, opts...).ToFunc()
+// ByViaGuideID orders the results by the via_guide_id field.
+func ByViaGuideID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldViaGuideID, opts...).ToFunc()
 }
 
 // ByRecipient orders the results by the recipient field.
@@ -113,6 +105,11 @@ func ByRecipient(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByOperatorID orders the results by the operator_id field.
+func ByOperatorID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldOperatorID, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

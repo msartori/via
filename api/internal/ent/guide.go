@@ -18,21 +18,22 @@ type Guide struct {
 	config `json:"-"`
 	// ID of the ent.
 	ID int `json:"id,omitempty"`
-	// Code holds the value of the "code" field.
-	Code string `json:"code,omitempty"`
+	// ViaGuideID holds the value of the "via_guide_id" field.
+	ViaGuideID string `json:"via_guide_id,omitempty"`
 	// Recipient holds the value of the "recipient" field.
 	Recipient string `json:"recipient,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
+	// OperatorID holds the value of the "operator_id" field.
+	OperatorID int `json:"operator_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the GuideQuery when eager-loading is set.
-	Edges          GuideEdges `json:"edges"`
-	operator_guide *int
-	selectValues   sql.SelectValues
+	Edges        GuideEdges `json:"edges"`
+	selectValues sql.SelectValues
 }
 
 // GuideEdges holds the relations/edges for other nodes in the graph.
@@ -71,14 +72,12 @@ func (*Guide) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case guide.FieldID:
+		case guide.FieldID, guide.FieldOperatorID:
 			values[i] = new(sql.NullInt64)
-		case guide.FieldCode, guide.FieldRecipient, guide.FieldStatus:
+		case guide.FieldViaGuideID, guide.FieldRecipient, guide.FieldStatus:
 			values[i] = new(sql.NullString)
 		case guide.FieldCreatedAt, guide.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
-		case guide.ForeignKeys[0]: // operator_guide
-			values[i] = new(sql.NullInt64)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -100,11 +99,11 @@ func (gu *Guide) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field id", value)
 			}
 			gu.ID = int(value.Int64)
-		case guide.FieldCode:
+		case guide.FieldViaGuideID:
 			if value, ok := values[i].(*sql.NullString); !ok {
-				return fmt.Errorf("unexpected type %T for field code", values[i])
+				return fmt.Errorf("unexpected type %T for field via_guide_id", values[i])
 			} else if value.Valid {
-				gu.Code = value.String
+				gu.ViaGuideID = value.String
 			}
 		case guide.FieldRecipient:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -118,6 +117,12 @@ func (gu *Guide) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				gu.Status = value.String
 			}
+		case guide.FieldOperatorID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field operator_id", values[i])
+			} else if value.Valid {
+				gu.OperatorID = int(value.Int64)
+			}
 		case guide.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
@@ -129,13 +134,6 @@ func (gu *Guide) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
 				gu.UpdatedAt = value.Time
-			}
-		case guide.ForeignKeys[0]:
-			if value, ok := values[i].(*sql.NullInt64); !ok {
-				return fmt.Errorf("unexpected type %T for edge-field operator_guide", value)
-			} else if value.Valid {
-				gu.operator_guide = new(int)
-				*gu.operator_guide = int(value.Int64)
 			}
 		default:
 			gu.selectValues.Set(columns[i], values[i])
@@ -183,14 +181,17 @@ func (gu *Guide) String() string {
 	var builder strings.Builder
 	builder.WriteString("Guide(")
 	builder.WriteString(fmt.Sprintf("id=%v, ", gu.ID))
-	builder.WriteString("code=")
-	builder.WriteString(gu.Code)
+	builder.WriteString("via_guide_id=")
+	builder.WriteString(gu.ViaGuideID)
 	builder.WriteString(", ")
 	builder.WriteString("recipient=")
 	builder.WriteString(gu.Recipient)
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(gu.Status)
+	builder.WriteString(", ")
+	builder.WriteString("operator_id=")
+	builder.WriteString(fmt.Sprintf("%v", gu.OperatorID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(gu.CreatedAt.Format(time.ANSIC))

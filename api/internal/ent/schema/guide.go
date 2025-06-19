@@ -16,11 +16,24 @@ type Guide struct {
 // Fields of the Guide.
 func (Guide) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("code").MaxLen(12).Unique().NotEmpty(),
-		field.String("recipient").MaxLen(100).Optional(),
-		field.String("status").MaxLen(30).Optional(),
-		field.Time("created_at").Default(time.Now),
-		field.Time("updated_at").Default(time.Now).UpdateDefault(time.Now),
+		field.String("via_guide_id").
+			NotEmpty().
+			Immutable().
+			MaxLen(12).
+			MinLen(12),
+		field.String("recipient").
+			NotEmpty().
+			Immutable().
+			MaxLen(100),
+		field.String("status").
+			NotEmpty().
+			MaxLen(30),
+		field.Int("operator_id"),
+		field.Time("created_at").
+			Default(time.Now),
+		field.Time("updated_at").
+			Default(time.Now).
+			UpdateDefault(time.Now),
 	}
 }
 
@@ -28,8 +41,11 @@ func (Guide) Fields() []ent.Field {
 func (Guide) Edges() []ent.Edge {
 	return []ent.Edge{
 		edge.From("operator", Operator.Type).
-			Ref("guide").
-			Unique(),
+			Ref("guides").
+			Unique().
+			Required().
+			Field("operator_id"),
+
 		edge.To("history", GuideHistory.Type),
 	}
 }

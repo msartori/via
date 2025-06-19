@@ -22,9 +22,9 @@ type GuideCreate struct {
 	hooks    []Hook
 }
 
-// SetCode sets the "code" field.
-func (gc *GuideCreate) SetCode(s string) *GuideCreate {
-	gc.mutation.SetCode(s)
+// SetViaGuideID sets the "via_guide_id" field.
+func (gc *GuideCreate) SetViaGuideID(s string) *GuideCreate {
+	gc.mutation.SetViaGuideID(s)
 	return gc
 }
 
@@ -34,25 +34,15 @@ func (gc *GuideCreate) SetRecipient(s string) *GuideCreate {
 	return gc
 }
 
-// SetNillableRecipient sets the "recipient" field if the given value is not nil.
-func (gc *GuideCreate) SetNillableRecipient(s *string) *GuideCreate {
-	if s != nil {
-		gc.SetRecipient(*s)
-	}
-	return gc
-}
-
 // SetStatus sets the "status" field.
 func (gc *GuideCreate) SetStatus(s string) *GuideCreate {
 	gc.mutation.SetStatus(s)
 	return gc
 }
 
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (gc *GuideCreate) SetNillableStatus(s *string) *GuideCreate {
-	if s != nil {
-		gc.SetStatus(*s)
-	}
+// SetOperatorID sets the "operator_id" field.
+func (gc *GuideCreate) SetOperatorID(i int) *GuideCreate {
+	gc.mutation.SetOperatorID(i)
 	return gc
 }
 
@@ -80,20 +70,6 @@ func (gc *GuideCreate) SetUpdatedAt(t time.Time) *GuideCreate {
 func (gc *GuideCreate) SetNillableUpdatedAt(t *time.Time) *GuideCreate {
 	if t != nil {
 		gc.SetUpdatedAt(*t)
-	}
-	return gc
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (gc *GuideCreate) SetOperatorID(id int) *GuideCreate {
-	gc.mutation.SetOperatorID(id)
-	return gc
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (gc *GuideCreate) SetNillableOperatorID(id *int) *GuideCreate {
-	if id != nil {
-		gc = gc.SetOperatorID(*id)
 	}
 	return gc
 }
@@ -165,29 +141,41 @@ func (gc *GuideCreate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (gc *GuideCreate) check() error {
-	if _, ok := gc.mutation.Code(); !ok {
-		return &ValidationError{Name: "code", err: errors.New(`ent: missing required field "Guide.code"`)}
+	if _, ok := gc.mutation.ViaGuideID(); !ok {
+		return &ValidationError{Name: "via_guide_id", err: errors.New(`ent: missing required field "Guide.via_guide_id"`)}
 	}
-	if v, ok := gc.mutation.Code(); ok {
-		if err := guide.CodeValidator(v); err != nil {
-			return &ValidationError{Name: "code", err: fmt.Errorf(`ent: validator failed for field "Guide.code": %w`, err)}
+	if v, ok := gc.mutation.ViaGuideID(); ok {
+		if err := guide.ViaGuideIDValidator(v); err != nil {
+			return &ValidationError{Name: "via_guide_id", err: fmt.Errorf(`ent: validator failed for field "Guide.via_guide_id": %w`, err)}
 		}
+	}
+	if _, ok := gc.mutation.Recipient(); !ok {
+		return &ValidationError{Name: "recipient", err: errors.New(`ent: missing required field "Guide.recipient"`)}
 	}
 	if v, ok := gc.mutation.Recipient(); ok {
 		if err := guide.RecipientValidator(v); err != nil {
 			return &ValidationError{Name: "recipient", err: fmt.Errorf(`ent: validator failed for field "Guide.recipient": %w`, err)}
 		}
 	}
+	if _, ok := gc.mutation.Status(); !ok {
+		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Guide.status"`)}
+	}
 	if v, ok := gc.mutation.Status(); ok {
 		if err := guide.StatusValidator(v); err != nil {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Guide.status": %w`, err)}
 		}
+	}
+	if _, ok := gc.mutation.OperatorID(); !ok {
+		return &ValidationError{Name: "operator_id", err: errors.New(`ent: missing required field "Guide.operator_id"`)}
 	}
 	if _, ok := gc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`ent: missing required field "Guide.created_at"`)}
 	}
 	if _, ok := gc.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`ent: missing required field "Guide.updated_at"`)}
+	}
+	if len(gc.mutation.OperatorIDs()) == 0 {
+		return &ValidationError{Name: "operator", err: errors.New(`ent: missing required edge "Guide.operator"`)}
 	}
 	return nil
 }
@@ -215,9 +203,9 @@ func (gc *GuideCreate) createSpec() (*Guide, *sqlgraph.CreateSpec) {
 		_node = &Guide{config: gc.config}
 		_spec = sqlgraph.NewCreateSpec(guide.Table, sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt))
 	)
-	if value, ok := gc.mutation.Code(); ok {
-		_spec.SetField(guide.FieldCode, field.TypeString, value)
-		_node.Code = value
+	if value, ok := gc.mutation.ViaGuideID(); ok {
+		_spec.SetField(guide.FieldViaGuideID, field.TypeString, value)
+		_node.ViaGuideID = value
 	}
 	if value, ok := gc.mutation.Recipient(); ok {
 		_spec.SetField(guide.FieldRecipient, field.TypeString, value)
@@ -249,7 +237,7 @@ func (gc *GuideCreate) createSpec() (*Guide, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
-		_node.operator_guide = &nodes[0]
+		_node.OperatorID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := gc.mutation.HistoryIDs(); len(nodes) > 0 {

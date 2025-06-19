@@ -656,15 +656,15 @@ func (c *OperatorClient) GetX(ctx context.Context, id int) *Operator {
 	return obj
 }
 
-// QueryGuide queries the guide edge of a Operator.
-func (c *OperatorClient) QueryGuide(o *Operator) *GuideQuery {
+// QueryGuides queries the guides edge of a Operator.
+func (c *OperatorClient) QueryGuides(o *Operator) *GuideQuery {
 	query := (&GuideClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
 		id := o.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(operator.Table, operator.FieldID, id),
 			sqlgraph.To(guide.Table, guide.FieldID),
-			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuideTable, operator.GuideColumn),
+			sqlgraph.Edge(sqlgraph.O2M, false, operator.GuidesTable, operator.GuidesColumn),
 		)
 		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
 		return fromV, nil

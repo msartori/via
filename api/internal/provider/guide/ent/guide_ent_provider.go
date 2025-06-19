@@ -8,6 +8,8 @@ import (
 	"via/internal/ent/guide"
 	"via/internal/log"
 	"via/internal/model"
+
+	"entgo.io/ent/dialect/sql"
 )
 
 type GuideEntProvider struct {
@@ -18,45 +20,35 @@ func New() GuideEntProvider {
 	return GuideEntProvider{ent_client.Get()}
 }
 
-func (p GuideEntProvider) GetGuideByCode(ctx context.Context, code string) (model.GuideProcess, error) {
-	logger := log.Get()
-	logger.Info(ctx, "msg", "guide_ent_process_provider.GetGuideProcessByCode_start")
-	defer logger.Info(ctx, "msg", "guide_ent_process_provider.GetGuideProcessByCode_end")
-	gp, err := p.client.Guide.
+func (p GuideEntProvider) GetGuideByViaGuideId(ctx context.Context, viaGuideId string) (model.Guide, error) {
+	guide, err := p.client.Guide.
 		Query().
-		Where(guide.Code(code)).
-		Only(ctx)
+		Where(guide.ViaGuideID(viaGuideId)).
+		Order(guide.ByCreatedAt(sql.OrderDesc())).
+		First(ctx)
 	if err != nil {
 		if ent.IsNotFound(err) {
-			return model.GuideProcess{}, nil
+			return model.Guide{}, nil
 
 		}
-		log.Get().Error(ctx, err, "msg", "failed querying guide process by code")
-		return model.GuideProcess{}, fmt.Errorf("failed querying guide process by code: %w", err)
+		log.Get().Error(ctx, err, "msg", "failed querying guide by viaGuideId")
+		return model.Guide{}, fmt.Errorf("failed querying guide by viaGuideId: %w", err)
 
 	}
-	return model.GuideProcess{
-		ID:        gp.ID,
-		Code:      gp.Code,
-		Recipient: gp.Recipient,
-		Status:    gp.Status,
-		CreatedAt: gp.CreatedAt,
-		UpdatedAt: gp.UpdatedAt,
-	}, err
+	return model.FromEntGuide(*guide), err
 }
 
-func (p GuideEntProvider) CreateGuide(ctx context.Context, guide model.ViaGuide) (int, error) {
-	logger := log.Get()
-	logger.Info(ctx, "msg", "guide_ent_process_provider.CreateGuide_start")
-	defer logger.Info(ctx, "msg", "guide_ent_process_provider.CreateGuide_end")
+func (p GuideEntProvider) CreateGuide(ctx context.Context, viaGuide model.ViaGuide) (int, error) {
 	gp, err := p.client.Guide.
 		Create().
-		SetCode(guide.ID).
+		SetViaGuideID(viaGuide.ID).
 		SetStatus("Initial").
-		SetRecipient(guide.Recipient).
+		SetRecipient(viaGuide.Recipient).
+		SetOperatorID(1).
 		Save(ctx)
 	if err != nil {
-		return 0, fmt.Errorf("failed creating user: %w", err)
+		log.Get().Error(ctx, err, "msg", "failed creating Guide")
+		return 0, fmt.Errorf("failed creating Guide: %w", err)
 	}
 	return gp.ID, nil
 }

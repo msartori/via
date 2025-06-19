@@ -11,9 +11,9 @@ type MockGuideProvider struct {
 	mock.Mock
 }
 
-func (m *MockGuideProvider) GetGuideByCode(ctx context.Context, code string) (model.GuideProcess, error) {
-	args := m.Called(ctx, code)
-	return args.Get(0).(model.GuideProcess), args.Error(1)
+func (m *MockGuideProvider) GetGuideByViaGuideId(ctx context.Context, viaGuideId string) (model.Guide, error) {
+	args := m.Called(ctx, viaGuideId)
+	return args.Get(0).(model.Guide), args.Error(1)
 }
 
 func (m *MockGuideProvider) CreateGuide(ctx context.Context, guide model.ViaGuide) (int, error) {

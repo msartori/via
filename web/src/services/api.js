@@ -4,7 +4,7 @@ const apiUrl = import.meta.env.VITE_API_URL;
 
 export async function getGuide(codigo) {
   try {
-    const res = await axios.get(`${apiUrl}/guide/${codigo}`, {
+    const res = await axios.get(`${apiUrl}/guide-to-withdraw/${codigo}`, {
       headers: {
         'Content-Type': 'application/json',
         'bypass-tunnel-reminder': 'true',

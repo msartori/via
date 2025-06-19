@@ -7,9 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"via/internal/ent/guide"
 	"via/internal/ent/guidehistory"
-	"via/internal/ent/operator"
 	"via/internal/ent/predicate"
 
 	"entgo.io/ent/dialect/sql"
@@ -30,26 +28,6 @@ func (ghu *GuideHistoryUpdate) Where(ps ...predicate.GuideHistory) *GuideHistory
 	return ghu
 }
 
-// SetStatus sets the "status" field.
-func (ghu *GuideHistoryUpdate) SetStatus(s string) *GuideHistoryUpdate {
-	ghu.mutation.SetStatus(s)
-	return ghu
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (ghu *GuideHistoryUpdate) SetNillableStatus(s *string) *GuideHistoryUpdate {
-	if s != nil {
-		ghu.SetStatus(*s)
-	}
-	return ghu
-}
-
-// ClearStatus clears the value of the "status" field.
-func (ghu *GuideHistoryUpdate) ClearStatus() *GuideHistoryUpdate {
-	ghu.mutation.ClearStatus()
-	return ghu
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (ghu *GuideHistoryUpdate) SetCreatedAt(t time.Time) *GuideHistoryUpdate {
 	ghu.mutation.SetCreatedAt(t)
@@ -64,51 +42,9 @@ func (ghu *GuideHistoryUpdate) SetNillableCreatedAt(t *time.Time) *GuideHistoryU
 	return ghu
 }
 
-// SetGuideID sets the "guide" edge to the Guide entity by ID.
-func (ghu *GuideHistoryUpdate) SetGuideID(id int) *GuideHistoryUpdate {
-	ghu.mutation.SetGuideID(id)
-	return ghu
-}
-
-// SetGuide sets the "guide" edge to the Guide entity.
-func (ghu *GuideHistoryUpdate) SetGuide(g *Guide) *GuideHistoryUpdate {
-	return ghu.SetGuideID(g.ID)
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (ghu *GuideHistoryUpdate) SetOperatorID(id int) *GuideHistoryUpdate {
-	ghu.mutation.SetOperatorID(id)
-	return ghu
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (ghu *GuideHistoryUpdate) SetNillableOperatorID(id *int) *GuideHistoryUpdate {
-	if id != nil {
-		ghu = ghu.SetOperatorID(*id)
-	}
-	return ghu
-}
-
-// SetOperator sets the "operator" edge to the Operator entity.
-func (ghu *GuideHistoryUpdate) SetOperator(o *Operator) *GuideHistoryUpdate {
-	return ghu.SetOperatorID(o.ID)
-}
-
 // Mutation returns the GuideHistoryMutation object of the builder.
 func (ghu *GuideHistoryUpdate) Mutation() *GuideHistoryMutation {
 	return ghu.mutation
-}
-
-// ClearGuide clears the "guide" edge to the Guide entity.
-func (ghu *GuideHistoryUpdate) ClearGuide() *GuideHistoryUpdate {
-	ghu.mutation.ClearGuide()
-	return ghu
-}
-
-// ClearOperator clears the "operator" edge to the Operator entity.
-func (ghu *GuideHistoryUpdate) ClearOperator() *GuideHistoryUpdate {
-	ghu.mutation.ClearOperator()
-	return ghu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -140,13 +76,11 @@ func (ghu *GuideHistoryUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ghu *GuideHistoryUpdate) check() error {
-	if v, ok := ghu.mutation.Status(); ok {
-		if err := guidehistory.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "GuideHistory.status": %w`, err)}
-		}
-	}
 	if ghu.mutation.GuideCleared() && len(ghu.mutation.GuideIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "GuideHistory.guide"`)
+	}
+	if ghu.mutation.OperatorCleared() && len(ghu.mutation.OperatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "GuideHistory.operator"`)
 	}
 	return nil
 }
@@ -163,72 +97,8 @@ func (ghu *GuideHistoryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := ghu.mutation.Status(); ok {
-		_spec.SetField(guidehistory.FieldStatus, field.TypeString, value)
-	}
-	if ghu.mutation.StatusCleared() {
-		_spec.ClearField(guidehistory.FieldStatus, field.TypeString)
-	}
 	if value, ok := ghu.mutation.CreatedAt(); ok {
 		_spec.SetField(guidehistory.FieldCreatedAt, field.TypeTime, value)
-	}
-	if ghu.mutation.GuideCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.GuideTable,
-			Columns: []string{guidehistory.GuideColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ghu.mutation.GuideIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.GuideTable,
-			Columns: []string{guidehistory.GuideColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if ghu.mutation.OperatorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.OperatorTable,
-			Columns: []string{guidehistory.OperatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ghu.mutation.OperatorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.OperatorTable,
-			Columns: []string{guidehistory.OperatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ghu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -250,26 +120,6 @@ type GuideHistoryUpdateOne struct {
 	mutation *GuideHistoryMutation
 }
 
-// SetStatus sets the "status" field.
-func (ghuo *GuideHistoryUpdateOne) SetStatus(s string) *GuideHistoryUpdateOne {
-	ghuo.mutation.SetStatus(s)
-	return ghuo
-}
-
-// SetNillableStatus sets the "status" field if the given value is not nil.
-func (ghuo *GuideHistoryUpdateOne) SetNillableStatus(s *string) *GuideHistoryUpdateOne {
-	if s != nil {
-		ghuo.SetStatus(*s)
-	}
-	return ghuo
-}
-
-// ClearStatus clears the value of the "status" field.
-func (ghuo *GuideHistoryUpdateOne) ClearStatus() *GuideHistoryUpdateOne {
-	ghuo.mutation.ClearStatus()
-	return ghuo
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (ghuo *GuideHistoryUpdateOne) SetCreatedAt(t time.Time) *GuideHistoryUpdateOne {
 	ghuo.mutation.SetCreatedAt(t)
@@ -284,51 +134,9 @@ func (ghuo *GuideHistoryUpdateOne) SetNillableCreatedAt(t *time.Time) *GuideHist
 	return ghuo
 }
 
-// SetGuideID sets the "guide" edge to the Guide entity by ID.
-func (ghuo *GuideHistoryUpdateOne) SetGuideID(id int) *GuideHistoryUpdateOne {
-	ghuo.mutation.SetGuideID(id)
-	return ghuo
-}
-
-// SetGuide sets the "guide" edge to the Guide entity.
-func (ghuo *GuideHistoryUpdateOne) SetGuide(g *Guide) *GuideHistoryUpdateOne {
-	return ghuo.SetGuideID(g.ID)
-}
-
-// SetOperatorID sets the "operator" edge to the Operator entity by ID.
-func (ghuo *GuideHistoryUpdateOne) SetOperatorID(id int) *GuideHistoryUpdateOne {
-	ghuo.mutation.SetOperatorID(id)
-	return ghuo
-}
-
-// SetNillableOperatorID sets the "operator" edge to the Operator entity by ID if the given value is not nil.
-func (ghuo *GuideHistoryUpdateOne) SetNillableOperatorID(id *int) *GuideHistoryUpdateOne {
-	if id != nil {
-		ghuo = ghuo.SetOperatorID(*id)
-	}
-	return ghuo
-}
-
-// SetOperator sets the "operator" edge to the Operator entity.
-func (ghuo *GuideHistoryUpdateOne) SetOperator(o *Operator) *GuideHistoryUpdateOne {
-	return ghuo.SetOperatorID(o.ID)
-}
-
 // Mutation returns the GuideHistoryMutation object of the builder.
 func (ghuo *GuideHistoryUpdateOne) Mutation() *GuideHistoryMutation {
 	return ghuo.mutation
-}
-
-// ClearGuide clears the "guide" edge to the Guide entity.
-func (ghuo *GuideHistoryUpdateOne) ClearGuide() *GuideHistoryUpdateOne {
-	ghuo.mutation.ClearGuide()
-	return ghuo
-}
-
-// ClearOperator clears the "operator" edge to the Operator entity.
-func (ghuo *GuideHistoryUpdateOne) ClearOperator() *GuideHistoryUpdateOne {
-	ghuo.mutation.ClearOperator()
-	return ghuo
 }
 
 // Where appends a list predicates to the GuideHistoryUpdate builder.
@@ -373,13 +181,11 @@ func (ghuo *GuideHistoryUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (ghuo *GuideHistoryUpdateOne) check() error {
-	if v, ok := ghuo.mutation.Status(); ok {
-		if err := guidehistory.StatusValidator(v); err != nil {
-			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "GuideHistory.status": %w`, err)}
-		}
-	}
 	if ghuo.mutation.GuideCleared() && len(ghuo.mutation.GuideIDs()) > 0 {
 		return errors.New(`ent: clearing a required unique edge "GuideHistory.guide"`)
+	}
+	if ghuo.mutation.OperatorCleared() && len(ghuo.mutation.OperatorIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "GuideHistory.operator"`)
 	}
 	return nil
 }
@@ -413,72 +219,8 @@ func (ghuo *GuideHistoryUpdateOne) sqlSave(ctx context.Context) (_node *GuideHis
 			}
 		}
 	}
-	if value, ok := ghuo.mutation.Status(); ok {
-		_spec.SetField(guidehistory.FieldStatus, field.TypeString, value)
-	}
-	if ghuo.mutation.StatusCleared() {
-		_spec.ClearField(guidehistory.FieldStatus, field.TypeString)
-	}
 	if value, ok := ghuo.mutation.CreatedAt(); ok {
 		_spec.SetField(guidehistory.FieldCreatedAt, field.TypeTime, value)
-	}
-	if ghuo.mutation.GuideCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.GuideTable,
-			Columns: []string{guidehistory.GuideColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ghuo.mutation.GuideIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.GuideTable,
-			Columns: []string{guidehistory.GuideColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(guide.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
-	}
-	if ghuo.mutation.OperatorCleared() {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.OperatorTable,
-			Columns: []string{guidehistory.OperatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt),
-			},
-		}
-		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
-	}
-	if nodes := ghuo.mutation.OperatorIDs(); len(nodes) > 0 {
-		edge := &sqlgraph.EdgeSpec{
-			Rel:     sqlgraph.M2O,
-			Inverse: true,
-			Table:   guidehistory.OperatorTable,
-			Columns: []string{guidehistory.OperatorColumn},
-			Bidi:    false,
-			Target: &sqlgraph.EdgeTarget{
-				IDSpec: sqlgraph.NewFieldSpec(operator.FieldID, field.TypeInt),
-			},
-		}
-		for _, k := range nodes {
-			edge.Target.Nodes = append(edge.Target.Nodes, k)
-		}
-		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &GuideHistory{config: ghuo.config}
 	_spec.Assign = _node.assignValues

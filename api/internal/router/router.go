@@ -22,9 +22,12 @@ func New(cfg config.Config) http.Handler {
 	r.Use(middleware.Request)
 
 	// Routes
-	r.Get("/guide/{id}", handler.GetGuide(cfg.Bussiness).ServeHTTP)
-	r.Get("/process/guide/code/{code}", handler.GetGuideProcessByCode().ServeHTTP)
-	r.Post("/process/guide", handler.CreateGuideProcess().ServeHTTP)
+	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",
+		handler.GetGuideToWithdraw(cfg.Bussiness).ServeHTTP))
+	r.Get("/guide/via-guide-id/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideByViaGuideId",
+		handler.GetGuideByViaGuideId().ServeHTTP))
+	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
+		handler.CreateGuideToWidthdraw().ServeHTTP))
 
 	// Set up dependencies
 	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))

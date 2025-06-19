@@ -16,8 +16,17 @@ type GuideHistory struct {
 // Fields of the GuideHistory.
 func (GuideHistory) Fields() []ent.Field {
 	return []ent.Field{
-		field.String("status").MaxLen(30).Optional(),
-		field.Time("created_at").Default(time.Now),
+		field.Int("guide_id").
+			Immutable(),
+		field.String("status").
+			Immutable().
+			NotEmpty().
+			MaxLen(30),
+		field.Int("operator_id").
+			Immutable().
+			Positive(),
+		field.Time("created_at").
+			Default(time.Now),
 	}
 }
 
@@ -27,9 +36,15 @@ func (GuideHistory) Edges() []ent.Edge {
 		edge.From("guide", Guide.Type).
 			Ref("history").
 			Required().
-			Unique(),
+			Unique().
+			Field("guide_id").
+			Immutable(),
+
 		edge.From("operator", Operator.Type).
 			Ref("guide_history").
-			Unique(),
+			Required().
+			Unique().
+			Field("operator_id").
+			Immutable(),
 	}
 }

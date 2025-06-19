@@ -55,14 +55,44 @@ func IDLTE(id int) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldLTE(FieldID, id))
 }
 
+// GuideID applies equality check predicate on the "guide_id" field. It's identical to GuideIDEQ.
+func GuideID(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldEQ(FieldGuideID, v))
+}
+
 // Status applies equality check predicate on the "status" field. It's identical to StatusEQ.
 func Status(v string) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldEQ(FieldStatus, v))
 }
 
+// OperatorID applies equality check predicate on the "operator_id" field. It's identical to OperatorIDEQ.
+func OperatorID(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldEQ(FieldOperatorID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldEQ(FieldCreatedAt, v))
+}
+
+// GuideIDEQ applies the EQ predicate on the "guide_id" field.
+func GuideIDEQ(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldEQ(FieldGuideID, v))
+}
+
+// GuideIDNEQ applies the NEQ predicate on the "guide_id" field.
+func GuideIDNEQ(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldNEQ(FieldGuideID, v))
+}
+
+// GuideIDIn applies the In predicate on the "guide_id" field.
+func GuideIDIn(vs ...int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldIn(FieldGuideID, vs...))
+}
+
+// GuideIDNotIn applies the NotIn predicate on the "guide_id" field.
+func GuideIDNotIn(vs ...int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldNotIn(FieldGuideID, vs...))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.
@@ -120,16 +150,6 @@ func StatusHasSuffix(v string) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldHasSuffix(FieldStatus, v))
 }
 
-// StatusIsNil applies the IsNil predicate on the "status" field.
-func StatusIsNil() predicate.GuideHistory {
-	return predicate.GuideHistory(sql.FieldIsNull(FieldStatus))
-}
-
-// StatusNotNil applies the NotNil predicate on the "status" field.
-func StatusNotNil() predicate.GuideHistory {
-	return predicate.GuideHistory(sql.FieldNotNull(FieldStatus))
-}
-
 // StatusEqualFold applies the EqualFold predicate on the "status" field.
 func StatusEqualFold(v string) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldEqualFold(FieldStatus, v))
@@ -138,6 +158,26 @@ func StatusEqualFold(v string) predicate.GuideHistory {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.GuideHistory {
 	return predicate.GuideHistory(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// OperatorIDEQ applies the EQ predicate on the "operator_id" field.
+func OperatorIDEQ(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldEQ(FieldOperatorID, v))
+}
+
+// OperatorIDNEQ applies the NEQ predicate on the "operator_id" field.
+func OperatorIDNEQ(v int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldNEQ(FieldOperatorID, v))
+}
+
+// OperatorIDIn applies the In predicate on the "operator_id" field.
+func OperatorIDIn(vs ...int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldIn(FieldOperatorID, vs...))
+}
+
+// OperatorIDNotIn applies the NotIn predicate on the "operator_id" field.
+func OperatorIDNotIn(vs ...int) predicate.GuideHistory {
+	return predicate.GuideHistory(sql.FieldNotIn(FieldOperatorID, vs...))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

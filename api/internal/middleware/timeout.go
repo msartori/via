@@ -111,7 +111,7 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 				}
 				logger.WithLogFieldsInRequest(r, "status", statusCode)
 				logger.Error(r.Context(), err, "msg", i18n.GetWithLang("en", msg))
-				response.WriteJSONError(w, r, response.Response{Message: i18n.Get(r, msg)}, statusCode)
+				response.WriteJSONError(w, r, response.Response[any]{Message: i18n.Get(r, msg)}, statusCode)
 			case <-done: // handler completed successfully
 				tw.copy(r)
 			}

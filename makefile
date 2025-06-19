@@ -57,22 +57,16 @@ clean-local:
 
 localtunnel-start:
 	@echo "Starting LocalTunnel API ($(API_PORT))..."
-	@nohup npx localtunnel --subdomain via-$(ENV)-api --port $(API_PORT) > $(LT_API_LOG) 2>&1 &
-	@sleep 5
-	@echo "Starting LocalTunnel WEB ($(WEB_PORT))..."
-	@nohup npx localtunnel --subdomain via-$(ENV)-web --port $(WEB_PORT) > $(LT_FRONT_LOG) 2>&1 &
-	@sleep 8
-	@echo "Extracting URLs..."
-	@API_URL=$$(grep -m 1 -o 'https://[^ ]*\.loca\.lt' $(LT_API_LOG)); \
-	FRONT_URL=$$(grep -m 1 -o 'https://[^ ]*\.loca\.lt' $(LT_FRONT_LOG)); \
-	echo "VITE_API_URL=$$API_URL" > web/env/.env.$(ENV); \
-	#echo "FRONT_URL=$$FRONT_URL" >> web/env/.env.$(ENV); \
-	echo "API_URL=$$API_URL"; \
-	echo "FRONT_URL=$$FRONT_URL"
+	@nohup npx localtunnel --subdomain via-$(ENV)-api --port $(API_PORT) &
 
-#localtunnel-stop:
-#	@echo "Killing LocalTunnel process..."
-#	@pkill -f "localtunnel" || true
+	@echo "Starting LocalTunnel WEB ($(WEB_PORT))..."
+	@nohup npx localtunnel --subdomain via-$(ENV)-web --port $(WEB_PORT) &
+
+	@echo "VITE_API_URL=https://via-$(ENV)-api.loca.lt" > web/env/.env.$(ENV)
+
+localtunnel-stop:
+	@echo "Killing LocalTunnel process..."
+	@pkill -f "localtunnel" || true
 
 start-api:
 	docker-compose --env-file $(ENV_FILE) up --build -d api
@@ -91,7 +85,6 @@ endif
 	
 # Stop container
 down:
-	#make localtunnel-stop
 	@echo "🔽 Stopping service on ENV: $(ENV_FILE)..."
 	docker-compose --env-file $(ENV_FILE) down
 
