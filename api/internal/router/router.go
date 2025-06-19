@@ -27,7 +27,7 @@ func New(cfg config.Config) http.Handler {
 	r.Get("/guide/via-guide-id/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideByViaGuideId",
 		handler.GetGuideByViaGuideId().ServeHTTP))
 	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
-		handler.CreateGuideToWidthdraw().ServeHTTP))
+		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
 
 	// Set up dependencies
 	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))

@@ -1,15 +1,15 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
-import { getGuide } from '../services/api';
+import { getGuideToWidthraw } from '../services/api';
+import { createGuideToWidthraw } from '../services/api';
 
 const code = ref('');
-//const result = ref(null);
 const withdrawMessage = ref(null);
 const error = ref('');
 const requestId = ref('');
 const searching = ref(false);
 const enabledToWithdraw = ref(false);
-const inProcess = ref(false)
+const inProcess = ref(null)
 
 onMounted(() => {
   document.title = 'Vía Cargo - Consulta de Guía';
@@ -25,7 +25,7 @@ async function search() {
   enabledToWithdraw.value = false;
 
   try {
-    const response = await getGuide(code.value);
+    const response = await getGuideToWidthraw(code.value);
     const { status, content } = response;
     if (status === 200) {
       //result.value = content.data;
@@ -56,16 +56,29 @@ function onEnter() {
   }
 }
 
-function accept() {
+async function accept() {
   withdrawMessage.value = null
-  //TODO call api to put the guide in process 
-  //TODO manage error
   if (enabledToWithdraw.value) {
-    inProcess.value = true
-    setTimeout(() => {
-      inProcess.value = false
-    }, 5000)
-  } 
+    inProcess.value = "Creando nueva guía..."
+    try {
+      const response = await createGuideToWidthraw(code.value);
+      const { status, content } = response;
+      if (status === 200) {
+        inProcess.value = "La guía está en proceso. Por favor aguarde a ser atendido."
+        setTimeout(() => {
+          inProcess.value = null
+          code.value = ""
+        }, 5000)
+      } else {
+        //withdrawMessage.value = null;
+        inProcess.value = null;
+        error.value = content.message || 'error http status ' + status ;
+        requestId.value = content.requestId;
+      }
+    } finally {
+      //do nothing
+    }
+  }
 }
 
 function cancel() {
@@ -175,7 +188,7 @@ function cancel() {
           />
         </svg>
         <p class="text-green-600">
-          La guía está en proceso. Por favor aguarde a ser atendido.
+          {{ inProcess }}
         </p>
       </div>
     </div>  

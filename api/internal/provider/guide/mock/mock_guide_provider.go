@@ -20,3 +20,8 @@ func (m *MockGuideProvider) CreateGuide(ctx context.Context, guide model.ViaGuid
 	args := m.Called(ctx, guide)
 	return args.Get(0).(int), args.Error(1)
 }
+
+func (m *MockGuideProvider) ReinitGuide(ctx context.Context, id int) (int, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(int), args.Error(1)
+}

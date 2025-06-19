@@ -9,6 +9,7 @@ import (
 type GuideProvider interface {
 	GetGuideByViaGuideId(ctx context.Context, viaGuideId string) (model.Guide, error)
 	CreateGuide(ctx context.Context, guide model.ViaGuide) (int, error)
+	ReinitGuide(ctx context.Context, id int) (int, error)
 }
 
 var (

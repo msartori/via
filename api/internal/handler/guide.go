@@ -2,6 +2,8 @@ package handler
 
 import (
 	"net/http"
+	biz_guide_status "via/internal/biz/guide/status"
+	"via/internal/config"
 	"via/internal/i18n"
 	"via/internal/log"
 	"via/internal/model"
@@ -12,10 +14,14 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type GetGuideByViaGuideIdOutput struct {
+	Guide model.Guide `json:"guide"`
+}
+
 func GetGuideByViaGuideId() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		res := response.Response[model.Guide]{}
+		res := response.Response[GetGuideByViaGuideIdOutput]{}
 		viaGuideId := chi.URLParam(r, "viaGuideId")
 
 		if ok := isValidViaGuideId(w, r, viaGuideId); !ok {
@@ -35,7 +41,7 @@ func GetGuideByViaGuideId() http.Handler {
 			return
 		}
 
-		res.Data = guide
+		res.Data = GetGuideByViaGuideIdOutput{guide}
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }
@@ -45,10 +51,10 @@ type CreateGuideToWidthdrawInput struct {
 }
 
 type CreateGuideToWidthdrawOutput struct {
-	ID int `json:"id"`
+	WithdrawMessage string `json:"withdrawMessage"`
 }
 
-func CreateGuideToWidthdraw() http.Handler {
+func CreateGuideToWidthdraw(biz config.Bussiness) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := response.Response[*CreateGuideToWidthdrawOutput]{}
 		var input CreateGuideToWidthdrawInput
@@ -76,6 +82,38 @@ func CreateGuideToWidthdraw() http.Handler {
 			return
 		}
 
+		if ok := isInvalidViaGuideToWithdraw(viaGuide, biz); !ok {
+			logger.Warn(r.Context(), "msg", "not able to create a new guide to process", "via_guide", viaGuide)
+			res.Message = i18n.Get(r, i18n.MsgGuideInvalid)
+			response.WriteJSON(w, r, res, http.StatusBadRequest)
+			return
+		}
+
+		guide, err := guide_provider.Get().GetGuideByViaGuideId(r.Context(), viaGuide.ID)
+
+		if ok := isFailedToFetchGuide(w, r, err); ok {
+			return
+		}
+
+		if guide.ID != 0 {
+			logger.WithLogFieldsInRequest(r, "guide_id", guide.ID)
+			if biz_guide_status.IsAbleToReInit(guide.Status) {
+				guide_provider.Get().ReinitGuide(r.Context(), guide.ID)
+				logger.Info(r.Context(), "msg", "guide re-init")
+				data.WithdrawMessage = getWithDrawMessage(r, inProcess, viaGuide.ID)
+				response.WriteJSON(w, r, res, http.StatusOK)
+				return
+			}
+
+			if !biz_guide_status.IsValidToCreateForWithdraw(guide.Status) {
+				logger.Warn(r.Context(), "msg", "not able to create a new guide to process",
+					"via_guide", viaGuide, "guide", guide)
+				res.Message = i18n.Get(r, i18n.MsgGuideInvalid)
+				response.WriteJSON(w, r, res, http.StatusBadRequest)
+				return
+			}
+		}
+
 		id, err := guide_provider.Get().CreateGuide(r.Context(), viaGuide)
 
 		if err != nil {
@@ -85,7 +123,9 @@ func CreateGuideToWidthdraw() http.Handler {
 			response.WriteJSON(w, r, res, status)
 			return
 		}
-		data.ID = id
+		logger.WithLogFieldsInRequest(r, "guide_id", id)
+		logger.Info(r.Context(), "msg", "guide to withdraw created")
+		data.WithdrawMessage = getWithDrawMessage(r, inProcess, viaGuide.ID)
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }

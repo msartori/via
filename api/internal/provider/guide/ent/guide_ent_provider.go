@@ -3,6 +3,8 @@ package guide_ent_provider
 import (
 	"context"
 	"fmt"
+	biz_operator "via/internal/biz"
+	biz_guide_status "via/internal/biz/guide/status"
 	ent_client "via/internal/client/ent"
 	"via/internal/ent"
 	"via/internal/ent/guide"
@@ -42,13 +44,25 @@ func (p GuideEntProvider) CreateGuide(ctx context.Context, viaGuide model.ViaGui
 	gp, err := p.client.Guide.
 		Create().
 		SetViaGuideID(viaGuide.ID).
-		SetStatus("Initial").
+		SetStatus(biz_guide_status.INITIAL).
 		SetRecipient(viaGuide.Recipient).
-		SetOperatorID(1).
+		SetOperatorID(biz_operator.OPERATOR_SYSTEM).
 		Save(ctx)
 	if err != nil {
 		log.Get().Error(ctx, err, "msg", "failed creating Guide")
 		return 0, fmt.Errorf("failed creating Guide: %w", err)
+	}
+	return gp.ID, nil
+}
+
+func (p GuideEntProvider) ReinitGuide(ctx context.Context, id int) (int, error) {
+	gp, err := p.client.Guide.
+		UpdateOneID(id).
+		SetStatus(biz_guide_status.INITIAL).
+		Save(ctx)
+	if err != nil {
+		log.Get().Error(ctx, err, "msg", "failed updating Guide")
+		return 0, fmt.Errorf("failed updating Guide: %w", err)
 	}
 	return gp.ID, nil
 }
