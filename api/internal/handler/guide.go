@@ -129,3 +129,31 @@ func CreateGuideToWidthdraw(biz config.Bussiness) http.Handler {
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }
+
+type GetOperatorGuideOutput struct {
+	OperatorGuides []model.OperatorGuide `json:"operatorGuides"`
+}
+
+func GetOperatorGuide() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		res := response.Response[GetOperatorGuideOutput]{}
+		operatorGuides := []model.OperatorGuide{}
+		guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetOperatorStatus())
+		if ok := isFailedToFetchGuide(w, r, err); ok {
+			return
+		}
+		for _, guide := range guides {
+			operatorGuides = append(operatorGuides,
+				model.OperatorGuide{
+					GuideId:   guide.ID,
+					Recipient: guide.Recipient,
+					Status:    biz_guide_status.Description(GetLanguage(r), guide.Status),
+					Operator:  guide.Operator,
+				})
+		}
+		logger := log.Get()
+		logger.Info(r.Context(), "msg", "returning operator guides")
+		res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides}
+		response.WriteJSON(w, r, res, http.StatusOK)
+	})
+}

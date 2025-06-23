@@ -82,6 +82,8 @@ func GetGuideToWithdraw(biz config.Bussiness) http.Handler {
 					response.WriteJSON(w, r, res, http.StatusOK)
 					return
 				}
+				// guide found is partially delivered-> a new one will be created
+				// guide found is on-hold, will put back on in-progress
 				if biz_guide_status.IsEnabledToWithdraw(guide.Status) {
 					logger.Info(r.Context(), "msg", "guide enabled to start withdraw process")
 					data.EnabledToWithdraw = true

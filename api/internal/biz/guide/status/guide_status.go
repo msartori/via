@@ -4,29 +4,37 @@ import "fmt"
 
 // Status string constants
 const (
-	INITIAL              = "initial"
-	RECIPIENT_IDENTIFIED = "recipientIdentified"
-	PAYMENT_PROCESSED    = "paymentProcessed"
-	WITHDRAW_ENABLED     = "withdrawEnabled"
-	COUNTER_DELIVERY     = "counterDelivery"
-	WAREHOUSE_DELIVERY   = "warehouseDelivery"
-	PARTIAL_DELIVERED    = "partialDelivered"
-	DELIVERED            = "delivered"
-	ON_HOLD              = "onHold"
+	INITIAL                    = "initial"
+	PENDING_RECIPIENT_IDENTIFY = "pendingRecipientIdentify"
+	RECIPIENT_IDENTIFIED       = "recipientIdentified"
+	PENDING_PAYMENT            = "pendingPayment"
+	PAID                       = "paymentProcessed"
+	//WITHDRAW_ENABLED           = "withdrawEnabled"
+	PENDING_COUNTER_DELIVERY   = "pendingCounterDelivery"
+	PENDING_WAREHOUSE_DELIVERY = "pendingWarehouseDelivery"
+	PARTIAL_DELIVERED          = "partialDelivered"
+	DELIVERED                  = "delivered"
+	ON_HOLD                    = "onHold"
+	SUSPENDED                  = "suspended"
+	RECOVERED                  = "recovered"
 )
 
 // messages holds the localized descriptions
 var messages = map[string]map[string]string{
 	"es": {
-		INITIAL:              "Inicial",
-		RECIPIENT_IDENTIFIED: "Destinatario identificado",
-		PAYMENT_PROCESSED:    "Pago realizado",
-		WITHDRAW_ENABLED:     "Habilitado para retiro",
-		COUNTER_DELIVERY:     "Retiro por mostrador",
-		WAREHOUSE_DELIVERY:   "Retiro por depósito",
-		PARTIAL_DELIVERED:    "Parcialmente entregado",
-		DELIVERED:            "Entregado",
-		ON_HOLD:              "En espera",
+		INITIAL:                    "Inicial",
+		PENDING_RECIPIENT_IDENTIFY: "Pendiente de identificación de destinatario",
+		RECIPIENT_IDENTIFIED:       "Destinatario identificado",
+		PENDING_PAYMENT:            "Pendiente de pago",
+		PAID:                       "Pago realizado",
+		//WITHDRAW_ENABLED:           "Habilitado para retiro",
+		PENDING_COUNTER_DELIVERY:   "Pendiente de retiro por mostrador",
+		PENDING_WAREHOUSE_DELIVERY: "Pendiente de retiro por depósito",
+		PARTIAL_DELIVERED:          "Parcialmente entregado",
+		DELIVERED:                  "Entregado",
+		ON_HOLD:                    "En espera",  // custormer can bring it back
+		SUSPENDED:                  "Suspendida", // indeterminent, only operator can bring it back
+		RECOVERED:                  "Recuperada", // was ON-HOLD or SUSPENDED
 	},
 }
 
@@ -45,11 +53,14 @@ func IsEnabledToWithdraw(status string) bool {
 
 func IsInProcess(status string) bool {
 	return INITIAL == status ||
+		PENDING_RECIPIENT_IDENTIFY == status ||
 		RECIPIENT_IDENTIFIED == status ||
-		PAYMENT_PROCESSED == status ||
-		WITHDRAW_ENABLED == status ||
-		COUNTER_DELIVERY == status ||
-		WAREHOUSE_DELIVERY == status
+		PENDING_PAYMENT == status ||
+		PAID == status ||
+		//WITHDRAW_ENABLED == status ||
+		PENDING_COUNTER_DELIVERY == status ||
+		PENDING_WAREHOUSE_DELIVERY == status ||
+		RECOVERED == status
 }
 
 func IsDelivered(status string) bool {
@@ -62,4 +73,14 @@ func IsAbleToReInit(status string) bool {
 
 func IsValidToCreateForWithdraw(status string) bool {
 	return PARTIAL_DELIVERED == status
+}
+
+func GetMonitorStatus() []string {
+	return []string{INITIAL, PENDING_RECIPIENT_IDENTIFY, RECIPIENT_IDENTIFIED, PENDING_PAYMENT, PAID,
+		PENDING_COUNTER_DELIVERY, PENDING_WAREHOUSE_DELIVERY, RECOVERED}
+}
+
+func GetOperatorStatus() []string {
+	return []string{INITIAL, PENDING_RECIPIENT_IDENTIFY, RECIPIENT_IDENTIFIED, PENDING_PAYMENT, PAID,
+		PENDING_COUNTER_DELIVERY, PENDING_WAREHOUSE_DELIVERY, RECOVERED}
 }

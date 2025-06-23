@@ -29,6 +29,12 @@ func New(cfg config.Config) http.Handler {
 	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
 		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
 
+	r.Get("/monitor/events", middleware.LogHandlerExecution("handler.GetMonitorEvent",
+		handler.GetMonitorEvents().ServeHTTP))
+
+	r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuide",
+		handler.GetOperatorGuide().ServeHTTP))
+
 	// Set up dependencies
 	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))
 	guide_provider.Set(guide_ent_provider.New())

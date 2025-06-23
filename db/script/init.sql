@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS operators (
     id SERIAL PRIMARY KEY,
     account VARCHAR(200) UNIQUE NOT NULL,
+    name VARCHAR(200) NOT NULL,
     enabled boolean NOT NULL DEFAULT false, 
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -39,11 +40,11 @@ FOR EACH ROW
 EXECUTE FUNCTION insert_guide_histories();
 
 -- Insert SYSTEM operator only if not exists
-INSERT INTO operators (id, account, enabled)
-SELECT 1, 'SYSTEM', true
+INSERT INTO operators (id, account, name, enabled)
+SELECT 1, 'SYSTEM', 'SYSTEM', true
 WHERE NOT EXISTS (SELECT 1 FROM operators WHERE id = 1);
 
 -- Advance the sequence safely
 SELECT setval(pg_get_serial_sequence('operators', 'id'), GREATEST(MAX(id), 1)) FROM operators;
 
-INSERT INTO operators (account, enabled) values ('miguel.sartori@gmail.com', 'true');
+INSERT INTO operators (account, enabled) values ('miguel.sartori@gmail.com', 'Miguel Sartori', 'true');

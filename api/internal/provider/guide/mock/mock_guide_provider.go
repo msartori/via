@@ -25,3 +25,8 @@ func (m *MockGuideProvider) ReinitGuide(ctx context.Context, id int) (int, error
 	args := m.Called(ctx, id)
 	return args.Get(0).(int), args.Error(1)
 }
+
+func (m *MockGuideProvider) GetGuidesByStatus(ctx context.Context, status []string) ([]model.Guide, error) {
+	args := m.Called(ctx, status)
+	return args.Get(0).([]model.Guide), args.Error(1)
+}

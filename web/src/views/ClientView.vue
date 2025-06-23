@@ -2,6 +2,8 @@
 import { ref, computed, onMounted } from 'vue';
 import { getGuideToWidthraw } from '../services/api';
 import { createGuideToWidthraw } from '../services/api';
+import { nextTick } from 'vue'
+
 
 const code = ref('');
 const withdrawMessage = ref(null);
@@ -10,9 +12,11 @@ const requestId = ref('');
 const searching = ref(false);
 const enabledToWithdraw = ref(false);
 const inProcess = ref(null)
+const inputCode = ref(null)
 
 onMounted(() => {
   document.title = 'Vía Cargo - Consulta de Guía';
+  inputCode.value.focus()
 });
 
 const codeValido = computed(() => /^\d{12}$/.test(code.value));
@@ -64,11 +68,14 @@ async function accept() {
       const response = await createGuideToWidthraw(code.value);
       const { status, content } = response;
       if (status === 200) {
-        inProcess.value = "La guía está en proceso. Por favor aguarde a ser atendido."
-        setTimeout(() => {
+        //TODO replace with content response
+        inProcess.value = content.data.withdrawMessage
+        setTimeout(async () => {
           inProcess.value = null
           code.value = ""
-        }, 5000)
+          await nextTick()
+          inputCode.value?.focus()
+        }, 10000)
       } else {
         //withdrawMessage.value = null;
         inProcess.value = null;
@@ -78,11 +85,21 @@ async function accept() {
     } finally {
       //do nothing
     }
+  } else {
+    code.value = ""
+    await nextTick()
+    inputCode.value?.focus()
   }
 }
 
 function cancel() {
   withdrawMessage.value = null
+  code.value = ""
+  setTimeout(async () => {
+    await nextTick()
+    inputCode.value?.focus()
+  },100)
+  
 }
 
 </script>
@@ -103,6 +120,7 @@ function cancel() {
     <div v-if="!withdrawMessage && !inProcess" class="w-full max-w-lg border border-green-300 bg-green-50 p-6 rounded shadow">
       <label class="block text-green-700 font-semibold mb-2 text-sm">Código de Guía</label>
       <input
+        ref="inputCode"
         v-model="code"
         type="text"
         @input="onInput"

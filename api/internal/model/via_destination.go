@@ -1,6 +1,6 @@
 package model
 
 type ViaDestination struct {
-	ID          string
+	ID          string `json:"id"`
 	Description string `json:"description"`
 }

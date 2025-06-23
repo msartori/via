@@ -26,7 +26,7 @@ const (
 	notAbleToProcess  = "not_able_to_process"
 )
 
-var messages = map[string]map[string]string{
+var guideMessages = map[string]map[string]string{
 	"es": {
 		notFound:          "El código de guía ingresado [%s] no se encuentra, por favor verifique que sea correcto.",
 		wrongBranch:       "El código de guía ingresado [%s] es correcto, pero el destino del envío no corresponde a esta sucursal. Por favor dirijase a la sucursal %s.",
@@ -45,7 +45,7 @@ func getWithDrawMessage(r *http.Request, key string, args ...interface{}) string
 	if lang == "" {
 		lang = "es"
 	}
-	if msg, ok := messages[lang][key]; ok {
+	if msg, ok := guideMessages[lang][key]; ok {
 		if len(args) > 0 && strings.Contains(msg, "%") {
 			return fmt.Sprintf(msg, args...)
 		}
@@ -119,4 +119,12 @@ func isFailedToFetchGuide(w http.ResponseWriter, r *http.Request, err error) boo
 		return true
 	}
 	return false
+}
+
+func GetLanguage(r *http.Request) string {
+	lang := r.Header.Get("Accept-Language")
+	if lang == "" {
+		lang = "es"
+	}
+	return lang
 }
