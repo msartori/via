@@ -16,6 +16,8 @@ const (
 	FieldID = "id"
 	// FieldAccount holds the string denoting the account field in the database.
 	FieldAccount = "account"
+	// FieldName holds the string denoting the name field in the database.
+	FieldName = "name"
 	// FieldEnabled holds the string denoting the enabled field in the database.
 	FieldEnabled = "enabled"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -48,6 +50,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldAccount,
+	FieldName,
 	FieldEnabled,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -66,6 +69,8 @@ func ValidColumn(column string) bool {
 var (
 	// AccountValidator is a validator for the "account" field. It is called by the builders before save.
 	AccountValidator func(string) error
+	// NameValidator is a validator for the "name" field. It is called by the builders before save.
+	NameValidator func(string) error
 	// DefaultEnabled holds the default value on creation for the "enabled" field.
 	DefaultEnabled bool
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
@@ -87,6 +92,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByAccount orders the results by the account field.
 func ByAccount(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldAccount, opts...).ToFunc()
+}
+
+// ByName orders the results by the name field.
+func ByName(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldName, opts...).ToFunc()
 }
 
 // ByEnabled orders the results by the enabled field.

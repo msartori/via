@@ -19,6 +19,8 @@ type Operator struct {
 	ID int `json:"id,omitempty"`
 	// Account holds the value of the "account" field.
 	Account string `json:"account,omitempty"`
+	// Name holds the value of the "name" field.
+	Name string `json:"name,omitempty"`
 	// Enabled holds the value of the "enabled" field.
 	Enabled bool `json:"enabled,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -69,7 +71,7 @@ func (*Operator) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullBool)
 		case operator.FieldID:
 			values[i] = new(sql.NullInt64)
-		case operator.FieldAccount:
+		case operator.FieldAccount, operator.FieldName:
 			values[i] = new(sql.NullString)
 		case operator.FieldCreatedAt, operator.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -99,6 +101,12 @@ func (o *Operator) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field account", values[i])
 			} else if value.Valid {
 				o.Account = value.String
+			}
+		case operator.FieldName:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field name", values[i])
+			} else if value.Valid {
+				o.Name = value.String
 			}
 		case operator.FieldEnabled:
 			if value, ok := values[i].(*sql.NullBool); !ok {
@@ -166,6 +174,9 @@ func (o *Operator) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", o.ID))
 	builder.WriteString("account=")
 	builder.WriteString(o.Account)
+	builder.WriteString(", ")
+	builder.WriteString("name=")
+	builder.WriteString(o.Name)
 	builder.WriteString(", ")
 	builder.WriteString("enabled=")
 	builder.WriteString(fmt.Sprintf("%v", o.Enabled))

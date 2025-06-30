@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	biz_config "via/internal/biz/config"
 	biz_guide_status "via/internal/biz/guide/status"
-	"via/internal/config"
 	"via/internal/log"
 	guide_provider "via/internal/provider/guide"
 	via_guide_provider "via/internal/provider/via/guide"
@@ -19,7 +19,7 @@ type GetGuideToWithdrawOutput struct {
 	WithdrawMessage   string `json:"withdrawMessage"`
 }
 
-func GetGuideToWithdraw(biz config.Bussiness) http.Handler {
+func GetGuideToWithdraw(biz biz_config.Bussiness) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := response.Response[*GetGuideToWithdrawOutput]{}
 		viaGuideId := chi.URLParam(r, "viaGuideId")
@@ -56,6 +56,14 @@ func GetGuideToWithdraw(biz config.Bussiness) http.Handler {
 			response.WriteJSON(w, r, res, http.StatusOK)
 			return
 		}
+
+		if strings.HasSuffix(viaGuide.Route, biz.HomeDelivery) {
+			logger.Info(r.Context(), "msg", "guide is home delivery")
+			data.WithdrawMessage = getWithDrawMessage(r, homeDelivery, viaGuideId)
+			response.WriteJSON(w, r, res, http.StatusOK)
+			return
+		}
+
 		if slices.Contains(strings.Split(biz.PendingStatus, ","), viaGuide.Status) {
 			logger.Info(r.Context(), "msg", "guide is in via pending status")
 			data.WithdrawMessage = getWithDrawMessage(r, pending, viaGuideId)

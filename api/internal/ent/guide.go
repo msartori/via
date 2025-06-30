@@ -24,6 +24,8 @@ type Guide struct {
 	Recipient string `json:"recipient,omitempty"`
 	// Status holds the value of the "status" field.
 	Status string `json:"status,omitempty"`
+	// Payment holds the value of the "payment" field.
+	Payment string `json:"payment,omitempty"`
 	// OperatorID holds the value of the "operator_id" field.
 	OperatorID int `json:"operator_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
@@ -74,7 +76,7 @@ func (*Guide) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case guide.FieldID, guide.FieldOperatorID:
 			values[i] = new(sql.NullInt64)
-		case guide.FieldViaGuideID, guide.FieldRecipient, guide.FieldStatus:
+		case guide.FieldViaGuideID, guide.FieldRecipient, guide.FieldStatus, guide.FieldPayment:
 			values[i] = new(sql.NullString)
 		case guide.FieldCreatedAt, guide.FieldUpdatedAt:
 			values[i] = new(sql.NullTime)
@@ -116,6 +118,12 @@ func (gu *Guide) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field status", values[i])
 			} else if value.Valid {
 				gu.Status = value.String
+			}
+		case guide.FieldPayment:
+			if value, ok := values[i].(*sql.NullString); !ok {
+				return fmt.Errorf("unexpected type %T for field payment", values[i])
+			} else if value.Valid {
+				gu.Payment = value.String
 			}
 		case guide.FieldOperatorID:
 			if value, ok := values[i].(*sql.NullInt64); !ok {
@@ -189,6 +197,9 @@ func (gu *Guide) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(gu.Status)
+	builder.WriteString(", ")
+	builder.WriteString("payment=")
+	builder.WriteString(gu.Payment)
 	builder.WriteString(", ")
 	builder.WriteString("operator_id=")
 	builder.WriteString(fmt.Sprintf("%v", gu.OperatorID))

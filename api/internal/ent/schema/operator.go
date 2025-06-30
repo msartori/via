@@ -21,6 +21,10 @@ func (Operator) Fields() []ent.Field {
 			NotEmpty().
 			MaxLen(200).
 			Unique(),
+		field.String("name").
+			Immutable().
+			NotEmpty().
+			MaxLen(200),
 		field.Bool("enabled").
 			Default(false),
 		field.Time("created_at").

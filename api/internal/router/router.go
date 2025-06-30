@@ -24,8 +24,10 @@ func New(cfg config.Config) http.Handler {
 	// Routes
 	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",
 		handler.GetGuideToWithdraw(cfg.Bussiness).ServeHTTP))
-	r.Get("/guide/via-guide-id/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideByViaGuideId",
-		handler.GetGuideByViaGuideId().ServeHTTP))
+	/*
+		r.Get("/guide/via-guide-id/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideByViaGuideId",
+			handler.GetGuideByViaGuideId().ServeHTTP))
+	*/
 	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
 		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
 
@@ -34,6 +36,15 @@ func New(cfg config.Config) http.Handler {
 
 	r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuide",
 		handler.GetOperatorGuide().ServeHTTP))
+
+	r.Post("/guide/{guideId}/assign", middleware.LogHandlerExecution("handler.AssignGuideToOperator",
+		handler.AssignGuideToOperator().ServeHTTP))
+
+	r.Get("/guide/{guideId}/status-options", middleware.LogHandlerExecution("handler.GetGuideStatusOptions",
+		handler.GetGuideStatusOptions().ServeHTTP))
+
+	r.Put("/guide/{guideId}/status", middleware.LogHandlerExecution("handler.UpdateGuideStatus",
+		handler.UpdateGuideStatus().ServeHTTP))
 
 	// Set up dependencies
 	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))

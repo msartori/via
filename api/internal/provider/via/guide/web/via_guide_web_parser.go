@@ -102,7 +102,7 @@ func (p HistoricalQueryResponseParser) Parse(data []byte, v any) error {
 		Status:      getCell("Estado"),
 		Packages:    parseInt("BUL"),
 		Weight:      parseFloat("PR Kg"),
-		Shipping:    getCell("Portes"),
+		Payment:     getCell("Portes"),
 		Route:       getCell("Ruta"),
 		Date:        getCell("Fecha"),
 		Sender:      getCell("Remitente"),

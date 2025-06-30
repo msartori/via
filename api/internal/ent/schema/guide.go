@@ -28,6 +28,11 @@ func (Guide) Fields() []ent.Field {
 		field.String("status").
 			NotEmpty().
 			MaxLen(30),
+		field.String("payment").
+			NotEmpty().
+			Immutable().
+			MaxLen(1).
+			MinLen(1),
 		field.Int("operator_id"),
 		field.Time("created_at").
 			Default(time.Now),

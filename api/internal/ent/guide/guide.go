@@ -20,6 +20,8 @@ const (
 	FieldRecipient = "recipient"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
+	// FieldPayment holds the string denoting the payment field in the database.
+	FieldPayment = "payment"
 	// FieldOperatorID holds the string denoting the operator_id field in the database.
 	FieldOperatorID = "operator_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
@@ -54,6 +56,7 @@ var Columns = []string{
 	FieldViaGuideID,
 	FieldRecipient,
 	FieldStatus,
+	FieldPayment,
 	FieldOperatorID,
 	FieldCreatedAt,
 	FieldUpdatedAt,
@@ -76,6 +79,8 @@ var (
 	RecipientValidator func(string) error
 	// StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	StatusValidator func(string) error
+	// PaymentValidator is a validator for the "payment" field. It is called by the builders before save.
+	PaymentValidator func(string) error
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultUpdatedAt holds the default value on creation for the "updated_at" field.
@@ -105,6 +110,11 @@ func ByRecipient(opts ...sql.OrderTermOption) OrderOption {
 // ByStatus orders the results by the status field.
 func ByStatus(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldStatus, opts...).ToFunc()
+}
+
+// ByPayment orders the results by the payment field.
+func ByPayment(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldPayment, opts...).ToFunc()
 }
 
 // ByOperatorID orders the results by the operator_id field.

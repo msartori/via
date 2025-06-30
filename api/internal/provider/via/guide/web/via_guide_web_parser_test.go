@@ -27,7 +27,7 @@ func TestParseHistoricalQueryResponse(t *testing.T) {
 			Status:      "ENT",
 			Packages:    1,
 			Weight:      1.714,
-			Shipping:    "D",
+			Payment:     "D",
 			Route:       "TUC-MDQ",
 			Date:        "13/03/25",
 			Sender:      "ROLDAN PAULA",

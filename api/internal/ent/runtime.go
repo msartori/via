@@ -71,12 +71,31 @@ func init() {
 			return nil
 		}
 	}()
+	// guideDescPayment is the schema descriptor for payment field.
+	guideDescPayment := guideFields[3].Descriptor()
+	// guide.PaymentValidator is a validator for the "payment" field. It is called by the builders before save.
+	guide.PaymentValidator = func() func(string) error {
+		validators := guideDescPayment.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+			validators[2].(func(string) error),
+		}
+		return func(payment string) error {
+			for _, fn := range fns {
+				if err := fn(payment); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// guideDescCreatedAt is the schema descriptor for created_at field.
-	guideDescCreatedAt := guideFields[4].Descriptor()
+	guideDescCreatedAt := guideFields[5].Descriptor()
 	// guide.DefaultCreatedAt holds the default value on creation for the created_at field.
 	guide.DefaultCreatedAt = guideDescCreatedAt.Default.(func() time.Time)
 	// guideDescUpdatedAt is the schema descriptor for updated_at field.
-	guideDescUpdatedAt := guideFields[5].Descriptor()
+	guideDescUpdatedAt := guideFields[6].Descriptor()
 	// guide.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	guide.DefaultUpdatedAt = guideDescUpdatedAt.Default.(func() time.Time)
 	// guide.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
@@ -129,16 +148,34 @@ func init() {
 			return nil
 		}
 	}()
+	// operatorDescName is the schema descriptor for name field.
+	operatorDescName := operatorFields[1].Descriptor()
+	// operator.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	operator.NameValidator = func() func(string) error {
+		validators := operatorDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// operatorDescEnabled is the schema descriptor for enabled field.
-	operatorDescEnabled := operatorFields[1].Descriptor()
+	operatorDescEnabled := operatorFields[2].Descriptor()
 	// operator.DefaultEnabled holds the default value on creation for the enabled field.
 	operator.DefaultEnabled = operatorDescEnabled.Default.(bool)
 	// operatorDescCreatedAt is the schema descriptor for created_at field.
-	operatorDescCreatedAt := operatorFields[2].Descriptor()
+	operatorDescCreatedAt := operatorFields[3].Descriptor()
 	// operator.DefaultCreatedAt holds the default value on creation for the created_at field.
 	operator.DefaultCreatedAt = operatorDescCreatedAt.Default.(func() time.Time)
 	// operatorDescUpdatedAt is the schema descriptor for updated_at field.
-	operatorDescUpdatedAt := operatorFields[3].Descriptor()
+	operatorDescUpdatedAt := operatorFields[4].Descriptor()
 	// operator.DefaultUpdatedAt holds the default value on creation for the updated_at field.
 	operator.DefaultUpdatedAt = operatorDescUpdatedAt.Default.(func() time.Time)
 	// operator.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.

@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	biz_config "via/internal/biz/config"
 	biz_guide_status "via/internal/biz/guide/status"
-	"via/internal/config"
 	"via/internal/global"
 	"via/internal/i18n"
 	"via/internal/log"
@@ -47,11 +47,12 @@ func TestGetGuideHandler(t *testing.T) {
 	mockGuideProvider := new(mock_guide_provider.MockGuideProvider)
 	guide_provider.Set(mockGuideProvider)
 
-	biz := config.Bussiness{
+	biz := biz_config.Bussiness{
 		ViaBranch:       "001",
 		PendingStatus:   "IN_TRANSIT,WAITING",
 		DeliveredStatus: "DELIVERED",
 		WithdrawStatus:  "READY",
+		HomeDelivery:    "CD06",
 	}
 
 	tests := []struct {
@@ -276,6 +277,27 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus:            http.StatusInternalServerError,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890230001",
 				Message: i18n.Get(newRequestWithID("123456789023"), i18n.MsgInternalServerError)},
+		},
+		{
+			name:                         "guide home delivery",
+			guideID:                      "123456789024",
+			guideViaProviderCallExpected: true,
+			guideViaMockReturn: model.ViaGuide{
+				ID: "123456789024",
+				Destination: model.ViaDestination{
+					ID: "001",
+				},
+				Status: "READY",
+				Route:  "CD06",
+			},
+			expectedStatus: http.StatusOK,
+			expectedResponse: response.Response[GetGuideToWithdrawOutput]{
+				RequestID: "1234567890240001",
+				Data: GetGuideToWithdrawOutput{
+					EnabledToWithdraw: false,
+					WithdrawMessage:   getWithDrawMessage(newRequestWithID("123456789024"), homeDelivery, "123456789024"),
+				},
+			},
 		},
 	}
 

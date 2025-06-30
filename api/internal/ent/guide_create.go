@@ -40,6 +40,12 @@ func (gc *GuideCreate) SetStatus(s string) *GuideCreate {
 	return gc
 }
 
+// SetPayment sets the "payment" field.
+func (gc *GuideCreate) SetPayment(s string) *GuideCreate {
+	gc.mutation.SetPayment(s)
+	return gc
+}
+
 // SetOperatorID sets the "operator_id" field.
 func (gc *GuideCreate) SetOperatorID(i int) *GuideCreate {
 	gc.mutation.SetOperatorID(i)
@@ -165,6 +171,14 @@ func (gc *GuideCreate) check() error {
 			return &ValidationError{Name: "status", err: fmt.Errorf(`ent: validator failed for field "Guide.status": %w`, err)}
 		}
 	}
+	if _, ok := gc.mutation.Payment(); !ok {
+		return &ValidationError{Name: "payment", err: errors.New(`ent: missing required field "Guide.payment"`)}
+	}
+	if v, ok := gc.mutation.Payment(); ok {
+		if err := guide.PaymentValidator(v); err != nil {
+			return &ValidationError{Name: "payment", err: fmt.Errorf(`ent: validator failed for field "Guide.payment": %w`, err)}
+		}
+	}
 	if _, ok := gc.mutation.OperatorID(); !ok {
 		return &ValidationError{Name: "operator_id", err: errors.New(`ent: missing required field "Guide.operator_id"`)}
 	}
@@ -214,6 +228,10 @@ func (gc *GuideCreate) createSpec() (*Guide, *sqlgraph.CreateSpec) {
 	if value, ok := gc.mutation.Status(); ok {
 		_spec.SetField(guide.FieldStatus, field.TypeString, value)
 		_node.Status = value
+	}
+	if value, ok := gc.mutation.Payment(); ok {
+		_spec.SetField(guide.FieldPayment, field.TypeString, value)
+		_node.Payment = value
 	}
 	if value, ok := gc.mutation.CreatedAt(); ok {
 		_spec.SetField(guide.FieldCreatedAt, field.TypeTime, value)

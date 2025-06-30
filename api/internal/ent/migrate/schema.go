@@ -14,6 +14,7 @@ var (
 		{Name: "via_guide_id", Type: field.TypeString, Size: 12},
 		{Name: "recipient", Type: field.TypeString, Size: 100},
 		{Name: "status", Type: field.TypeString, Size: 30},
+		{Name: "payment", Type: field.TypeString, Size: 1},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},
 		{Name: "operator_id", Type: field.TypeInt},
@@ -26,7 +27,7 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "guides_operators_guides",
-				Columns:    []*schema.Column{GuidesColumns[6]},
+				Columns:    []*schema.Column{GuidesColumns[7]},
 				RefColumns: []*schema.Column{OperatorsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -64,6 +65,7 @@ var (
 	OperatorsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "account", Type: field.TypeString, Unique: true, Size: 200},
+		{Name: "name", Type: field.TypeString, Size: 200},
 		{Name: "enabled", Type: field.TypeBool, Default: false},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "updated_at", Type: field.TypeTime},

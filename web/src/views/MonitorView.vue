@@ -5,11 +5,14 @@ import { getMonitorEvents } from '../services/api';
 const events = ref([])
 const error = ref('');
 const requestId = ref('');
-
+const playSound = () => {
+  const audio = new Audio('/sounds/select.mp3')
+  audio.play().catch((e) => console.error('Sound error:', e))
+}
 let intervalId = null
 
 async function fetchMonitorEvents() {
-   error.value = null
+  error.value = null
   try {
     const response = await getMonitorEvents();
     const { status, content } = response;

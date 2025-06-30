@@ -70,6 +70,11 @@ func Status(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldEQ(FieldStatus, v))
 }
 
+// Payment applies equality check predicate on the "payment" field. It's identical to PaymentEQ.
+func Payment(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldPayment, v))
+}
+
 // OperatorID applies equality check predicate on the "operator_id" field. It's identical to OperatorIDEQ.
 func OperatorID(v int) predicate.Guide {
 	return predicate.Guide(sql.FieldEQ(FieldOperatorID, v))
@@ -278,6 +283,71 @@ func StatusEqualFold(v string) predicate.Guide {
 // StatusContainsFold applies the ContainsFold predicate on the "status" field.
 func StatusContainsFold(v string) predicate.Guide {
 	return predicate.Guide(sql.FieldContainsFold(FieldStatus, v))
+}
+
+// PaymentEQ applies the EQ predicate on the "payment" field.
+func PaymentEQ(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEQ(FieldPayment, v))
+}
+
+// PaymentNEQ applies the NEQ predicate on the "payment" field.
+func PaymentNEQ(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldNEQ(FieldPayment, v))
+}
+
+// PaymentIn applies the In predicate on the "payment" field.
+func PaymentIn(vs ...string) predicate.Guide {
+	return predicate.Guide(sql.FieldIn(FieldPayment, vs...))
+}
+
+// PaymentNotIn applies the NotIn predicate on the "payment" field.
+func PaymentNotIn(vs ...string) predicate.Guide {
+	return predicate.Guide(sql.FieldNotIn(FieldPayment, vs...))
+}
+
+// PaymentGT applies the GT predicate on the "payment" field.
+func PaymentGT(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldGT(FieldPayment, v))
+}
+
+// PaymentGTE applies the GTE predicate on the "payment" field.
+func PaymentGTE(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldGTE(FieldPayment, v))
+}
+
+// PaymentLT applies the LT predicate on the "payment" field.
+func PaymentLT(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldLT(FieldPayment, v))
+}
+
+// PaymentLTE applies the LTE predicate on the "payment" field.
+func PaymentLTE(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldLTE(FieldPayment, v))
+}
+
+// PaymentContains applies the Contains predicate on the "payment" field.
+func PaymentContains(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldContains(FieldPayment, v))
+}
+
+// PaymentHasPrefix applies the HasPrefix predicate on the "payment" field.
+func PaymentHasPrefix(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldHasPrefix(FieldPayment, v))
+}
+
+// PaymentHasSuffix applies the HasSuffix predicate on the "payment" field.
+func PaymentHasSuffix(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldHasSuffix(FieldPayment, v))
+}
+
+// PaymentEqualFold applies the EqualFold predicate on the "payment" field.
+func PaymentEqualFold(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldEqualFold(FieldPayment, v))
+}
+
+// PaymentContainsFold applies the ContainsFold predicate on the "payment" field.
+func PaymentContainsFold(v string) predicate.Guide {
+	return predicate.Guide(sql.FieldContainsFold(FieldPayment, v))
 }
 
 // OperatorIDEQ applies the EQ predicate on the "operator_id" field.

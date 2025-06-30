@@ -40,6 +40,7 @@ type GuideMutation struct {
 	via_guide_id    *string
 	recipient       *string
 	status          *string
+	payment         *string
 	created_at      *time.Time
 	updated_at      *time.Time
 	clearedFields   map[string]struct{}
@@ -257,6 +258,42 @@ func (m *GuideMutation) OldStatus(ctx context.Context) (v string, err error) {
 // ResetStatus resets all changes to the "status" field.
 func (m *GuideMutation) ResetStatus() {
 	m.status = nil
+}
+
+// SetPayment sets the "payment" field.
+func (m *GuideMutation) SetPayment(s string) {
+	m.payment = &s
+}
+
+// Payment returns the value of the "payment" field in the mutation.
+func (m *GuideMutation) Payment() (r string, exists bool) {
+	v := m.payment
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPayment returns the old "payment" field's value of the Guide entity.
+// If the Guide object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *GuideMutation) OldPayment(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPayment is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPayment requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPayment: %w", err)
+	}
+	return oldValue.Payment, nil
+}
+
+// ResetPayment resets all changes to the "payment" field.
+func (m *GuideMutation) ResetPayment() {
+	m.payment = nil
 }
 
 // SetOperatorID sets the "operator_id" field.
@@ -482,7 +519,7 @@ func (m *GuideMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *GuideMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.via_guide_id != nil {
 		fields = append(fields, guide.FieldViaGuideID)
 	}
@@ -491,6 +528,9 @@ func (m *GuideMutation) Fields() []string {
 	}
 	if m.status != nil {
 		fields = append(fields, guide.FieldStatus)
+	}
+	if m.payment != nil {
+		fields = append(fields, guide.FieldPayment)
 	}
 	if m.operator != nil {
 		fields = append(fields, guide.FieldOperatorID)
@@ -515,6 +555,8 @@ func (m *GuideMutation) Field(name string) (ent.Value, bool) {
 		return m.Recipient()
 	case guide.FieldStatus:
 		return m.Status()
+	case guide.FieldPayment:
+		return m.Payment()
 	case guide.FieldOperatorID:
 		return m.OperatorID()
 	case guide.FieldCreatedAt:
@@ -536,6 +578,8 @@ func (m *GuideMutation) OldField(ctx context.Context, name string) (ent.Value, e
 		return m.OldRecipient(ctx)
 	case guide.FieldStatus:
 		return m.OldStatus(ctx)
+	case guide.FieldPayment:
+		return m.OldPayment(ctx)
 	case guide.FieldOperatorID:
 		return m.OldOperatorID(ctx)
 	case guide.FieldCreatedAt:
@@ -571,6 +615,13 @@ func (m *GuideMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetStatus(v)
+		return nil
+	case guide.FieldPayment:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPayment(v)
 		return nil
 	case guide.FieldOperatorID:
 		v, ok := value.(int)
@@ -653,6 +704,9 @@ func (m *GuideMutation) ResetField(name string) error {
 		return nil
 	case guide.FieldStatus:
 		m.ResetStatus()
+		return nil
+	case guide.FieldPayment:
+		m.ResetPayment()
 		return nil
 	case guide.FieldOperatorID:
 		m.ResetOperatorID()
@@ -1367,6 +1421,7 @@ type OperatorMutation struct {
 	typ                  string
 	id                   *int
 	account              *string
+	name                 *string
 	enabled              *bool
 	created_at           *time.Time
 	updated_at           *time.Time
@@ -1514,6 +1569,42 @@ func (m *OperatorMutation) OldAccount(ctx context.Context) (v string, err error)
 // ResetAccount resets all changes to the "account" field.
 func (m *OperatorMutation) ResetAccount() {
 	m.account = nil
+}
+
+// SetName sets the "name" field.
+func (m *OperatorMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *OperatorMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Operator entity.
+// If the Operator object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *OperatorMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *OperatorMutation) ResetName() {
+	m.name = nil
 }
 
 // SetEnabled sets the "enabled" field.
@@ -1766,9 +1857,12 @@ func (m *OperatorMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *OperatorMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.account != nil {
 		fields = append(fields, operator.FieldAccount)
+	}
+	if m.name != nil {
+		fields = append(fields, operator.FieldName)
 	}
 	if m.enabled != nil {
 		fields = append(fields, operator.FieldEnabled)
@@ -1789,6 +1883,8 @@ func (m *OperatorMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case operator.FieldAccount:
 		return m.Account()
+	case operator.FieldName:
+		return m.Name()
 	case operator.FieldEnabled:
 		return m.Enabled()
 	case operator.FieldCreatedAt:
@@ -1806,6 +1902,8 @@ func (m *OperatorMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case operator.FieldAccount:
 		return m.OldAccount(ctx)
+	case operator.FieldName:
+		return m.OldName(ctx)
 	case operator.FieldEnabled:
 		return m.OldEnabled(ctx)
 	case operator.FieldCreatedAt:
@@ -1827,6 +1925,13 @@ func (m *OperatorMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetAccount(v)
+		return nil
+	case operator.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
 		return nil
 	case operator.FieldEnabled:
 		v, ok := value.(bool)
@@ -1900,6 +2005,9 @@ func (m *OperatorMutation) ResetField(name string) error {
 	switch name {
 	case operator.FieldAccount:
 		m.ResetAccount()
+		return nil
+	case operator.FieldName:
+		m.ResetName()
 		return nil
 	case operator.FieldEnabled:
 		m.ResetEnabled()

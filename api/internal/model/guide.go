@@ -10,6 +10,7 @@ type Guide struct {
 	Recipient  string    `json:"recipient"`
 	Operator   Operator  `json:"operator"`
 	Status     string    `json:"status"`
+	Payment    string    `json:"payment"`
 	CreatedAt  time.Time `json:"createdAt"`
 	UpdatedAt  time.Time `json:"updatedAt"`
 }

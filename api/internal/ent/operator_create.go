@@ -28,6 +28,12 @@ func (oc *OperatorCreate) SetAccount(s string) *OperatorCreate {
 	return oc
 }
 
+// SetName sets the "name" field.
+func (oc *OperatorCreate) SetName(s string) *OperatorCreate {
+	oc.mutation.SetName(s)
+	return oc
+}
+
 // SetEnabled sets the "enabled" field.
 func (oc *OperatorCreate) SetEnabled(b bool) *OperatorCreate {
 	oc.mutation.SetEnabled(b)
@@ -159,6 +165,14 @@ func (oc *OperatorCreate) check() error {
 			return &ValidationError{Name: "account", err: fmt.Errorf(`ent: validator failed for field "Operator.account": %w`, err)}
 		}
 	}
+	if _, ok := oc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Operator.name"`)}
+	}
+	if v, ok := oc.mutation.Name(); ok {
+		if err := operator.NameValidator(v); err != nil {
+			return &ValidationError{Name: "name", err: fmt.Errorf(`ent: validator failed for field "Operator.name": %w`, err)}
+		}
+	}
 	if _, ok := oc.mutation.Enabled(); !ok {
 		return &ValidationError{Name: "enabled", err: errors.New(`ent: missing required field "Operator.enabled"`)}
 	}
@@ -197,6 +211,10 @@ func (oc *OperatorCreate) createSpec() (*Operator, *sqlgraph.CreateSpec) {
 	if value, ok := oc.mutation.Account(); ok {
 		_spec.SetField(operator.FieldAccount, field.TypeString, value)
 		_node.Account = value
+	}
+	if value, ok := oc.mutation.Name(); ok {
+		_spec.SetField(operator.FieldName, field.TypeString, value)
+		_node.Name = value
 	}
 	if value, ok := oc.mutation.Enabled(); ok {
 		_spec.SetField(operator.FieldEnabled, field.TypeBool, value)

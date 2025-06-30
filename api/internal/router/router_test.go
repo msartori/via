@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	biz_config "via/internal/biz/config"
 	"via/internal/config"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
@@ -30,7 +31,7 @@ func TestRouter_New(t *testing.T) {
 		CORS: middleware.CORSCfg{
 			Origins: "*",
 		},
-		Bussiness: config.Bussiness{
+		Bussiness: biz_config.Bussiness{
 			ViaBranch:       "001",
 			PendingStatus:   "PENDING",
 			DeliveredStatus: "DELIVERED",

@@ -32,13 +32,13 @@ var monitorEventStatusByGuideStatus = map[string]string{
 	biz_guide_status.PENDING_PAYMENT:            MSG_COUNTER,
 	biz_guide_status.PAID:                       MSG_WAIT,
 	biz_guide_status.PENDING_COUNTER_DELIVERY:   MSG_COUNTER,
-	biz_guide_status.RECOVERED:                  MSG_WAIT,
+	biz_guide_status.PENDING_WAREHOUSE_DELIVERY: MSG_WAREHOUSE,
 }
 
 func GetMonitorEventStatusDescriptionByGuideStatus(lang, guideStatus string) string {
 	status, found := monitorEventStatusByGuideStatus[guideStatus]
 	if !found {
-		return MSG_WAIT
+		return monitorEventStatus[lang][MSG_WAIT]
 	}
 	return monitorEventStatus[lang][status]
 }

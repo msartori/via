@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"regexp"
 	"slices"
+	"strconv"
 	"strings"
-	"via/internal/config"
+	biz_config "via/internal/biz/config"
 	"via/internal/i18n"
 	"via/internal/log"
 	"via/internal/model"
@@ -24,6 +25,7 @@ const (
 	alreadyInProcess  = "already_in_process"
 	inProcess         = "in_process"
 	notAbleToProcess  = "not_able_to_process"
+	homeDelivery      = "home_delivery"
 )
 
 var guideMessages = map[string]map[string]string{
@@ -37,6 +39,7 @@ var guideMessages = map[string]map[string]string{
 		alreadyInProcess:  "El código de guía ingresado [%s] es correcto, el envío esta en proceso de entrega, aguarde y será atendido.",
 		inProcess:         "La guía [%s] está en proceso. Por favor aguarde a ser atendido.",
 		notAbleToProcess:  "No es posible processar el retiro de la guía [%s], vuelva a consultar más tarde.",
+		homeDelivery:      "El código de guía ingresado [%s] es correcto, pero el envío se realizará a domicilio.",
 	},
 }
 
@@ -96,7 +99,7 @@ func isGuideNotFound(w http.ResponseWriter, r *http.Request, id string) bool {
 	return true
 }
 
-func isInvalidViaGuideToWithdraw(viaGuide model.ViaGuide, biz config.Bussiness) bool {
+func isInvalidViaGuideToWithdraw(viaGuide model.ViaGuide, biz biz_config.Bussiness) bool {
 	if viaGuide.Status == biz.DeliveredStatus {
 		return false
 	}
@@ -122,9 +125,42 @@ func isFailedToFetchGuide(w http.ResponseWriter, r *http.Request, err error) boo
 }
 
 func GetLanguage(r *http.Request) string {
-	lang := r.Header.Get("Accept-Language")
-	if lang == "" {
-		lang = "es"
+	langHeader := r.Header.Get("Accept-Language")
+	if langHeader == "" {
+		return "es" //default language
 	}
-	return lang
+
+	languages := strings.Split(langHeader, ",")
+
+	if len(languages) == 0 {
+		return "es"
+	}
+
+	// Get the first and clean it
+	primary := strings.SplitN(strings.TrimSpace(languages[0]), ";", 2)[0]
+
+	if primary == "" {
+		return "es"
+	}
+
+	return primary
+}
+
+func isValidGuideId(w http.ResponseWriter, r *http.Request, guideId string) (bool, int) {
+	res := response.Response[any]{}
+	if guideId == "" {
+		log.Get().Warn(r.Context(), "msg", "missing guide id")
+		res.Message = i18n.Get(r, i18n.MsgGuideRequired)
+		response.WriteJSON(w, r, res, http.StatusBadRequest)
+		return false, 0
+	}
+
+	if id, err := strconv.Atoi(guideId); err != nil {
+		log.Get().Warn(r.Context(), "msg", "invalid guide id", "guide_id", guideId)
+		res.Message = i18n.Get(r, i18n.MsgGuideRequired)
+		response.WriteJSON(w, r, res, http.StatusBadRequest)
+		return false, 0
+	} else {
+		return true, id
+	}
 }

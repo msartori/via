@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	biz_config "via/internal/biz/config"
 	http_client "via/internal/client/http"
 	db_pool "via/internal/db/pool"
 	app_log "via/internal/log/app"
@@ -11,13 +12,6 @@ import (
 
 	"github.com/caarlos0/env/v10"
 )
-
-type Bussiness struct {
-	ViaBranch       string `env:"VIA_BRANCH"  envDefault:"123" json:"viaBranch"`
-	WithdrawStatus  string `env:"WITHDRAW_STATUS"  envDefault:"CRR" json:"withdrawStatus"`
-	DeliveredStatus string `env:"DELIVERED_STATUS" envDefault:"ENT" json:"deliveredStatus"`
-	PendingStatus   string `env:"PENDING_STATUS"  envDefault:"ASP,CPO,ORI,PTE" json:"pendingStatus"`
-}
 
 type Application struct {
 	Env            string `env:"ENV"  envDefault:"production" json:"env"`
@@ -32,7 +26,7 @@ type Config struct {
 	Database       db_pool.DatabaseCfg       `envPrefix:"DB_" json:"db"`
 	CORS           middleware.CORSCfg        `envPrefix:"CORS_" json:"cors"`
 	GuideWebClient http_client.HttpClientCfg `envPrefix:"GUIDE_WEB_CLIENT_" json:"guideWebClient"`
-	Bussiness      Bussiness                 `envPrefix:"BUSSINESS_" json:"bussiness"`
+	Bussiness      biz_config.Bussiness      `envPrefix:"BUSSINESS_" json:"bussiness"`
 }
 
 var (

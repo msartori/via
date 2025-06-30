@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS guides (
     via_guide_id CHAR(12) NOT NULL,
     recipient VARCHAR(100) NOT NULL,
     status VARCHAR(30) NOT NULL,
+    payment CHAR(1) NOT NULL DEFAULT 'P',
     operator_id INTEGER NOT NULL REFERENCES operators(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -47,4 +48,6 @@ WHERE NOT EXISTS (SELECT 1 FROM operators WHERE id = 1);
 -- Advance the sequence safely
 SELECT setval(pg_get_serial_sequence('operators', 'id'), GREATEST(MAX(id), 1)) FROM operators;
 
-INSERT INTO operators (account, enabled) values ('miguel.sartori@gmail.com', 'Miguel Sartori', 'true');
+INSERT INTO operators (account, name, enabled) values ('miguel.sartori@gmail.com', 'Miguel Sartori', 'true');
+
+INSERT INTO operators (account, name, enabled) values ('jose.lopez@gmail.com', 'Jose Lopez', 'true');
