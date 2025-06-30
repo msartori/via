@@ -1,0 +1,27 @@
+app = "via-web"
+primary_region = "eze"
+
+[build]
+  dockerfile = "dockerfile.fly.web"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 80
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.checks]
+    type = "http"
+    path = "/"
+    method = "GET"
+    interval = 10000         # cada 10 segundos
+    timeout = 2000           # timeout 2 segundos
+    grace_period = 5000      # espera 5 segundos al arrancar
+    restart_limit = 0        # sin límite de reinicios
+

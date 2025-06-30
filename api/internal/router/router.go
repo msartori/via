@@ -10,6 +10,7 @@ import (
 	guide_ent_provider "via/internal/provider/guide/ent"
 	via_guide_provider "via/internal/provider/via/guide"
 	via_guide_web_provider "via/internal/provider/via/guide/web"
+	"via/internal/response"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -20,6 +21,10 @@ func New(cfg config.Config) http.Handler {
 	r.Use(middleware.Recover)
 	r.Use(middleware.Timeout(time.Duration(cfg.Application.RequestTimeout) * time.Second))
 	r.Use(middleware.Request)
+
+	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response.WriteJSON[any](w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
+	}))
 
 	// Routes
 	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",

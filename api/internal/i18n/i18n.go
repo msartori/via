@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"via/internal/response"
 )
 
 const (
@@ -47,10 +48,7 @@ func GetWithLang(lang, key string, args ...interface{}) string {
 }
 
 func Get(r *http.Request, key string, args ...interface{}) string {
-	lang := r.Header.Get("Accept-Language")
-	if lang == "" {
-		lang = "es"
-	}
+	lang := response.GetLanguage(r)
 	if msg, ok := messages[lang][key]; ok {
 		if len(args) > 0 {
 			if strings.Contains(msg, "%") {

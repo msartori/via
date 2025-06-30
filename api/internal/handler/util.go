@@ -44,10 +44,7 @@ var guideMessages = map[string]map[string]string{
 }
 
 func getWithDrawMessage(r *http.Request, key string, args ...interface{}) string {
-	lang := r.Header.Get("Accept-Language")
-	if lang == "" {
-		lang = "es"
-	}
+	lang := response.GetLanguage(r)
 	if msg, ok := guideMessages[lang][key]; ok {
 		if len(args) > 0 && strings.Contains(msg, "%") {
 			return fmt.Sprintf(msg, args...)
@@ -122,28 +119,6 @@ func isFailedToFetchGuide(w http.ResponseWriter, r *http.Request, err error) boo
 		return true
 	}
 	return false
-}
-
-func GetLanguage(r *http.Request) string {
-	langHeader := r.Header.Get("Accept-Language")
-	if langHeader == "" {
-		return "es" //default language
-	}
-
-	languages := strings.Split(langHeader, ",")
-
-	if len(languages) == 0 {
-		return "es"
-	}
-
-	// Get the first and clean it
-	primary := strings.SplitN(strings.TrimSpace(languages[0]), ";", 2)[0]
-
-	if primary == "" {
-		return "es"
-	}
-
-	return primary
 }
 
 func isValidGuideId(w http.ResponseWriter, r *http.Request, guideId string) (bool, int) {

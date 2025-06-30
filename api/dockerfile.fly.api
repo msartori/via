@@ -1,0 +1,36 @@
+# -------------------------
+# Build stage
+# -------------------------
+FROM golang:1.24 as builder
+
+WORKDIR /app
+
+# Copy all files needed
+COPY . .
+
+# Install make if needed (for local runs too)
+RUN apt-get update && apt-get install -y make
+
+# Build the binary with your Makefile (assumes it places binary in api/build/via)
+RUN go build -o /app/via ./cmd
+
+# -------------------------
+# Runtime image
+# -------------------------
+FROM debian:bookworm-slim
+
+WORKDIR /app
+
+# Install SSL certs for HTTPS if needed
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy the built binary from the build stage
+COPY --from=builder /app/via .
+
+# Expose the port expected by Fly
+EXPOSE 8080
+
+# Entrypoint
+CMD ["./via"]
+

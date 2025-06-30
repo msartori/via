@@ -10,3 +10,7 @@ lt_front.log
 /db_data.local
 /db_data.dev
 nohup.out
+api/env/set-fly-secrets.sh
+api/env/.env.prod
+api/set-fly-secrets.sh
+web/env/.env.prod

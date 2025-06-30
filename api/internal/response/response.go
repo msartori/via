@@ -3,6 +3,8 @@ package response
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+	biz_language "via/internal/biz/language"
 	"via/internal/global"
 )
 
@@ -30,4 +32,26 @@ func writeJSON[T any](w http.ResponseWriter, r *http.Request, res Response[T], s
 		res.RequestID = requestID
 	}
 	json.NewEncoder(w).Encode(res)
+}
+
+func GetLanguage(r *http.Request) string {
+	langHeader := r.Header.Get("Accept-Language")
+	if langHeader == "" {
+		return biz_language.DEFAULT //default language
+	}
+
+	languages := strings.Split(langHeader, ",")
+
+	if len(languages) == 0 {
+		return biz_language.DEFAULT
+	}
+
+	// Get the first and clean it
+	primary := strings.SplitN(strings.TrimSpace(languages[0]), ";", 2)[0]
+
+	if primary == "" {
+		return biz_language.DEFAULT
+	}
+
+	return primary
 }

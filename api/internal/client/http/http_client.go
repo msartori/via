@@ -15,9 +15,10 @@ type HttpClient struct {
 	AuthorizationHeader string
 }
 type HttpClientCfg struct {
-	Timeout                   int    `env:"TIMEOUT" envDefault:"30" json:"timeout"` // in seconds
-	BaseURL                   string `env:"BASE_URL" envDefault:"http://localhost:8080" json:"baseUrl"`
-	AuthorizationHeaderSecret string `env:"AUTHORIZATION_HEADER_SECRET" envDefault:"" json:"-"`
+	Timeout                       int    `env:"TIMEOUT" envDefault:"30" json:"timeout"` // in seconds
+	BaseURL                       string `env:"BASE_URL" envDefault:"http://localhost:8080" json:"baseUrl"`
+	AuthorizationHeaderSecretFile string `env:"AUTHORIZATION_HEADER_SECRET_FILE" envDefault:"" json:"-"`
+	AuthorizationHeaderSecret     string `env:"AUTHORIZATION_HEADER_SECRET" envDefault:"" json:"-"`
 }
 
 func New(cfg HttpClientCfg) *HttpClient {

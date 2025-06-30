@@ -31,7 +31,7 @@ func GetMonitorEvents() http.Handler {
 			monitorEvents = append(monitorEvents,
 				model.MonitorEvent{GuideId: guide.ViaGuideID,
 					Recipient: guide.Recipient,
-					Status:    model.GetMonitorEventStatusDescriptionByGuideStatus(GetLanguage(r), guide.Status),
+					Status:    model.GetMonitorEventStatusDescriptionByGuideStatus(response.GetLanguage(r), guide.Status),
 					Highlight: model.GetHighlightByGuideStatus(guide.Status)})
 		}
 		res.Data = GetMonitorEventOutput{Events: monitorEvents}

@@ -19,3 +19,11 @@ psql -h localhost -p 5432 -U viauser -d viadb
 pkill -f "localtunnel"
 
 export PATH=$PATH:$(go env GOPATH)/bin
+
+
+fly auth login
+
+fly logs -i [instance]
+
+fly mpg connect --cluster [cluster]
+

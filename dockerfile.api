@@ -41,7 +41,4 @@
     EXPOSE ${PORT}
     
     ENV APPNAME=${APPNAME}
-    #ENTRYPOINT ["sh", "-c"]
-    # App start
-    #CMD ["./$APPNAME"]
     ENTRYPOINT ["./via"]

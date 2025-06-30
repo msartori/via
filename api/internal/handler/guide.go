@@ -152,11 +152,11 @@ func GetOperatorGuide() http.Handler {
 				model.OperatorGuide{
 					GuideId:    guide.ID,
 					Recipient:  guide.Recipient,
-					Status:     biz_guide_status.GetStatusDescription(GetLanguage(r), guide.Status),
+					Status:     biz_guide_status.GetStatusDescription(response.GetLanguage(r), guide.Status),
 					Operator:   guide.Operator,
 					Selectable: guide.Operator.ID == biz_operator.OPERATOR_SYSTEM || guide.Operator.ID == operatorId,
 					ViaGuideId: guide.ViaGuideID,
-					Payment:    biz_config.GetPaymentDescription(GetLanguage(r), guide.Payment),
+					Payment:    biz_config.GetPaymentDescription(response.GetLanguage(r), guide.Payment),
 					LastChange: guide.UpdatedAt,
 				})
 		}
@@ -238,7 +238,7 @@ func GetGuideStatusOptions() http.Handler {
 		for _, nStatus := range nextStatus {
 			statusOptions = append(statusOptions,
 				model.GenericIdDesc{ID: nStatus,
-					Description: biz_guide_status.GetStatusDescription(GetLanguage(r), nStatus),
+					Description: biz_guide_status.GetStatusDescription(response.GetLanguage(r), nStatus),
 					Extra:       biz_guide_status.GetStatusState(nStatus)})
 		}
 		res.Data = GetGuideStatusOptionsOutput{StatusOptions: statusOptions}

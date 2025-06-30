@@ -18,6 +18,7 @@ var (
 
 type DatabaseCfg struct {
 	PasswordFile string `env:"PASSWORD_FILE" envDefault:"" json:"passwordFile"`
+	Password     string `env:"PASSWORD" envDefault:"" json:"-"`
 	User         string `env:"USER" envDefault:"" json:"-"`
 	Base         string `env:"BASE" envDefault:"" json:"-"`
 	Port         string `env:"PORT" envDefault:"" json:"port"`
@@ -26,8 +27,11 @@ type DatabaseCfg struct {
 
 func New(cfg DatabaseCfg) (*sql.DB, error) {
 	var err error
+	if cfg.Password == "" {
+		cfg.Password = secret.ReadSecret(cfg.PasswordFile)
+	}
 	once.Do(func() {
-		dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, secret.ReadSecret(cfg.PasswordFile), cfg.Host, cfg.Port, cfg.Base)
+		dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Base)
 		instance, err = sql.Open("pgx", dsn)
 		if err != nil {
 			err = fmt.Errorf("opening DB: %w", err)
