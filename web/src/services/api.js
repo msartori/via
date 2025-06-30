@@ -86,7 +86,7 @@ export async function getMonitorEvents(params) {
 
 export async function getOperatorGuides(operatorId) {
   try {
-    const res = await axios.get(`${apiUrl}/operator/guides`, {
+    const res = await axios.get(`${apiUrl}/operator/guides`, { withCredentials: true }, {
       params: {
         operatorId
       },
