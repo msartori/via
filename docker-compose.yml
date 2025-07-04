@@ -17,8 +17,13 @@ services:
     secrets:
       - db_password   
       - via_auth
+      - oauth_client_secret
+      - jwt_private_key 
+      - jwt_public_key
+      - ds_password
     depends_on:
       - db  
+      - ds
 
   web:
     build:
@@ -54,7 +59,23 @@ services:
     secrets:
       - db_password
     ports:
-      - "${DB_PORT}:5432"  # opcional si necesitas acceder desde el host
+      - "${DB_PORT}:5432"
+
+  ds:
+    image: redis:7
+    container_name: ${APPNAME}-${ENV}-redis
+    env_file:
+      - ds/env/.env.${ENV}   
+    networks:
+      - ${APPNAME}-network
+    ports:
+      - "${DS_PORT}:6379"
+    volumes:
+      - ./ds_data.${ENV}:/data
+    secrets:
+      - ds_password
+    command: >
+      redis-server --requirepass "$(cat /run/secrets/ds_password)"
 
 networks:
   via-network:
@@ -66,3 +87,11 @@ secrets:
     file: ./secrets/db_password.${ENV}
   via_auth:
     file: ./secrets/via_auth.${ENV}
+  oauth_client_secret:
+    file: ./secrets/oauth_client_secret.${ENV}
+  jwt_private_key:
+    file: ./secrets/jwt_private_key.${ENV}
+  jwt_public_key:
+    file: ./secrets/jwt_public_key.${ENV}
+  ds_password:
+    file: ./secrets/ds_password.${ENV}  

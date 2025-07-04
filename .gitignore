@@ -14,3 +14,5 @@ api/env/set-fly-secrets.sh
 api/env/.env.prod
 api/set-fly-secrets.sh
 web/env/.env.prod
+/ds_data.local
+/ds_data.dev

@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
 	biz_config "via/internal/biz/config"
 	biz_guide_status "via/internal/biz/guide/status"
 	biz_operator "via/internal/biz/operator"
@@ -140,9 +139,12 @@ func GetOperatorGuide() http.Handler {
 		res := response.Response[GetOperatorGuideOutput]{}
 		operatorGuides := []model.OperatorGuide{}
 		operatorId := 0
-		if operatorIdParam, err := strconv.Atoi(r.URL.Query().Get("operatorId")); err == nil {
-			operatorId = operatorIdParam
+		if operatorId = isValidOperatorId(w, r); operatorId == 0 {
+			return
 		}
+		logger := log.Get()
+		logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+
 		guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetOperatorStatus())
 		if ok := isFailedToFetchGuide(w, r, err); ok {
 			return
@@ -160,15 +162,10 @@ func GetOperatorGuide() http.Handler {
 					LastChange: guide.UpdatedAt,
 				})
 		}
-		logger := log.Get()
 		logger.Info(r.Context(), "msg", "returning operator guides")
 		res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides}
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
-}
-
-type AssignGuideToOperatorInput struct {
-	OperatorID int `json:"operatorId"`
 }
 
 func AssignGuideToOperator() http.Handler {
@@ -178,15 +175,14 @@ func AssignGuideToOperator() http.Handler {
 		if !valid {
 			return
 		}
-
 		logger := log.Get()
 		logger.WithLogFieldsInRequest(r, "guide_id", guideId)
-		var input AssignGuideToOperatorInput
-		if ok := getJsonBody(w, r, &input); !ok {
+		operatorId := 0
+		if operatorId = isValidOperatorId(w, r); operatorId == 0 {
 			return
 		}
-		logger.WithLogFieldsInRequest(r, "operator_id", input.OperatorID)
-		err := guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guideId, Operator: model.Operator{ID: input.OperatorID}})
+		logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+		err := guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guideId, Operator: model.Operator{ID: operatorId}})
 		if err != nil {
 			log.Get().Error(r.Context(), err, "msg", "failed assigning operator to guide")
 			res.Message = i18n.Get(r, i18n.MsgInternalServerError)
@@ -257,9 +253,15 @@ func UpdateGuideStatus() http.Handler {
 		if !valid {
 			return
 		}
-
 		logger := log.Get()
 		logger.WithLogFieldsInRequest(r, "guide_id", guideId)
+
+		operatorId := 0
+		if operatorId = isValidOperatorId(w, r); operatorId == 0 {
+			return
+		}
+		logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+
 		var input UpdateGuideStatusInput
 		if ok := getJsonBody(w, r, &input); !ok {
 			return

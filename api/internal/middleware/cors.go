@@ -21,6 +21,7 @@ func CORS(cfg CORSCfg) func(http.Handler) http.Handler {
 			w.Header().Set("Access-Control-Allow-Origin", cfg.Origins)
 			w.Header().Set("Access-Control-Allow-Methods", cfg.Methods)
 			w.Header().Set("Access-Control-Allow-Headers", cfg.Headers)
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
 
 			// Resolve preflight requests
 			// If the request method is OPTIONS, respond with 200 OK

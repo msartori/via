@@ -19,9 +19,9 @@ func StartServer(cfg config.Config) {
 	server := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Application.Port),
 		Handler:      r,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  30 * time.Second,
+		ReadTimeout:  1500 * time.Second,
+		WriteTimeout: 1500 * time.Second,
+		IdleTimeout:  3000 * time.Second,
 	}
 	logger := log.Get()
 	go func() {

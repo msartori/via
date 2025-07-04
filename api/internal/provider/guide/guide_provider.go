@@ -27,8 +27,8 @@ func Get() GuideProvider {
 	return instance
 }
 
-func Set(guideProcessProvider GuideProvider) {
+func Set(guideProvider GuideProvider) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	instance = guideProcessProvider
+	instance = guideProvider
 }

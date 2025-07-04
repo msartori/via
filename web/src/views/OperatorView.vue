@@ -10,8 +10,6 @@ const requestId = ref('')
 const statusChanging = ref(false)
 const animateActivity = ref(false)
 
-const operatorId = '3'
-
 const {
   operatorGuides,
   activeGuide,

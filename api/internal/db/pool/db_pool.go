@@ -1,4 +1,4 @@
-package db_poll
+package db_pool
 
 import (
 	"database/sql"

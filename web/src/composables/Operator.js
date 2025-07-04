@@ -10,7 +10,6 @@ export default function useOperator({
   statusChanging,
   animateActivity
 }) {
-  const operatorId = '3'
   const operatorGuides = ref([])
   const activeGuide = ref(null)
   const statusOptions = ref([])
@@ -21,7 +20,7 @@ export default function useOperator({
 
   async function fetchOperatorGuides() {
     error.value = null
-    const response = await getOperatorGuides(operatorId)
+    const response = await getOperatorGuides()
     const { status, content } = response
 
     if (status === 200) {
@@ -30,13 +29,16 @@ export default function useOperator({
 
       if (activeGuide.value) {
         const stillExists = updatedGuides.find(g => g.guideId === activeGuide.value.guideId)
-        if (stillExists && stillExists.operator?.id === Number(operatorId)) {
+        if (stillExists && stillExists.operator.id != 0) {
           activeGuide.value = { ...stillExists }
           await loadStatusOptions(stillExists.guideId)
         } else {
           activeGuide.value = null
         }
       }
+    } else if (status === 401) {
+      error.value = content.message || 'No autorizado'
+      requestId.value = content.requestId
     } else {
       error.value = content.message || 'Error al obtener las guías'
       requestId.value = content.requestId
@@ -70,14 +72,14 @@ export default function useOperator({
   async function selectGuide(guide) {
     if (!guide.selectable) return
 
-    if (guide.operator?.id === Number(operatorId)) {
+    if (guide.operator.id != 0) {
       activeGuide.value = { ...guide }
       await loadStatusOptions(guide.guideId)
       scrollToActivity()
       return
     }
 
-    const response = await assignGuideToOperator(guide.guideId, operatorId)
+    const response = await assignGuideToOperator(guide.guideId)
     if (response.status === 200) {
       await fetchOperatorGuides()
       const updated = operatorGuides.value.find(g => g.guideId === guide.guideId)
@@ -135,7 +137,7 @@ export default function useOperator({
 
   onMounted(() => {
     fetchOperatorGuides()
-    refreshIntervalId = setInterval(fetchOperatorGuides, 10000)
+    refreshIntervalId = setInterval(fetchOperatorGuides, 100000)
   })
 
   onBeforeUnmount(() => {
