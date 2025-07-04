@@ -15,6 +15,7 @@ const (
 	MsgRequestTimeout            = "request_timeout"
 	MsgRequestCanceledByClient   = "request_canceled_client"
 	MsgUnexpectedContextError    = "unexpected_context_error"
+	MsgTooManyRequestsError      = "too_many_requests_error"
 	MsgOperatorInvalid           = "operator_invalid"
 	MsgOperatorUnauthorized      = "operator_unauthorized"
 	MsgAuthStateNotFound         = "auth_state_not_found"
@@ -31,6 +32,7 @@ var messages = map[string]map[string]string{
 		MsgRequestTimeout:            "Tiempo de espera de solicitud agotado.",
 		MsgRequestCanceledByClient:   "Solicitud cancelada por el cliente.",
 		MsgUnexpectedContextError:    "Error de contexto inesperado.",
+		MsgTooManyRequestsError:      "Demasiadas solicitudes, por favor intente más tarde.",
 		MsgOperatorInvalid:           "El Id de Operador es inválido",
 		MsgOperatorUnauthorized:      "Operador no autorizado.",
 		MsgAuthStateNotFound:         "Estado de autenticación no encontrado.",

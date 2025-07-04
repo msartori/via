@@ -18,6 +18,7 @@ type DS interface {
 	Set(ctx context.Context, key string, value string, ttlSeconds int) error
 	Get(ctx context.Context, key string) (string, error)
 	Del(ctx context.Context, key string) error
+	Incr(ctx context.Context, key string) (int64, error)
 }
 
 var (

@@ -62,8 +62,10 @@ services:
       - "${DB_PORT}:5432"
 
   ds:
-    image: redis:7
-    container_name: ${APPNAME}-${ENV}-redis
+    build:
+      context: .
+      dockerfile: dockerfile.ds
+    container_name: ${APPNAME}-${ENV}-ds
     env_file:
       - ds/env/.env.${ENV}   
     networks:

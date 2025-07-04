@@ -137,7 +137,7 @@ export default function useOperator({
 
   onMounted(() => {
     fetchOperatorGuides()
-    refreshIntervalId = setInterval(fetchOperatorGuides, 100000)
+    refreshIntervalId = setInterval(fetchOperatorGuides, 10000)
   })
 
   onBeforeUnmount(() => {

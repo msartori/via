@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"time"
 	"via/internal/config"
+	"via/internal/ds"
 	"via/internal/handler"
 	"via/internal/middleware"
 	guide_provider "via/internal/provider/guide"
@@ -12,6 +13,7 @@ import (
 	operator_ent_provider "via/internal/provider/operator/ent"
 	via_guide_provider "via/internal/provider/via/guide"
 	via_guide_web_provider "via/internal/provider/via/guide/web"
+	"via/internal/ratelimit"
 	"via/internal/response"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +25,16 @@ func New(cfg config.Config) http.Handler {
 	r.Use(middleware.Recover)
 	r.Use(middleware.Timeout(time.Duration(cfg.Application.RequestTimeout) * time.Second))
 	r.Use(middleware.Request)
+	r.Use(middleware.NewRateLimitMiddleware(
+		map[string]middleware.RateLimitMiddleware{
+			"/operator/guides": {
+				RateLimiter: ratelimit.New("OperatorGuide", 6, 1*time.Minute, ds.Get()),
+				KeyGetter: func(r *http.Request) string {
+					return r.RemoteAddr
+				},
+			},
+		},
+	))
 
 	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
@@ -52,10 +64,13 @@ func New(cfg config.Config) http.Handler {
 
 	r.Group(func(r chi.Router) {
 		r.Use(middleware.JWTAuthMiddleware(cfg.OAuth))
-		r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuide",
+
+		r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuides",
 			handler.GetOperatorGuide().ServeHTTP))
+
 		r.Post("/guide/{guideId}/assign", middleware.LogHandlerExecution("handler.AssignGuideToOperator",
 			handler.AssignGuideToOperator().ServeHTTP))
+
 		r.Put("/guide/{guideId}/status", middleware.LogHandlerExecution("handler.UpdateGuideStatus",
 			handler.UpdateGuideStatus().ServeHTTP))
 

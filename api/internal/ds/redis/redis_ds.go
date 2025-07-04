@@ -38,3 +38,7 @@ func (r *RedisDS) Get(ctx context.Context, key string) (string, error) {
 func (r *RedisDS) Del(ctx context.Context, key string) error {
 	return r.client.Del(ctx, key).Err()
 }
+
+func (r *RedisDS) Incr(ctx context.Context, key string) (int64, error) {
+	return r.client.Incr(ctx, key).Result()
+}
