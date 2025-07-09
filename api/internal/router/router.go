@@ -43,10 +43,7 @@ func New(cfg config.Config) http.Handler {
 	// Routes
 	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",
 		handler.GetGuideToWithdraw(cfg.Bussiness).ServeHTTP))
-	/*
-		r.Get("/guide/via-guide-id/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideByViaGuideId",
-			handler.GetGuideByViaGuideId().ServeHTTP))
-	*/
+
 	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
 		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
 
@@ -57,7 +54,7 @@ func New(cfg config.Config) http.Handler {
 		handler.GetGuideStatusOptions().ServeHTTP))
 
 	r.Get("/auth/login", middleware.LogHandlerExecution("handler.Login",
-		handler.Login(cfg.OAuth).ServeHTTP))
+		handler.Login().ServeHTTP))
 
 	r.Get("/auth/callback", middleware.LogHandlerExecution("handler.LoginCallback",
 		handler.LoginCallback(cfg.OAuth).ServeHTTP))

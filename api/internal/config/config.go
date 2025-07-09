@@ -29,7 +29,7 @@ type Config struct {
 	Database       db_pool.DatabaseCfg       `envPrefix:"DB_" json:"db"`
 	CORS           middleware.CORSCfg        `envPrefix:"CORS_" json:"cors"`
 	GuideWebClient http_client.HttpClientCfg `envPrefix:"GUIDE_WEB_CLIENT_" json:"guideWebClient"`
-	Bussiness      biz_config.Bussiness      `envPrefix:"BUSSINESS_" json:"bussiness"`
+	Bussiness      biz_config.BussinessCfg   `envPrefix:"BUSSINESS_" json:"bussiness"`
 	OAuth          auth.OAuthConfig          `envPrefix:"OAUTH_" json:"oauth"`
 	JWT            jwt_key.JWTConfig         `envPrefix:"JWT_" json:"jwt"`
 	DS             ds.DSConfig               `envPrefix:"DS_" json:"ds"`
@@ -38,6 +38,7 @@ type Config struct {
 var (
 	instance *Config
 	once     sync.Once
+	mutex    sync.Mutex
 )
 
 // Get returns a singleton config loaded from environment variables
@@ -59,4 +60,11 @@ func Get() Config {
 		instance = &cfg
 	})
 	return *instance
+}
+
+func reset() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	instance = nil
+	once = sync.Once{}
 }

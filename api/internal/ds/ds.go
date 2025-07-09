@@ -16,7 +16,7 @@ type DSConfig struct {
 // DataStore is an interface that defines methods for setting, getting, and deleting data in a datastore.
 type DS interface {
 	Set(ctx context.Context, key string, value string, ttlSeconds int) error
-	Get(ctx context.Context, key string) (string, error)
+	Get(ctx context.Context, key string) (bool, string, error)
 	Del(ctx context.Context, key string) error
 	Incr(ctx context.Context, key string) (int64, error)
 }

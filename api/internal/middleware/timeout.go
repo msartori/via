@@ -5,6 +5,7 @@ import (
 	"errors"
 	"maps"
 	"net/http"
+	"runtime/debug"
 	"sync"
 	"time"
 	"via/internal/i18n"
@@ -88,6 +89,14 @@ func Timeout(duration time.Duration) func(http.Handler) http.Handler {
 			// This allows us to wait for the handler to finish or timeout
 			// without blocking the main goroutine
 			go func() {
+				defer func() {
+					if rec := recover(); rec != nil {
+						log.Get().Error(r.Context(), rec.(error), "msg", "recovering from panic in timeout middleware",
+							"stack", string(debug.Stack()))
+						http.Error(tw, "internal server error", http.StatusInternalServerError)
+						return
+					}
+				}()
 				next.ServeHTTP(tw, r)
 				close(done)
 			}()

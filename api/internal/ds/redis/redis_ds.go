@@ -14,9 +14,11 @@ type RedisDS struct {
 	client *redis.Client
 }
 
+var readSecret = secret.ReadSecret
+
 func New(cfg ds.DSConfig) ds.DS {
 	if cfg.Password == "" {
-		cfg.Password = secret.ReadSecret(cfg.PasswordFile)
+		cfg.Password = readSecret(cfg.PasswordFile)
 	}
 	base, _ := strconv.Atoi(cfg.Base)
 	rdb := redis.NewClient(&redis.Options{
@@ -31,8 +33,12 @@ func (r *RedisDS) Set(ctx context.Context, key string, value string, ttlSeconds 
 	return r.client.Set(ctx, key, value, time.Duration(ttlSeconds)*time.Second).Err()
 }
 
-func (r *RedisDS) Get(ctx context.Context, key string) (string, error) {
-	return r.client.Get(ctx, key).Result()
+func (r *RedisDS) Get(ctx context.Context, key string) (bool, string, error) {
+	value, err := r.client.Get(ctx, key).Result()
+	if err == redis.Nil {
+		return false, "", nil // Key does not exist
+	}
+	return value != "", value, err // Return true if value is not empty
 }
 
 func (r *RedisDS) Del(ctx context.Context, key string) error {

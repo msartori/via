@@ -13,24 +13,20 @@ type JWTConfig struct {
 	PublicKey            string `env:"PUBLIC_KEY" json:"-"`
 	PrivateKeySecretFile string `env:"PRIVATE_KEY_FILE" json:"privateKeySecretFile"`
 	PublicKeySecretFile  string `env:"PUBLIC_KEY_FILE" json:"publicKeySecretFile"`
+	jwt.SigningMethod
 }
 
 var (
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
-	once       sync.Once
+	privateKey    *rsa.PrivateKey
+	publicKey     *rsa.PublicKey
+	once          sync.Once
+	mutex         sync.Mutex
+	signingMethod jwt.SigningMethod
 )
 
 func Init(cfg JWTConfig) error {
+	var err error
 	once.Do(func() {
-		var err error
-		if cfg.PrivateKey == "" {
-			cfg.PrivateKey = secret.ReadSecret(cfg.PrivateKeySecretFile)
-		}
-		privateKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(cfg.PrivateKey))
-		if err != nil {
-			return
-		}
 		if cfg.PublicKey == "" {
 			cfg.PublicKey = secret.ReadSecret(cfg.PublicKeySecretFile)
 		}
@@ -38,8 +34,19 @@ func Init(cfg JWTConfig) error {
 		if err != nil {
 			return
 		}
+		if cfg.PrivateKey == "" {
+			cfg.PrivateKey = secret.ReadSecret(cfg.PrivateKeySecretFile)
+		}
+		privateKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(cfg.PrivateKey))
+		if err != nil {
+			return
+		}
+		if cfg.SigningMethod == nil {
+			cfg.SigningMethod = jwt.SigningMethodRS256
+		}
+		signingMethod = cfg.SigningMethod
 	})
-	return nil
+	return err
 }
 
 func GetPrivateKey() *rsa.PrivateKey {
@@ -51,5 +58,13 @@ func GetPublicKey() *rsa.PublicKey {
 }
 
 func GetSigningMethod() jwt.SigningMethod {
-	return jwt.SigningMethodRS256
+	return signingMethod
+}
+
+func Reset() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	privateKey = nil
+	publicKey = nil
+	once = sync.Once{}
 }

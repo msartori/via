@@ -5,7 +5,7 @@ import (
 	biz_language "via/internal/biz/language"
 )
 
-type Bussiness struct {
+type BussinessCfg struct {
 	ViaBranch       string `env:"VIA_BRANCH" envDefault:"123" json:"viaBranch"`
 	WithdrawStatus  string `env:"WITHDRAW_STATUS" envDefault:"CRR" json:"withdrawStatus"`
 	DeliveredStatus string `env:"DELIVERED_STATUS" envDefault:"ENT" json:"deliveredStatus"`

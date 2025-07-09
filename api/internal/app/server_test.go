@@ -5,8 +5,7 @@ import (
 	"testing"
 	"time"
 	"via/internal/config"
-	"via/internal/log"
-	mock_log "via/internal/log/mock"
+	"via/internal/testutil"
 )
 
 func TestStartServer_GracefulShutdown(t *testing.T) {
@@ -17,9 +16,7 @@ func TestStartServer_GracefulShutdown(t *testing.T) {
 		},
 	}
 
-	mockLog := new(mock_log.MockNoOpLogger)
-	// logger mock setup
-	log.Set(mockLog)
+	testutil.InjectNoOpLogger()
 
 	// Execute server in go routine
 	go StartServer(cfg)

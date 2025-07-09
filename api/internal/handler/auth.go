@@ -24,9 +24,9 @@ const (
 	codeKey        = "code"
 )
 
-func Login(cfg auth.OAuthConfig) http.Handler {
+func Login() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		state, codeChallenge, challengeMethod, err := auth.GenerateState(r.URL.Query().Get(redirectURIKey))
+		state, codeChallenge, challengeMethod, err := auth.Get().GenerateState(r.Context(), r.URL.Query().Get(redirectURIKey))
 		if err != nil {
 			log.Get().Error(r.Context(), err, "msg", "failed to generate state")
 			response.WriteJSON(w, r, response.Response[any]{
@@ -34,7 +34,7 @@ func Login(cfg auth.OAuthConfig) http.Handler {
 			}, http.StatusInternalServerError)
 			return
 		}
-		authURL := auth.GetOAuth2Config(cfg).AuthCodeURL(state,
+		authURL := auth.Get().OAuth2Config.AuthCodeURL(state,
 			oauth2.AccessTypeOffline,
 			oauth2.SetAuthURLParam("code_challenge_method", challengeMethod),
 			oauth2.SetAuthURLParam("code_challenge", codeChallenge))
@@ -46,8 +46,15 @@ func LoginCallback(cfg auth.OAuthConfig) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		code := r.URL.Query().Get(codeKey)
 		state := r.URL.Query().Get(stateKey)
-		oauth2Config := auth.GetOAuth2Config(cfg)
-		authState, found := auth.GetState(state)
+		oauth2Config := auth.Get().OAuth2Config
+		authState, found, err := auth.Get().GetState(r.Context(), state)
+		if err != nil {
+			log.Get().Error(r.Context(), err, "msg", "failed to get auth state")
+			response.WriteJSON(w, r, response.Response[any]{
+				Message: i18n.Get(r, i18n.MsgInternalServerError),
+			}, http.StatusInternalServerError)
+			return
+		}
 		if !found {
 			log.Get().Warn(r.Context(), "msg", "auth state not found")
 			response.WriteJSON(w, r, response.Response[any]{

@@ -1,27 +1,64 @@
 package auth
 
 import (
+	"context"
 	"sync"
-	"time"
+	"via/internal/ds"
 	"via/internal/secret"
 
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"via/internal/cache"
 
-	"github.com/patrickmn/go-cache"
 	"golang.org/x/oauth2"
 )
 
 const AuthTokenKey string = "auth_token"
+const cacheTTL = 5 * 60
 
 var (
-	oauth2Config *oauth2.Config
-	once         sync.Once
-	// TODO move this to Redis or similar
-	authCache = cache.New(5*time.Minute, 10*time.Minute)
+	instance *Auth
+	mutex    = &sync.RWMutex{}
 )
 
+type Auth struct {
+	OAuth2Config OAuth2Cfg
+	cache        *cache.Cache // Use a suitable cache implementation, e.g., Redis
+}
+
+func Get() *Auth {
+	mutex.RLock()
+	defer mutex.RUnlock()
+	return instance
+}
+
+func Set(auth *Auth) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	instance = auth
+}
+
+func New(cfg OAuthConfig, ds ds.DS) *Auth {
+	if cfg.ClientSecret == "" {
+		cfg.ClientSecret = secret.ReadSecret(cfg.ClientSecretFile)
+	}
+	return &Auth{
+		cache: cache.New(ds),
+		OAuth2Config: &oauth2.Config{
+			ClientID:     cfg.ClientID,
+			ClientSecret: cfg.ClientSecret,
+			RedirectURL:  cfg.RedirectURL,
+			Scopes:       cfg.Scopes,
+			Endpoint: oauth2.Endpoint{
+				AuthURL:  cfg.AuthURL,
+				TokenURL: cfg.TokenURL,
+			},
+		},
+	}
+}
+
+// AuthState holds the state for OAuth2 authentication, including the code verifier and redirect URI.
 type AuthState struct {
 	CodeVerifier string
 	RedirectURI  string
@@ -44,29 +81,12 @@ type OAuthConfig struct {
 	IDPIssuer                     string   `env:"IDP_ISSUER" json:"idpIssuer"`
 }
 
-func GetOAuth2Config(cfg OAuthConfig) *oauth2.Config {
-	once.Do(func() {
-		if cfg.ClientSecret == "" {
-			cfg.ClientSecret = secret.ReadSecret(cfg.ClientSecretFile)
-		}
-		oauth2Config = &oauth2.Config{
-			ClientID:     cfg.ClientID,
-			ClientSecret: cfg.ClientSecret,
-			RedirectURL:  cfg.RedirectURL,
-			Scopes:       cfg.Scopes,
-			Endpoint: oauth2.Endpoint{
-				AuthURL:  cfg.AuthURL,
-				TokenURL: cfg.TokenURL,
-			},
-		}
-	})
-	return oauth2Config
-}
+var randReadPKCE = rand.Read
 
 func generatePKCE() (codeVerifier, codeChallenge, method string, err error) {
 	// Generate code_verifier (random string between 43-128 chars)
 	b := make([]byte, 32)
-	_, err = rand.Read(b)
+	_, err = randReadPKCE(b)
 	if err != nil {
 		return "", "", "", err
 	}
@@ -81,15 +101,17 @@ func generatePKCE() (codeVerifier, codeChallenge, method string, err error) {
 	return codeVerifier, codeChallenge, "S256", nil
 }
 
+var randReadState = rand.Read
+
 func generateState() (string, error) {
 	b := make([]byte, 16)
-	if _, err := rand.Read(b); err != nil {
+	if _, err := randReadState(b); err != nil {
 		return "", err
 	}
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func GenerateState(redirectURI string) (string, string, string, error) {
+func (a *Auth) GenerateState(ctx context.Context, redirectURI string) (string, string, string, error) {
 	state, err := generateState()
 	if err != nil {
 		return "", "", "", err
@@ -101,15 +123,23 @@ func GenerateState(redirectURI string) (string, string, string, error) {
 	authState := AuthState{
 		CodeVerifier: codeVerifier,
 		RedirectURI:  redirectURI}
-	authCache.Set(state, authState, cache.DefaultExpiration)
+
+	err = a.cache.Set(ctx, state, authState, cacheTTL)
+	if err != nil {
+		return "", "", "", err
+	}
 	return state, codeChallenge, method, nil
 }
 
-func GetState(state string) (AuthState, bool) {
-	if val, found := authCache.Get(state); found {
-		if authState, ok := val.(AuthState); ok {
-			return authState, true
-		}
+func (a *Auth) GetState(ctx context.Context, state string) (AuthState, bool, error) {
+	var authState AuthState
+	found, err := a.cache.Get(ctx, state, &authState)
+	if err != nil {
+		return AuthState{}, false, err
 	}
-	return AuthState{}, false
+	// Check if the value is found and is of type AuthState
+	if !found {
+		return AuthState{}, false, nil // Not found
+	}
+	return authState, true, nil
 }

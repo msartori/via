@@ -1,7 +1,6 @@
 package middleware_test
 
 import (
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -16,7 +15,7 @@ import (
 func TestRecoverMiddleware(t *testing.T) {
 	// Mock the logger
 	mockLog := new(mock_log.MockLogger)
-	mockLog.On("Info", mock.Anything, mock.Anything).Return()
+	mockLog.On("Error", mock.Anything, mock.Anything, mock.Anything).Return()
 	log.Set(mockLog)
 
 	// Handler with panic
@@ -34,15 +33,14 @@ func TestRecoverMiddleware(t *testing.T) {
 	assert.Equal(t, "internal server error\n", rec.Body.String())
 
 	// Verify that the logger was called with the expected message
-	mockLog.AssertCalled(t, "Info", mock.Anything, mock.Anything)
+	mockLog.AssertCalled(t, "Error", mock.Anything, mock.Anything, mock.Anything)
 
 	// Check the arguments passed to the logger
 	args := mockLog.Calls[0].Arguments
-	pairs, ok := args.Get(1).([]any)
-	assert.True(t, ok, "expected second arg to be []any")
-
-	// Verify that the log contains the expected panic message
-	str := fmt.Sprint(pairs)
-	assert.Contains(t, str, "recovering from panic")
-	assert.Contains(t, str, "something went wrong")
+	errArg, ok := args.Get(1).(error)
+	assert.True(t, ok)
+	assert.Contains(t, errArg.Error(), "something went wrong")
+	keyvals := args.Get(2).([]any)
+	assert.Contains(t, keyvals, "msg")
+	assert.Contains(t, keyvals, "recovering from panic")
 }

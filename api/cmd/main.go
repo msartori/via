@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"via/internal/app"
+	"via/internal/auth"
 	ent_client "via/internal/client/ent"
 	"via/internal/config"
 	db_pool "via/internal/db/pool"
@@ -23,6 +24,7 @@ func main() {
 	logger.Debug(context.Background(), "config", cfg)
 
 	ds.Set(redis_ds.New(cfg.DS))
+	auth.Set(auth.New(cfg.OAuth, ds.Get()))
 
 	// JWT key initialization
 	if err := jwt_key.Init(cfg.JWT); err != nil {

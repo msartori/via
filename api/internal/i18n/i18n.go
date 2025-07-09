@@ -1,9 +1,7 @@
 package i18n
 
 import (
-	"fmt"
 	"net/http"
-	"strings"
 	"via/internal/response"
 )
 
@@ -21,6 +19,7 @@ const (
 	MsgAuthStateNotFound         = "auth_state_not_found"
 	MsgAuthFailedToExchangeToken = "auth_failed_to_exchange_token"
 	MsgAuthFailedToGetUserInfo   = "auth_failed_to_get_user_info"
+	MsgBadRequest                = "bad_request"
 )
 
 var messages = map[string]map[string]string{
@@ -38,6 +37,7 @@ var messages = map[string]map[string]string{
 		MsgAuthStateNotFound:         "Estado de autenticación no encontrado.",
 		MsgAuthFailedToExchangeToken: "Error al intercambiar el token de autenticación.",
 		MsgAuthFailedToGetUserInfo:   "Error al obtener la información del usuario.",
+		MsgBadRequest:                "Solicitud Incorrecta.",
 	},
 	"en": {
 		MsgRequestTimeout:          "Request timeout.",
@@ -46,29 +46,15 @@ var messages = map[string]map[string]string{
 	},
 }
 
-func GetWithLang(lang, key string, args ...interface{}) string {
+func GetWithLang(lang, key string) string {
 	if msg, ok := messages[lang][key]; ok {
-		if len(args) > 0 {
-			if strings.Contains(msg, "%") {
-				return fmt.Sprintf(msg, args...)
-			}
-		}
 		return msg
 	}
 	// Fallback
 	return key
 }
 
-func Get(r *http.Request, key string, args ...any) string {
+func Get(r *http.Request, key string) string {
 	lang := response.GetLanguage(r)
-	if msg, ok := messages[lang][key]; ok {
-		if len(args) > 0 {
-			if strings.Contains(msg, "%") {
-				return fmt.Sprintf(msg, args...)
-			}
-		}
-		return msg
-	}
-	// Fallback
-	return key
+	return GetWithLang(lang, key)
 }

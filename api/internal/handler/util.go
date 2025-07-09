@@ -60,8 +60,8 @@ func getJsonBody(w http.ResponseWriter, r *http.Request, input any) bool {
 	res := response.Response[any]{}
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		log.Get().Error(r.Context(), err, "msg", "failed to decode body")
-		res.Message = i18n.Get(r, i18n.MsgInternalServerError)
-		response.WriteJSON(w, r, res, http.StatusInternalServerError)
+		res.Message = i18n.Get(r, i18n.MsgBadRequest)
+		response.WriteJSON(w, r, res, http.StatusBadRequest)
 		return false
 	}
 	return true
@@ -97,7 +97,7 @@ func isGuideNotFound(w http.ResponseWriter, r *http.Request, id string) bool {
 	return true
 }
 
-func isInvalidViaGuideToWithdraw(viaGuide model.ViaGuide, biz biz_config.Bussiness) bool {
+func isInvalidViaGuideToWithdraw(viaGuide model.ViaGuide, biz biz_config.BussinessCfg) bool {
 	if viaGuide.Status == biz.DeliveredStatus {
 		return false
 	}

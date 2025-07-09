@@ -14,6 +14,7 @@ import (
 var (
 	instance *sql.DB
 	once     sync.Once
+	mutex    sync.Mutex
 )
 
 type DatabaseCfg struct {
@@ -25,14 +26,17 @@ type DatabaseCfg struct {
 	Host         string `env:"HOST" envDefault:"" json:"host"`
 }
 
+var readSecret = secret.ReadSecret
+var openDB = sql.Open
+
 func New(cfg DatabaseCfg) (*sql.DB, error) {
 	var err error
 	if cfg.Password == "" {
-		cfg.Password = secret.ReadSecret(cfg.PasswordFile)
+		cfg.Password = readSecret(cfg.PasswordFile)
 	}
 	once.Do(func() {
 		dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Base)
-		instance, err = sql.Open("pgx", dsn)
+		instance, err = openDB("pgx", dsn)
 		if err != nil {
 			err = fmt.Errorf("opening DB: %w", err)
 			return
@@ -50,4 +54,11 @@ func New(cfg DatabaseCfg) (*sql.DB, error) {
 
 func Get() *sql.DB {
 	return instance
+}
+
+func reset() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	instance = nil
+	once = sync.Once{}
 }

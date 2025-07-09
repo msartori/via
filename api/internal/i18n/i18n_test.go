@@ -11,7 +11,6 @@ func TestGetWithLang(t *testing.T) {
 		name     string
 		lang     string
 		key      string
-		args     []interface{}
 		expected string
 	}{
 		{
@@ -42,14 +41,13 @@ func TestGetWithLang(t *testing.T) {
 			name:     "format string with args",
 			lang:     "es",
 			key:      MsgInternalServerError,
-			args:     []any{"extra"},
 			expected: "Error interno del servidor.", // still matches, no placeholder
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GetWithLang(tt.lang, tt.key, tt.args...)
+			got := GetWithLang(tt.lang, tt.key)
 			if got != tt.expected {
 				t.Errorf("expected '%s', got '%s'", tt.expected, got)
 			}
@@ -110,7 +108,7 @@ func TestGet(t *testing.T) {
 			if tt.lang != "" {
 				req.Header.Set("Accept-Language", tt.lang)
 			}
-			got := Get(req, tt.key, tt.args...)
+			got := Get(req, tt.key)
 			if got != tt.expected {
 				t.Errorf("expected '%s', got '%s'", tt.expected, got)
 			}

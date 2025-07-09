@@ -72,13 +72,17 @@ var nextStatus = map[string][]string{
 
 func GetNextStatus(currentStatus string, history []string, payment string) []string {
 	if nStatus, found := nextStatus[currentStatus]; found {
+		previous := ""
 		if nStatus[0] == PREVIOUS {
 			if len(history) > 1 {
-				previous := history[len(history)-2]
-				//return util.RemoveFirstString(nextStatus[previous], currentStatus)
-				return []string{previous}
+				previous = history[len(history)-2]
 			}
-			return []string{}
+		}
+		for i := len(history) - 3; i >= 0 && (previous == ON_HOLD || previous == SUSPENDED); i-- {
+			previous = history[i]
+		}
+		if previous != "" {
+			return []string{previous}
 		}
 		return nStatus
 	} else {

@@ -12,6 +12,7 @@ import (
 var (
 	instance *ent.Client
 	once     sync.Once
+	mutex    sync.Mutex
 )
 
 func New(dbPool *sql.DB) *ent.Client {
@@ -24,4 +25,12 @@ func New(dbPool *sql.DB) *ent.Client {
 
 func Get() *ent.Client {
 	return instance
+}
+
+// Reset resets the singleton (for testing only).
+func reset() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	instance = nil
+	once = sync.Once{}
 }

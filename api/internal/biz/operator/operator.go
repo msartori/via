@@ -26,3 +26,7 @@ func GetOperatorByAccount(ctx context.Context, account string) (model.Operator, 
 	}
 	return operator, nil
 }
+
+func ClearCache() {
+	operatorCache.Flush()
+}

@@ -15,38 +15,6 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type GetGuideByViaGuideIdOutput struct {
-	Guide model.Guide `json:"guide"`
-}
-
-func GetGuideByViaGuideId() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		res := response.Response[GetGuideByViaGuideIdOutput]{}
-		viaGuideId := chi.URLParam(r, "viaGuideId")
-
-		if ok := isValidViaGuideId(w, r, viaGuideId); !ok {
-			return
-		}
-
-		logger := log.Get()
-		logger.WithLogFieldsInRequest(r, "via_guide_id", viaGuideId)
-
-		guide, err := guide_provider.Get().GetGuideByViaGuideId(r.Context(), viaGuideId)
-
-		if ok := isFailedToFetchGuide(w, r, err); ok {
-			return
-		}
-
-		if ok := isGuideNotFound(w, r, guide.ViaGuideID); !ok {
-			return
-		}
-
-		res.Data = GetGuideByViaGuideIdOutput{guide}
-		response.WriteJSON(w, r, res, http.StatusOK)
-	})
-}
-
 type CreateGuideToWidthdrawInput struct {
 	ViaGuideId string `json:"viaGuideId"`
 }
@@ -55,7 +23,7 @@ type CreateGuideToWidthdrawOutput struct {
 	WithdrawMessage string `json:"withdrawMessage"`
 }
 
-func CreateGuideToWidthdraw(biz biz_config.Bussiness) http.Handler {
+func CreateGuideToWidthdraw(biz biz_config.BussinessCfg) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := response.Response[*CreateGuideToWidthdrawOutput]{}
 		var input CreateGuideToWidthdrawInput
@@ -168,9 +136,13 @@ func GetOperatorGuide() http.Handler {
 	})
 }
 
+type AssignGuideToOperatorOutput struct {
+	Guide model.Guide `json:"guide"`
+}
+
 func AssignGuideToOperator() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res := response.Response[GetGuideByViaGuideIdOutput]{}
+		res := response.Response[AssignGuideToOperatorOutput]{}
 		valid, guideId := isValidGuideId(w, r, chi.URLParam(r, "guideId"))
 		if !valid {
 			return

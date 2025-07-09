@@ -26,12 +26,15 @@ func (m *MockLogger) Info(ctx context.Context, keyvals ...any) {
 func (m *MockLogger) Warn(ctx context.Context, keyvals ...any) {
 	m.Called(ctx, keyvals)
 }
+
 func (m *MockLogger) Error(ctx context.Context, err error, keyvals ...any) {
 	m.Called(ctx, err, keyvals)
 }
+
 func (m *MockLogger) Fatal(ctx context.Context, err error, keyvals ...any) {
 	m.Called(ctx, err, keyvals)
 }
+
 func (m *MockLogger) WithLogFields(ctx context.Context, keyvals ...any) context.Context {
 	args := m.Called(ctx, keyvals)
 	return args.Get(0).(context.Context)
@@ -46,7 +49,6 @@ type MockNoOpLogger struct {
 }
 
 func (m *MockNoOpLogger) Trace(ctx context.Context, keyvals ...any) {
-
 }
 
 func (m *MockNoOpLogger) Debug(ctx context.Context, keyvals ...any) {
@@ -57,11 +59,13 @@ func (m *MockNoOpLogger) Info(ctx context.Context, keyvals ...any) {
 
 func (m *MockNoOpLogger) Warn(ctx context.Context, keyvals ...any) {
 }
+
 func (m *MockNoOpLogger) Error(ctx context.Context, err error, keyvals ...any) {
 }
-func (m *MockNoOpLogger) Fatal(ctx context.Context, err error, keyvals ...any) {
 
+func (m *MockNoOpLogger) Fatal(ctx context.Context, err error, keyvals ...any) {
 }
+
 func (m *MockNoOpLogger) WithLogFields(ctx context.Context, keyvals ...any) context.Context {
 	return ctx
 }

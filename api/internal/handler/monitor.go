@@ -15,7 +15,7 @@ type GetMonitorEventOutput struct {
 }
 
 func init() {
-	rand.New(rand.NewSource(time.Now().UnixNano())) // Semilla para aleatoriedad
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
 func GetMonitorEvents() http.Handler {

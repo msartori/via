@@ -11,13 +11,12 @@ import (
 	biz_guide_status "via/internal/biz/guide/status"
 	"via/internal/global"
 	"via/internal/i18n"
-	"via/internal/log"
-	mock_log "via/internal/log/mock"
 	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	mock_guide_provider "via/internal/provider/guide/mock"
 	via_guide_provider "via/internal/provider/via/guide"
 	mock_via_guide_provider "via/internal/provider/via/guide/mock"
+	"via/internal/testutil"
 
 	"via/internal/response"
 
@@ -39,15 +38,13 @@ func newRequestWithID(id string) *http.Request {
 }
 
 func TestGetGuideHandler(t *testing.T) {
-	mockLog := new(mock_log.MockNoOpLogger)
-	// logger mock setup
-	log.Set(mockLog)
+	testutil.InjectNoOpLogger()
 	mockViaGuideProvider := new(mock_via_guide_provider.MockViaGuideProvider)
 	via_guide_provider.Set(mockViaGuideProvider)
 	mockGuideProvider := new(mock_guide_provider.MockGuideProvider)
 	guide_provider.Set(mockGuideProvider)
 
-	biz := biz_config.Bussiness{
+	biz := biz_config.BussinessCfg{
 		ViaBranch:       "001",
 		PendingStatus:   "IN_TRANSIT,WAITING",
 		DeliveredStatus: "DELIVERED",
