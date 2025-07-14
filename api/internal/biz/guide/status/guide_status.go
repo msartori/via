@@ -77,12 +77,13 @@ func GetNextStatus(currentStatus string, history []string, payment string) []str
 			if len(history) > 1 {
 				previous = history[len(history)-2]
 			}
-		}
-		for i := len(history) - 3; i >= 0 && (previous == ON_HOLD || previous == SUSPENDED); i-- {
-			previous = history[i]
-		}
-		if previous != "" {
-			return []string{previous}
+			for i := len(history) - 3; i >= 0 && (previous == ON_HOLD || previous == SUSPENDED); i-- {
+				previous = history[i]
+			}
+			if previous != "" {
+				return []string{previous}
+			}
+			return []string{}
 		}
 		return nStatus
 	} else {

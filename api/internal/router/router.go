@@ -5,25 +5,60 @@ import (
 	"time"
 	"via/internal/config"
 	"via/internal/ds"
+	"via/internal/global"
 	"via/internal/handler"
 	"via/internal/middleware"
-	guide_provider "via/internal/provider/guide"
-	guide_ent_provider "via/internal/provider/guide/ent"
-	operator_provider "via/internal/provider/operator"
-	operator_ent_provider "via/internal/provider/operator/ent"
-	via_guide_provider "via/internal/provider/via/guide"
-	via_guide_web_provider "via/internal/provider/via/guide/web"
 	"via/internal/ratelimit"
 	"via/internal/response"
+	"via/internal/sse"
 
 	"github.com/go-chi/chi/v5"
 )
 
-func New(cfg config.Config) http.Handler {
+func NewRest(cfg config.Config) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.CORS(cfg.CORS))
 	r.Use(middleware.Recover)
 	r.Use(middleware.Timeout(time.Duration(cfg.Application.RequestTimeout) * time.Second))
+	r.Use(middleware.Request)
+
+	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
+	}))
+
+	// Routes
+	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",
+		handler.GetGuideToWithdraw(cfg.Bussiness).ServeHTTP))
+
+	r.Post("/guide-to-withdraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
+		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
+
+	r.Get("/auth/login", middleware.LogHandlerExecution("handler.Login",
+		handler.Login().ServeHTTP))
+
+	r.Get("/auth/callback", middleware.LogHandlerExecution("handler.LoginCallback",
+		handler.LoginCallback(cfg.OAuth).ServeHTTP))
+
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.JWTAuthMiddleware(cfg.OAuth))
+
+		r.Post("/guide/{guideId}/assign", middleware.LogHandlerExecution("handler.AssignGuideToOperator",
+			handler.AssignGuideToOperator().ServeHTTP))
+
+		r.Get("/guide/{guideId}/status-options", middleware.LogHandlerExecution("handler.GetGuideStatusOptions",
+			handler.GetGuideStatusOptions().ServeHTTP))
+
+		r.Put("/guide/{guideId}/status", middleware.LogHandlerExecution("handler.UpdateGuideStatus",
+			handler.UpdateGuideStatus().ServeHTTP))
+	})
+
+	return r
+}
+
+func NewSSE(cfg config.Config) http.Handler {
+	r := chi.NewRouter()
+	r.Use(middleware.CORS(cfg.CORS))
+	r.Use(middleware.Recover)
 	r.Use(middleware.Request)
 	r.Use(middleware.NewRateLimitMiddleware(
 		map[string]middleware.RateLimitMiddleware{
@@ -36,22 +71,15 @@ func New(cfg config.Config) http.Handler {
 		},
 	))
 
+	// Routes
 	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
 	}))
 
-	// Routes
-	r.Get("/guide-to-withdraw/{viaGuideId}", middleware.LogHandlerExecution("handler.GetGuideToWithdraw",
-		handler.GetGuideToWithdraw(cfg.Bussiness).ServeHTTP))
-
-	r.Post("/guide-to-withraw", middleware.LogHandlerExecution("handler.CreateGuideToWidthdraw",
-		handler.CreateGuideToWidthdraw(cfg.Bussiness).ServeHTTP))
-
-	r.Get("/monitor/events", middleware.LogHandlerExecution("handler.GetMonitorEvent",
-		handler.GetMonitorEvents().ServeHTTP))
-
-	r.Get("/guide/{guideId}/status-options", middleware.LogHandlerExecution("handler.GetGuideStatusOptions",
-		handler.GetGuideStatusOptions().ServeHTTP))
+	r.Get("/monitor/events", middleware.LogHandlerExecution("handler.GetMonitorEvents",
+		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			sse.HandleSSE(w, r, handler.GetMonitorEvents, global.NewGuideChannel, global.GuideStatusChangeChannel)
+		})))
 
 	r.Get("/auth/login", middleware.LogHandlerExecution("handler.Login",
 		handler.Login().ServeHTTP))
@@ -63,20 +91,9 @@ func New(cfg config.Config) http.Handler {
 		r.Use(middleware.JWTAuthMiddleware(cfg.OAuth))
 
 		r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuides",
-			handler.GetOperatorGuide().ServeHTTP))
-
-		r.Post("/guide/{guideId}/assign", middleware.LogHandlerExecution("handler.AssignGuideToOperator",
-			handler.AssignGuideToOperator().ServeHTTP))
-
-		r.Put("/guide/{guideId}/status", middleware.LogHandlerExecution("handler.UpdateGuideStatus",
-			handler.UpdateGuideStatus().ServeHTTP))
-
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				sse.HandleSSE(w, r, handler.GetOperatorGuide, global.NewGuideChannel, global.GuideAssignmentChannel, global.GuideStatusChangeChannel)
+			})))
 	})
-
-	// Set up dependencies
-	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))
-	guide_provider.Set(guide_ent_provider.New())
-	operator_provider.Set(operator_ent_provider.New())
-
 	return r
 }

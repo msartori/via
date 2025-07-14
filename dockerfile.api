@@ -28,7 +28,8 @@
     WORKDIR /app
     
     ARG APPNAME
-    ARG PORT
+    ARG REST_PORT
+    ARG SSE_PORT
 
     # Install certificates for HTTPS
     RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && \
@@ -38,7 +39,7 @@
     COPY --from=builder /app/api/build/${APPNAME} .
     
     # Api port open
-    EXPOSE ${PORT}
+    EXPOSE ${REST_PORT} ${SSE_PORT}
     
     ENV APPNAME=${APPNAME}
     ENTRYPOINT ["./via"]

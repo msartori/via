@@ -1,19 +1,19 @@
 import { api, apiUrl, webUrl, axiosOptions } from './apiConfig'
 
-function handleAuthRedirect(status) {
+export function handleAuthRedirect(status: number) {
   if (status === 401) {
     window.location.href = `${apiUrl}/auth/login?redirect_uri=${webUrl}/operator`
   }
 }
 
-function handleError(message) {
+export function handleError(message: string) {
   return {
     status: 500,
     content: { message, requestId: null }
   }
 }
 
-export async function getGuideToWidthraw(viaGuideId) {
+export async function getGuideToWidthraw(viaGuideId: string) {
   try {
     const res = await api.get(`/guide-to-withdraw/${viaGuideId}`, axiosOptions)
     return { status: res.status, content: res.data }
@@ -23,7 +23,7 @@ export async function getGuideToWidthraw(viaGuideId) {
   }
 }
 
-export async function createGuideToWidthraw(viaGuideId) {
+export async function createGuideToWidthraw(viaGuideId: string) {
   try {
     const res = await api.post(`/guide-to-withdraw`, { viaGuideId }, axiosOptions)
     return { status: res.status, content: res.data }
@@ -33,7 +33,7 @@ export async function createGuideToWidthraw(viaGuideId) {
   }
 }
 
-export async function getMonitorEvents(params) {
+export async function getMonitorEvents() {
   try {
     const res = await api.get(`/monitor/events`, axiosOptions)
     return { status: res.status, content: res.data }
@@ -42,7 +42,7 @@ export async function getMonitorEvents(params) {
     return handleError('Error al conectarse al servidor.')
   }
 }
-
+/*
 export async function getOperatorGuides() {
   try {
     const res = await api.get(`/operator/guides`, axiosOptions)
@@ -53,6 +53,7 @@ export async function getOperatorGuides() {
     return handleError('Error al conectarse al servidor.')
   }
 }
+  */
 
 export async function assignGuideToOperator(guideId) {
   try {

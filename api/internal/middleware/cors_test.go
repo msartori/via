@@ -39,7 +39,7 @@ func TestCORSMiddleware(t *testing.T) {
 	t.Run("regular request passes with correct headers", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/resource", nil)
 		rec := httptest.NewRecorder()
-
+		req.Header.Set("Origin", "http://localhost")
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
 
@@ -60,7 +60,7 @@ func TestCORSMiddleware(t *testing.T) {
 	t.Run("OPTIONS request returns 200 OK with headers", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodOptions, "/resource", nil)
 		rec := httptest.NewRecorder()
-
+		req.Header.Set("Origin", "http://localhost")
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
 
@@ -80,6 +80,7 @@ func TestCORSMiddleware(t *testing.T) {
 		handlerEmpty := CORS(emptyCfg)
 
 		req := httptest.NewRequest(http.MethodGet, "/test", nil)
+		req.Header.Set("Origin", "http://localhost")
 		rec := httptest.NewRecorder()
 
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)

@@ -56,13 +56,23 @@ clean-local:
 	rm -rf $(GOBUILD) $(TEMP)
 
 localtunnel-start:
-	@echo "Starting LocalTunnel API ($(API_PORT))..."
-	@nohup npx localtunnel --subdomain via-$(ENV)-api --port $(API_PORT) &
+	@echo "Starting LocalTunnel API ($(API_REST_PORT))..."
+	@nohup npx localtunnel --subdomain via-$(ENV)-api --port $(API_REST_PORT) &
+
+	@echo "Starting LocalTunnel API ($(API_SSE_PORT))..."
+	@nohup npx localtunnel --subdomain via-$(ENV)-sse-api --port $(API_SSE_PORT) &
 
 	@echo "Starting LocalTunnel WEB ($(WEB_PORT))..."
 	@nohup npx localtunnel --subdomain via-$(ENV)-web --port $(WEB_PORT) &
 
-	@echo "VITE_API_URL=https://via-$(ENV)-api.loca.lt" > web/env/.env.$(ENV)
+	@sed -i '' -e '/^VITE_API_URL=/d' web/env/.env.$(ENV)
+	@echo "VITE_API_URL=https://via-$(ENV)-api.loca.lt" >> web/env/.env.$(ENV)
+
+	@sed -i '' -e '/^VITE_WEB_URL=/d' web/env/.env.$(ENV)
+	@echo "VITE_WEB_URL=https://via-$(ENV)-web.loca.lt" >> web/env/.env.$(ENV)
+
+	@sed -i '' -e '/^VITE_API_SSE_URL=/d' web/env/.env.$(ENV)
+	@echo "VITE_API_SSE_URL=https://via-$(ENV)-sse-api.loca.lt" >> web/env/.env.$(ENV)
 
 localtunnel-stop:
 	@echo "Killing LocalTunnel process..."

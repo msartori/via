@@ -7,13 +7,15 @@ services:
       dockerfile: dockerfile.api
       args:
         APPNAME: ${APPNAME}
-        PORT: ${API_PORT}
+        REST_PORT: ${API_REST_PORT}
+        SSE_PORT: ${API_SSE_PORT}
     env_file:
       - api/env/.env.${ENV}   
     networks:
       - ${APPNAME}-network  
     ports:
-      - "${API_PORT}:${API_PORT}"
+      - "${API_REST_PORT}:${API_REST_PORT}"
+      - "${API_SSE_PORT}:${API_SSE_PORT}"
     secrets:
       - db_password   
       - via_auth

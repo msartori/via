@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"via/internal/app"
+	"net/http"
 	"via/internal/auth"
 	ent_client "via/internal/client/ent"
 	"via/internal/config"
@@ -12,6 +12,16 @@ import (
 	jwt_key "via/internal/jwt"
 	"via/internal/log"
 	app_log "via/internal/log/app"
+	guide_provider "via/internal/provider/guide"
+	guide_ent_provider "via/internal/provider/guide/ent"
+	operator_provider "via/internal/provider/operator"
+	operator_ent_provider "via/internal/provider/operator/ent"
+	via_guide_provider "via/internal/provider/via/guide"
+	via_guide_web_provider "via/internal/provider/via/guide/web"
+	"via/internal/pubsub"
+	redis_pubsub "via/internal/pubsub/redis"
+	"via/internal/router"
+	"via/internal/server"
 )
 
 func main() {
@@ -24,6 +34,9 @@ func main() {
 	logger.Debug(context.Background(), "config", cfg)
 
 	ds.Set(redis_ds.New(cfg.DS))
+
+	pubsub.Set(redis_pubsub.New(cfg.PubSub))
+
 	auth.Set(auth.New(cfg.OAuth, ds.Get()))
 
 	// JWT key initialization
@@ -41,5 +54,18 @@ func main() {
 	defer entClient.Close()
 	defer dbPool.Close()
 
-	app.StartServer(cfg)
+	// Set up dependencies
+	via_guide_provider.Set(via_guide_web_provider.New(cfg.GuideWebClient, via_guide_web_provider.HistoricalQueryResponseParser{}))
+	guide_provider.Set(guide_ent_provider.New())
+	operator_provider.Set(operator_ent_provider.New())
+
+	servers := []*http.Server{}
+	//start servers
+	if cfg.RestServer.Enabled {
+		servers = append(servers, server.Create(cfg.RestServer, router.NewRest(cfg)))
+	}
+	if cfg.SSEServer.Enabled {
+		servers = append(servers, server.Create(cfg.SSEServer, router.NewSSE(cfg)))
+	}
+	server.Start(servers)
 }

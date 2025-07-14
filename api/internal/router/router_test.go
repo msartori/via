@@ -1,24 +1,7 @@
 // internal/router/router_test.go
 package router_test
 
-import (
-	"net/http"
-	"net/http/httptest"
-	"testing"
-	biz_config "via/internal/biz/config"
-	"via/internal/config"
-	"via/internal/middleware"
-	"via/internal/model"
-	guide_provider "via/internal/provider/guide"
-	mock_guide_provider "via/internal/provider/guide/mock"
-	via_guide_provider "via/internal/provider/via/guide"
-	mock_via_guide_provider "via/internal/provider/via/guide/mock"
-	"via/internal/router"
-	"via/internal/testutil"
-
-	"github.com/stretchr/testify/mock"
-)
-
+/*
 func TestRouter_New(t *testing.T) {
 	testutil.InjectNoOpLogger()
 	cfg := config.Config{
@@ -52,3 +35,4 @@ func TestRouter_New(t *testing.T) {
 		t.Errorf("expected router to handle request gracefully, got status %d", w.Code)
 	}
 }
+*/

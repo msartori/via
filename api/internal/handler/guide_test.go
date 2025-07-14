@@ -25,6 +25,8 @@ import (
 	mock_guide_provider "via/internal/provider/guide/mock"
 	via_guide_provider "via/internal/provider/via/guide"
 	mock_via_guide_provider "via/internal/provider/via/guide/mock"
+	"via/internal/pubsub"
+	mock_pubsub "via/internal/pubsub/mock"
 	"via/internal/response"
 	"via/internal/testutil"
 )
@@ -66,6 +68,8 @@ func TestCreateGuideToWithdraw(t *testing.T) {
 	mockGuide := new(mock_guide_provider.MockGuideProvider)
 	guide_provider.Set(mockGuide)
 	log.Set(new(mock_log.MockNoOpLogger))
+	mockPubSub := new(mock_pubsub.MockPubSub)
+	pubsub.Set(mockPubSub)
 
 	resetMocks := func() {
 		mockVia.ExpectedCalls = nil
@@ -151,6 +155,7 @@ func TestCreateGuideToWithdraw(t *testing.T) {
 		mockGuide.On("GetGuideByViaGuideId", mock.Anything, "123456789012").
 			Return(model.Guide{ID: 10, Status: biz_guide_status.ON_HOLD}, nil)
 		mockGuide.On("UpdateGuide", mock.Anything, mock.Anything).Return(nil)
+		mockPubSub.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		rec := makeRequest("123456789012")
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
@@ -172,6 +177,7 @@ func TestCreateGuideToWithdraw(t *testing.T) {
 			model.ViaGuide{ID: viaGuideId, Status: biz.WithdrawStatus, Destination: model.ViaDestination{ID: biz.ViaBranch}}, nil)
 		mockGuide.On("GetGuideByViaGuideId", mock.Anything, viaGuideId).Return(model.Guide{}, nil)
 		mockGuide.On("CreateGuide", mock.Anything, mock.Anything).Return(200, nil)
+		mockPubSub.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 		rec := makeRequest(viaGuideId)
 		assert.Equal(t, http.StatusOK, rec.Code)
 	})
@@ -194,6 +200,8 @@ func TestGetOperatorGuide(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockGuideProvider := new(mock_guide_provider.MockGuideProvider)
 		guide_provider.Set(mockGuideProvider)
+		mockPubSub := new(mock_pubsub.MockPubSub)
+		pubsub.Set(mockPubSub)
 		t.Cleanup(func() { guide_provider.Set(nil) })
 
 		mockGuideProvider.On("GetGuidesByStatus", mock.Anything, mock.Anything).
@@ -201,10 +209,11 @@ func TestGetOperatorGuide(t *testing.T) {
 				{ID: 1, Recipient: "John", Status: "INIT", Operator: model.Operator{ID: 42}, ViaGuideID: "V123", Payment: "PREPAID"},
 			}, nil).Once()
 
+		mockPubSub.On("Subscribe", mock.Anything, []any{})
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
 		w := httptest.NewRecorder()
 
-		GetOperatorGuide().ServeHTTP(w, req)
+		GetOperatorGuide(req)
 
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockGuideProvider.AssertExpectations(t)
@@ -214,7 +223,7 @@ func TestGetOperatorGuide(t *testing.T) {
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, nil)
 		w := httptest.NewRecorder()
 
-		GetOperatorGuide().ServeHTTP(w, req)
+		GetOperatorGuide(req)
 
 		assertJSONErrorResponse(t, req, w, http.StatusUnauthorized, i18n.MsgOperatorInvalid)
 	})
@@ -230,7 +239,7 @@ func TestGetOperatorGuide(t *testing.T) {
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
 		w := httptest.NewRecorder()
 
-		GetOperatorGuide().ServeHTTP(w, req)
+		GetOperatorGuide(req)
 
 		assertJSONErrorResponse(t, req, w, http.StatusInternalServerError, i18n.MsgInternalServerError)
 		mockGuideProvider.AssertExpectations(t)

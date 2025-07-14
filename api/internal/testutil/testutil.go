@@ -1,6 +1,7 @@
 package testutil
 
 import (
+	"strings"
 	"testing"
 	jwt_key "via/internal/jwt"
 	jwt_key_mock "via/internal/jwt/mock"
@@ -22,4 +23,13 @@ func WithTestSetup(t *testing.T, setupFunc func(t *testing.T), cleaupFunc func()
 	setupFunc(t)
 	t.Cleanup(cleaupFunc)
 	testFunc(t)
+}
+
+func SplitSSEEvents(event string) []string {
+	events := strings.Split(event, "\n\n")
+	cleanEvents := []string{}
+	for _, e := range events {
+		cleanEvents = append(cleanEvents, strings.TrimPrefix(e, "data:"))
+	}
+	return cleanEvents
 }

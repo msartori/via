@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 export const apiUrl = import.meta.env.VITE_API_URL
+export const apiSSEUrl = import.meta.env.VITE_API_SSE_URL
 export const webUrl = import.meta.env.VITE_WEB_URL
 
 export const commonHeaders = {
@@ -16,5 +17,10 @@ export const axiosOptions = {
 
 export const api = axios.create({
   baseURL: apiUrl,
+  withCredentials: true,
+})
+
+export const apiSSE = axios.create({
+  baseURL: apiSSEUrl,
   withCredentials: true,
 })
