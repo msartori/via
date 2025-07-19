@@ -70,6 +70,12 @@ func TestGetNextStatus(t *testing.T) {
 			currentStatus: "unknown",
 			expected:      []string{},
 		},
+		{
+			name:          "next status previous with history, on hold as previous first",
+			currentStatus: ON_HOLD,
+			history:       []string{ON_HOLD, INITIAL, PENDING_PAYMENT},
+			expected:      []string{INITIAL},
+		},
 	}
 
 	for _, tt := range tests {

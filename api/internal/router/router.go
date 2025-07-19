@@ -15,12 +15,24 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+var rateFunctionByIP = func(r *http.Request) string {
+	return r.RemoteAddr
+}
+
 func NewRest(cfg config.Config) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.CORS(cfg.CORS))
 	r.Use(middleware.Recover)
 	r.Use(middleware.Timeout(time.Duration(cfg.Application.RequestTimeout) * time.Second))
 	r.Use(middleware.Request)
+	r.Use(middleware.NewRateLimitMiddleware(
+		map[string]middleware.RateLimitMiddleware{
+			"/auth/login": {
+				RateLimiter: ratelimit.New("Login", 6, 1*time.Minute, ds.Get()),
+				KeyGetter:   rateFunctionByIP,
+			},
+		},
+	))
 
 	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
@@ -39,8 +51,11 @@ func NewRest(cfg config.Config) http.Handler {
 	r.Get("/auth/callback", middleware.LogHandlerExecution("handler.LoginCallback",
 		handler.LoginCallback(cfg.OAuth).ServeHTTP))
 
+	r.Post("/auth/logout", middleware.LogHandlerExecution("handler.LogOut",
+		handler.LogOut(cfg.OAuth).ServeHTTP))
+
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JWTAuthMiddleware(cfg.OAuth))
+		r.Use(middleware.Auth(cfg.OAuth))
 
 		r.Post("/guide/{guideId}/assign", middleware.LogHandlerExecution("handler.AssignGuideToOperator",
 			handler.AssignGuideToOperator().ServeHTTP))
@@ -62,15 +77,16 @@ func NewSSE(cfg config.Config) http.Handler {
 	r.Use(middleware.Request)
 	r.Use(middleware.NewRateLimitMiddleware(
 		map[string]middleware.RateLimitMiddleware{
+			"/auth/login": {
+				RateLimiter: ratelimit.New("Login", 6, 1*time.Minute, ds.Get()),
+				KeyGetter:   rateFunctionByIP,
+			},
 			"/operator/guides": {
-				RateLimiter: ratelimit.New("OperatorGuide", 6, 1*time.Minute, ds.Get()),
-				KeyGetter: func(r *http.Request) string {
-					return r.RemoteAddr
-				},
+				RateLimiter: ratelimit.New("OperatorGuides", 6, 1*time.Minute, ds.Get()),
+				KeyGetter:   rateFunctionByIP,
 			},
 		},
 	))
-
 	// Routes
 	r.Get("/ping", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
@@ -88,7 +104,7 @@ func NewSSE(cfg config.Config) http.Handler {
 		handler.LoginCallback(cfg.OAuth).ServeHTTP))
 
 	r.Group(func(r chi.Router) {
-		r.Use(middleware.JWTAuthMiddleware(cfg.OAuth))
+		r.Use(middleware.Auth(cfg.OAuth))
 
 		r.Get("/operator/guides", middleware.LogHandlerExecution("handler.GetOperatorGuides",
 			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

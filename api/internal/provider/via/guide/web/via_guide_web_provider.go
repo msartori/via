@@ -21,7 +21,7 @@ type ViaGuideWebProvider struct {
 
 func New(cfg http_client.HttpClientCfg, guideParser ViaResponseParser) *ViaGuideWebProvider {
 	if cfg.AuthorizationHeaderSecret == "" {
-		cfg.AuthorizationHeaderSecret = secret.ReadSecret(cfg.AuthorizationHeaderSecretFile)
+		cfg.AuthorizationHeaderSecret = secret.Get().Read(cfg.AuthorizationHeaderSecretFile)
 	}
 	return (&ViaGuideWebProvider{
 		client:      http_client.New(cfg),

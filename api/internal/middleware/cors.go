@@ -25,6 +25,7 @@ func CORS(cfg CORSCfg) func(http.Handler) http.Handler {
 			} else {
 				origins := strings.SplitSeq(cfg.Origins, ",")
 				for o := range origins {
+					//	log.Get().Info(r.Context(), "origin", origins, "o", o)
 					if o == origin {
 						w.Header().Set("Access-Control-Allow-Origin", o)
 						break

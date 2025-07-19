@@ -26,13 +26,12 @@ type DatabaseCfg struct {
 	Host         string `env:"HOST" envDefault:"" json:"host"`
 }
 
-var readSecret = secret.ReadSecret
 var openDB = sql.Open
 
 func New(cfg DatabaseCfg) (*sql.DB, error) {
 	var err error
 	if cfg.Password == "" {
-		cfg.Password = readSecret(cfg.PasswordFile)
+		cfg.Password = secret.Get().Read(cfg.PasswordFile)
 	}
 	once.Do(func() {
 		dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.Base)

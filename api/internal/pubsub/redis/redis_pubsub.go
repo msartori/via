@@ -16,12 +16,10 @@ type RedisPubSub struct {
 	client *redis.Client
 }
 
-var readSecret = secret.ReadSecret
-
 // NewRedisPubSub creates a new RedisPubSub.
 func New(cfg pubsub.PubSubConfig) *RedisPubSub {
 	if cfg.Password == "" {
-		cfg.Password = readSecret(cfg.PasswordFile)
+		cfg.Password = secret.Get().Read(cfg.PasswordFile)
 	}
 	base, _ := strconv.Atoi(cfg.Base)
 	rdb := redis.NewClient(&redis.Options{

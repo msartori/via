@@ -69,7 +69,8 @@ func TestGetGuideHandler(t *testing.T) {
 			guideID:        "",
 			expectedStatus: http.StatusBadRequest,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "0001",
-				Message: i18n.Get(newRequestWithID(""), i18n.MsgGuideRequired)},
+				Message:    i18n.Get(newRequestWithID(""), i18n.MsgGuideRequired),
+				HttpStatus: http.StatusBadRequest},
 		},
 
 		{
@@ -77,7 +78,8 @@ func TestGetGuideHandler(t *testing.T) {
 			guideID:        "abc123",
 			expectedStatus: http.StatusBadRequest,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "abc1230001",
-				Message: i18n.Get(newRequestWithID("abc123"), i18n.MsgGuideInvalid)},
+				Message:    i18n.Get(newRequestWithID("abc123"), i18n.MsgGuideInvalid),
+				HttpStatus: http.StatusBadRequest},
 		},
 
 		{
@@ -86,7 +88,8 @@ func TestGetGuideHandler(t *testing.T) {
 			guideViaMockError: errors.New("fail"),
 			expectedStatus:    http.StatusInternalServerError,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890120001",
-				Message: i18n.Get(newRequestWithID("123456789012"), i18n.MsgInternalServerError)},
+				Message:    i18n.Get(newRequestWithID("123456789012"), i18n.MsgInternalServerError),
+				HttpStatus: http.StatusInternalServerError},
 			guideViaProviderCallExpected: true,
 		},
 
@@ -97,7 +100,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus:     http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890130001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: false,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789013"), notFound, "123456789013")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789013"), notFound, "123456789013")},
+				HttpStatus: http.StatusOK},
 			guideViaProviderCallExpected: true,
 		},
 		{
@@ -113,7 +117,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890140001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: false,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789014"), wrongBranch, "123456789014", "Sucursal X")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789014"), wrongBranch, "123456789014", "Sucursal X")},
+				HttpStatus: http.StatusOK},
 			guideViaProviderCallExpected: true,
 		},
 		{
@@ -129,7 +134,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890150001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: false,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789015"), pending, "123456789015")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789015"), pending, "123456789015")},
+				HttpStatus: http.StatusOK},
 			guideViaProviderCallExpected: true,
 		},
 		{
@@ -145,7 +151,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus: http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890160001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: false,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789016"), delivered, "123456789016")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789016"), delivered, "123456789016")},
+				HttpStatus: http.StatusOK},
 			guideViaProviderCallExpected: true,
 		},
 		{
@@ -164,7 +171,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus:            http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890170001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: true,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789017"), enabledToWithdraw, "123456789017")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789017"), enabledToWithdraw, "123456789017")},
+				HttpStatus: http.StatusOK},
 		},
 		{
 			name:                         "guide not available",
@@ -181,7 +189,8 @@ func TestGetGuideHandler(t *testing.T) {
 			expectedStatus:            http.StatusOK,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890180001",
 				Data: GetGuideToWithdrawOutput{EnabledToWithdraw: false,
-					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789018"), notAvailable, "123456789018")}},
+					WithdrawMessage: getWithDrawMessage(newRequestWithID("123456789018"), notAvailable, "123456789018")},
+				HttpStatus: http.StatusOK},
 		},
 		{
 			name:                         "guide with delivered status",
@@ -206,6 +215,7 @@ func TestGetGuideHandler(t *testing.T) {
 					EnabledToWithdraw: false,
 					WithdrawMessage:   getWithDrawMessage(newRequestWithID("123456789020"), delivered, "123456789020"),
 				},
+				HttpStatus: http.StatusOK,
 			},
 		},
 		{
@@ -231,6 +241,7 @@ func TestGetGuideHandler(t *testing.T) {
 					EnabledToWithdraw: false,
 					WithdrawMessage:   getWithDrawMessage(newRequestWithID("123456789021"), alreadyInProcess, "123456789021"),
 				},
+				HttpStatus: http.StatusOK,
 			},
 		},
 		{
@@ -256,6 +267,7 @@ func TestGetGuideHandler(t *testing.T) {
 					EnabledToWithdraw: true,
 					WithdrawMessage:   getWithDrawMessage(newRequestWithID("123456789022"), enabledToWithdraw, "123456789022"),
 				},
+				HttpStatus: http.StatusOK,
 			},
 		},
 		{
@@ -273,7 +285,8 @@ func TestGetGuideHandler(t *testing.T) {
 			guideMockError:            errors.New("fail"),
 			expectedStatus:            http.StatusInternalServerError,
 			expectedResponse: response.Response[GetGuideToWithdrawOutput]{RequestID: "1234567890230001",
-				Message: i18n.Get(newRequestWithID("123456789023"), i18n.MsgInternalServerError)},
+				Message:    i18n.Get(newRequestWithID("123456789023"), i18n.MsgInternalServerError),
+				HttpStatus: http.StatusInternalServerError},
 		},
 		{
 			name:                         "guide home delivery",
@@ -294,6 +307,7 @@ func TestGetGuideHandler(t *testing.T) {
 					EnabledToWithdraw: false,
 					WithdrawMessage:   getWithDrawMessage(newRequestWithID("123456789024"), homeDelivery, "123456789024"),
 				},
+				HttpStatus: http.StatusOK,
 			},
 		},
 	}

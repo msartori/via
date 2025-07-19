@@ -9,6 +9,7 @@ const error = ref('')
 const requestId = ref('')
 const statusChanging = ref(false)
 const animateActivity = ref(false)
+const loggingOut = ref(false)
 
 const {
   operatorGuides,
@@ -22,6 +23,7 @@ const {
   loadingStatusOptions,
   pendingStatusChange,
   elapsedTime,
+  logout
 } = useOperator({
   activityPanel,
   showConfirmModal,
@@ -29,11 +31,20 @@ const {
   error,
   requestId,
   statusChanging,
-  animateActivity
+  animateActivity,
+  loggingOut
 })
 </script>
 
 <template>
+  <div class="flex justify-end items-center p-4">
+    <button
+      class="text-sm font-medium px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+      @click="logout"
+    >
+      Cerrar sesión
+    </button>
+  </div>
   <div class="p-4 sm:p-6 flex flex-col lg:flex-row gap-6">
     <!-- Lista de guías -->
     <div class="w-full lg:w-1/2 max-h-screen overflow-hidden">
@@ -189,5 +200,20 @@ const {
   <!-- Error -->
   <div v-if="error" class="mt-4 text-red-600 font-medium max-w-lg text-center mx-auto">
     {{ error }} <br> req id: <b>{{ requestId }}</b>
+  </div>
+
+  
+  <!-- Overlay de logout -->
+  <div
+    v-if="loggingOut"
+    class="fixed inset-0 bg-black bg-opacity-30 z-50 flex items-center justify-center"
+  >
+    <div class="bg-white p-6 rounded shadow text-center">
+      <svg class="animate-spin h-6 w-6 mx-auto mb-2 text-red-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+      </svg>
+      <p class="text-sm text-gray-700">Cerrando sesión...</p>
+    </div>
   </div>
 </template>

@@ -16,6 +16,7 @@ import (
 
 	biz_config "via/internal/biz/config"
 	biz_guide_status "via/internal/biz/guide/status"
+	biz_operator "via/internal/biz/operator"
 	"via/internal/i18n"
 	"via/internal/log"
 	mock_log "via/internal/log/mock"
@@ -202,30 +203,42 @@ func TestGetOperatorGuide(t *testing.T) {
 		guide_provider.Set(mockGuideProvider)
 		mockPubSub := new(mock_pubsub.MockPubSub)
 		pubsub.Set(mockPubSub)
-		t.Cleanup(func() { guide_provider.Set(nil) })
+		guides := []model.Guide{
+			{ID: 2, Recipient: "John", Status: "INIT", Operator: model.Operator{ID: 42}, ViaGuideID: "V123", Payment: "PREPAID"},
+		}
+
+		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
+
+		operatorGuide := model.OperatorGuide{
+			GuideId:    guides[0].ID,
+			Recipient:  guides[0].Recipient,
+			Status:     biz_guide_status.GetStatusDescription(response.GetLanguage(req), guides[0].Status),
+			Operator:   guides[0].Operator,
+			Selectable: guides[0].Operator.ID == biz_operator.OPERATOR_SYSTEM || guides[0].Operator.ID == 42,
+			ViaGuideId: guides[0].ViaGuideID,
+			Payment:    biz_config.GetPaymentDescription(response.GetLanguage(req), guides[0].Payment),
+			LastChange: guides[0].UpdatedAt,
+		}
 
 		mockGuideProvider.On("GetGuidesByStatus", mock.Anything, mock.Anything).
-			Return([]model.Guide{
-				{ID: 1, Recipient: "John", Status: "INIT", Operator: model.Operator{ID: 42}, ViaGuideID: "V123", Payment: "PREPAID"},
-			}, nil).Once()
+			Return(guides, nil).Once()
 
 		mockPubSub.On("Subscribe", mock.Anything, []any{})
-		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
-		w := httptest.NewRecorder()
 
-		GetOperatorGuide(req)
-
-		assert.Equal(t, http.StatusOK, w.Code)
+		resp := GetOperatorGuide(req)
+		data, ok := resp.Data.(GetOperatorGuideOutput)
+		assert.True(t, ok, "expected type GetOperatorGuideOutput")
+		assert.Equal(t, []model.OperatorGuide{operatorGuide}, data.OperatorGuides)
+		assert.Equal(t, http.StatusOK, resp.HttpStatus)
 		mockGuideProvider.AssertExpectations(t)
 	})
 
 	t.Run("invalid operator ID", func(t *testing.T) {
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, nil)
-		w := httptest.NewRecorder()
 
-		GetOperatorGuide(req)
+		resp := GetOperatorGuide(req)
 
-		assertJSONErrorResponse(t, req, w, http.StatusUnauthorized, i18n.MsgOperatorInvalid)
+		assert.Equal(t, http.StatusUnauthorized, resp.HttpStatus)
 	})
 
 	t.Run("error fetching guides", func(t *testing.T) {
@@ -237,12 +250,10 @@ func TestGetOperatorGuide(t *testing.T) {
 			Return([]model.Guide{}, errors.New("db error")).Once()
 
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
-		w := httptest.NewRecorder()
 
-		GetOperatorGuide(req)
+		resp := GetOperatorGuide(req)
 
-		assertJSONErrorResponse(t, req, w, http.StatusInternalServerError, i18n.MsgInternalServerError)
-		mockGuideProvider.AssertExpectations(t)
+		assert.Equal(t, http.StatusInternalServerError, resp.HttpStatus)
 	})
 }
 
@@ -252,10 +263,13 @@ func TestAssignGuideToOperator(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		mockGuideProvider := new(mock_guide_provider.MockGuideProvider)
 		guide_provider.Set(mockGuideProvider)
-		t.Cleanup(func() { guide_provider.Set(nil) })
+		mockPubSub := new(mock_pubsub.MockPubSub)
+		pubsub.Set(mockPubSub)
 
 		mockGuideProvider.On("UpdateGuide", mock.Anything, mock.Anything).
 			Return(nil).Once()
+
+		mockPubSub.On("Publish", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 		req := newGuideRequest(http.MethodPost, "/guide/assign/123", "123", nil, 42)
 		w := httptest.NewRecorder()

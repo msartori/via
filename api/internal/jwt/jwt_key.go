@@ -28,14 +28,14 @@ func Init(cfg JWTConfig) error {
 	var err error
 	once.Do(func() {
 		if cfg.PublicKey == "" {
-			cfg.PublicKey = secret.ReadSecret(cfg.PublicKeySecretFile)
+			cfg.PublicKey = secret.Get().Read(cfg.PublicKeySecretFile)
 		}
 		publicKey, err = jwt.ParseRSAPublicKeyFromPEM([]byte(cfg.PublicKey))
 		if err != nil {
 			return
 		}
 		if cfg.PrivateKey == "" {
-			cfg.PrivateKey = secret.ReadSecret(cfg.PrivateKeySecretFile)
+			cfg.PrivateKey = secret.Get().Read(cfg.PrivateKeySecretFile)
 		}
 		privateKey, err = jwt.ParseRSAPrivateKeyFromPEM([]byte(cfg.PrivateKey))
 		if err != nil {

@@ -21,6 +21,7 @@ import (
 	"via/internal/pubsub"
 	redis_pubsub "via/internal/pubsub/redis"
 	"via/internal/router"
+	"via/internal/secret"
 	"via/internal/server"
 )
 
@@ -32,6 +33,8 @@ func main() {
 	log.Set(app_log.New(cfg.Log))
 	logger := log.Get()
 	logger.Debug(context.Background(), "config", cfg)
+
+	secret.Set(new(secret.FileSecretReader))
 
 	ds.Set(redis_ds.New(cfg.DS))
 

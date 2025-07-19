@@ -5,26 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"via/internal/secret"
+	mock_secret "via/internal/secret/mock"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
-
-// Override secret.ReadSecret during tests
-func overrideSecretReadSecret(value string) func() {
-	original := readSecret
-	readSecret = func(path string) string {
-		return value
-	}
-	return func() { readSecret = original }
-}
 
 func TestNew_Success(t *testing.T) {
 	reset()
 
-	// Override secret reader
-	resetSecret := overrideSecretReadSecret("test-password")
-	defer resetSecret()
+	secretMock := new(mock_secret.MockSecret)
+	secret.Set(secretMock)
+	secretMock.On("Read", mock.Anything).Return("test-password")
 
 	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	if err != nil {
@@ -65,8 +59,9 @@ func TestNew_Success(t *testing.T) {
 func TestNew_ErrorOpeningDB(t *testing.T) {
 	reset()
 
-	resetSecret := overrideSecretReadSecret("test-password")
-	defer resetSecret()
+	secretMock := new(mock_secret.MockSecret)
+	secret.Set(secretMock)
+	secretMock.On("Read", mock.Anything).Return("test-password")
 
 	originalSQLOpen := openDB
 	openDB = func(driverName, dataSourceName string) (*sql.DB, error) {
@@ -84,8 +79,9 @@ func TestNew_ErrorOpeningDB(t *testing.T) {
 func TestNew_ErrorPingingDB(t *testing.T) {
 	reset()
 
-	resetSecret := overrideSecretReadSecret("test-password")
-	defer resetSecret()
+	secretMock := new(mock_secret.MockSecret)
+	secret.Set(secretMock)
+	secretMock.On("Read", mock.Anything).Return("test-password")
 
 	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	if err != nil {
@@ -111,8 +107,9 @@ func TestNew_ErrorPingingDB(t *testing.T) {
 func TestReset(t *testing.T) {
 	reset()
 
-	resetSecret := overrideSecretReadSecret("test-password")
-	defer resetSecret()
+	secretMock := new(mock_secret.MockSecret)
+	secret.Set(secretMock)
+	secretMock.On("Read", mock.Anything).Return("test-password")
 
 	mockDB, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
 	if err != nil {

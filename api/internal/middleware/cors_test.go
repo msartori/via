@@ -24,25 +24,19 @@ func TestCORSMiddleware(t *testing.T) {
 	// logger mock setup
 	log.Set(mockLog)
 
-	// middleware configuration
-	cfg := CORSCfg{
-		Origins: "http://localhost",
-		Methods: "GET,POST,OPTIONS",
-		Headers: "Content-Type,Authorization",
-	}
-
-	// handler setup with CORS middleware
-	handler := CORS(cfg)
-
-	//handler := middleware.CORS(http.HandlerFunc(testHandler), cfg)
-
 	t.Run("regular request passes with correct headers", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/resource", nil)
 		rec := httptest.NewRecorder()
 		req.Header.Set("Origin", "http://localhost")
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
-
+		// middleware configuration
+		cfg := CORSCfg{
+			Origins: "http://localhost",
+			Methods: "GET,POST,OPTIONS",
+			Headers: "Content-Type,Authorization",
+		}
+		handler := CORS(cfg)
 		handler(http.HandlerFunc(testHandler)).ServeHTTP(rec, req)
 
 		res := rec.Result()
@@ -63,7 +57,13 @@ func TestCORSMiddleware(t *testing.T) {
 		req.Header.Set("Origin", "http://localhost")
 		mockLog.On("WithLogFieldsInRequest", req, mock.Anything).Return(req)
 		mockLog.On("Info", req.Context(), mock.Anything)
-
+		// middleware configuration
+		cfg := CORSCfg{
+			Origins: "*",
+			Methods: "GET,POST,OPTIONS",
+			Headers: "Content-Type,Authorization",
+		}
+		handler := CORS(cfg)
 		handler(http.HandlerFunc(testHandler)).ServeHTTP(rec, req)
 
 		res := rec.Result()

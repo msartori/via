@@ -42,18 +42,6 @@ export async function getMonitorEvents() {
     return handleError('Error al conectarse al servidor.')
   }
 }
-/*
-export async function getOperatorGuides() {
-  try {
-    const res = await api.get(`/operator/guides`, axiosOptions)
-    handleAuthRedirect(res.status)
-    return { status: res.status, content: res.data }
-  } catch (err) {
-    console.error(err)
-    return handleError('Error al conectarse al servidor.')
-  }
-}
-  */
 
 export async function assignGuideToOperator(guideId) {
   try {
@@ -89,4 +77,14 @@ export async function changeGuideStatus(guideId, newStatusId) {
     console.error(err)
     return handleError('Error al obtener opciones de estado')
   }
+}
+
+export async function doLogout() {
+    try {
+      const res = await api.post('/auth/logout', axiosOptions)
+      return { status: res.status, content: res.data }
+    } catch (err) {
+      console.error('Logout failed:', err)
+      handleError('Error al cerrar session')
+    } 
 }

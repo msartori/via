@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -9,8 +10,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 	"via/internal/auth"
 	biz_operator "via/internal/biz/operator"
+	"via/internal/ds"
 	mock_ds "via/internal/ds/mock"
 	"via/internal/i18n"
 	jwt_key "via/internal/jwt"
@@ -95,16 +98,349 @@ func TestLogin_GenerateStateError(t *testing.T) {
 	mockDS.AssertExpectations(t)
 }
 
+// Helper to mock HTTP Client RoundTrip
+type roundTripFunc func(req *http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
+}
+
+func TestLoginCallback(t *testing.T) {
+	type testCase struct {
+		name           string
+		setupMocks     func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider)
+		expectedStatus int
+		expectedMsg    string
+		expectRedirect bool
+		expectCookie   bool
+		customJWTKey   func()
+	}
+
+	tests := []testCase{
+		{
+			name: "success",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"test_verifier","RedirectURI":"https://client.app/callback"}`, nil)
+				mockDS.On("Set", mock.Anything, "dummy_id_token", mock.Anything, mock.Anything).Return(nil)
+
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "dummy_id_token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).Return(&http.Client{
+					Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+						body, _ := json.Marshal(map[string]string{"email": "test@example.com"})
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewReader(body)),
+							Header:     make(http.Header),
+						}, nil
+					}),
+				})
+
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{
+						ID:      1,
+						Account: "test@example.com",
+						Enabled: true,
+					}, nil)
+			},
+			expectedStatus: http.StatusSeeOther,
+			expectRedirect: true,
+			expectCookie:   true,
+		},
+		{
+			name: "success, unable to set token",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"test_verifier","RedirectURI":"https://client.app/callback"}`, nil)
+				mockDS.On("Set", mock.Anything, "dummy_id_token", mock.Anything, mock.Anything).Return(errors.New("ds fail"))
+
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "dummy_id_token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).Return(&http.Client{
+					Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+						body, _ := json.Marshal(map[string]string{"email": "test@example.com"})
+						return &http.Response{
+							StatusCode: http.StatusOK,
+							Body:       io.NopCloser(bytes.NewReader(body)),
+							Header:     make(http.Header),
+						}, nil
+					}),
+				})
+
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{
+						ID:      1,
+						Account: "test@example.com",
+						Enabled: true,
+					}, nil)
+			},
+			expectedStatus: http.StatusSeeOther,
+			expectRedirect: true,
+			expectCookie:   true,
+		},
+		{
+			name: "error getting auth state",
+			setupMocks: func(mockDS *mock_ds.MockDS, _ *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(false, "", errors.New("db error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedMsg:    i18n.MsgInternalServerError,
+		},
+		{
+			name: "auth state not found",
+			setupMocks: func(mockDS *mock_ds.MockDS, _ *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(false, "", nil)
+			},
+			expectedStatus: http.StatusBadRequest,
+			expectedMsg:    i18n.MsgAuthStateNotFound,
+		},
+		{
+			name: "error exchanging token",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(&oauth2.Token{}, errors.New("exchange error"))
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    i18n.MsgAuthFailedToExchangeToken,
+		},
+		{
+			name: "missing id_token",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(&oauth2.Token{}, nil)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    i18n.MsgAuthFailedToExchangeToken,
+		},
+		{
+			name: "error getting user info",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							return &http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader(""))}, nil
+						}),
+					})
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    i18n.MsgAuthFailedToGetUserInfo,
+		},
+		{
+			name: "error decoding user info",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, _ *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]interface{}{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("invalid json"))}, nil
+						}),
+					})
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedMsg:    i18n.MsgInternalServerError,
+		},
+		{
+			name: "error getting operator by account",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							userInfo := map[string]string{"email": "test@example.com"}
+							body, _ := json.Marshal(userInfo)
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
+						}),
+					})
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{}, errors.New("db error"))
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedMsg:    i18n.MsgInternalServerError,
+		},
+		{
+			name: "operator not found",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							userInfo := map[string]string{"email": "test@example.com"}
+							body, _ := json.Marshal(userInfo)
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
+						}),
+					})
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{ID: 0}, nil)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    i18n.MsgOperatorInvalid,
+		},
+		{
+			name: "operator not enabled",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							userInfo := map[string]string{"email": "test@example.com"}
+							body, _ := json.Marshal(userInfo)
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
+						}),
+					})
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{ID: 1, Enabled: false, Account: "test@example.com"}, nil)
+			},
+			expectedStatus: http.StatusUnauthorized,
+			expectedMsg:    i18n.MsgOperatorUnauthorized,
+		}, {
+			name: "error signing jwt token",
+			setupMocks: func(mockDS *mock_ds.MockDS, mockOAuthCfg *auth_mock.MockOAuth2Cfg, mockOperatorProvider *mock_operator_provider.MockOperatorProvider) {
+				mockDS.On("Get", mock.Anything, mock.Anything).
+					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
+
+				exchangedToken := &oauth2.Token{}
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
+				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
+					Return(exchangedToken, nil)
+				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
+					Return(&http.Client{
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							userInfo := map[string]string{"email": "test@example.com"}
+							body, _ := json.Marshal(userInfo)
+							return &http.Response{
+								StatusCode: http.StatusOK,
+								Body:       io.NopCloser(bytes.NewBuffer(body)),
+							}, nil
+						}),
+					})
+				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
+					Return(model.Operator{ID: 1, Enabled: true, Account: "test@example.com"}, nil)
+			},
+			customJWTKey: func() {
+				// Inject an invalid private key to force signing error
+				jwt_key.Reset()
+				jwt_key.Init(jwt_key.JWTConfig{
+					PrivateKey:    jwt_key_mock.GetPrivateKey(),
+					PublicKey:     jwt_key_mock.GetPublicKey(),
+					SigningMethod: &jwt_key_mock.MockSigner{},
+				})
+			},
+			expectedStatus: http.StatusInternalServerError,
+			expectedMsg:    i18n.MsgInternalServerError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Cleanup(func() {
+				jwt_key.Reset()
+				biz_operator.ClearCache()
+			})
+
+			mockDS := new(mock_ds.MockDS)
+			mockOAuthCfg := new(auth_mock.MockOAuth2Cfg)
+			mockOperatorProvider := new(mock_operator_provider.MockOperatorProvider)
+
+			if tt.setupMocks != nil {
+				tt.setupMocks(mockDS, mockOAuthCfg, mockOperatorProvider)
+			}
+
+			if tt.customJWTKey != nil {
+				tt.customJWTKey()
+			} else {
+				testutil.InjectMockJWTKey()
+			}
+
+			ds.Set(mockDS)
+			auth.Set(auth.New(auth.OAuthConfig{ClientSecret: "mySecret"}, mockDS))
+			auth.Get().OAuth2Config = mockOAuthCfg
+			operator_provider.Set(mockOperatorProvider)
+			log.Set(&mock_log.MockNoOpLogger{})
+
+			req := httptest.NewRequest(http.MethodGet, "/callback?code=test_code&state=test_state", nil)
+			w := httptest.NewRecorder()
+
+			LoginCallback(auth.OAuthConfig{
+				JWTClaimsIssuer:               "test-issuer",
+				JWTClaimsAudience:             "test-audience",
+				JWTExpirationInSeconds:        3600,
+				JWTRefreshExpirationInSeconds: 7200,
+				CookieSecure:                  false,
+				UserInfoURL:                   "https://userinfo.test",
+			}).ServeHTTP(w, req)
+
+			res := w.Result()
+
+			if tt.expectRedirect {
+				assert.Equal(t, http.StatusSeeOther, res.StatusCode)
+				assert.Equal(t, "https://client.app/callback", res.Header.Get("Location"))
+				if tt.expectCookie {
+					assert.NotEmpty(t, res.Header.Get("Set-Cookie"))
+				}
+			} else {
+				assert.Equal(t, tt.expectedStatus, res.StatusCode)
+				var resp response.Response[any]
+				err := json.NewDecoder(res.Body).Decode(&resp)
+				assert.NoError(t, err)
+				assert.Equal(t, i18n.Get(req, tt.expectedMsg), resp.Message)
+			}
+
+			mockDS.AssertExpectations(t)
+			mockOAuthCfg.AssertExpectations(t)
+			mockOperatorProvider.AssertExpectations(t)
+		})
+	}
+}
+
+/*
+
 func TestLoginCallback_Success(t *testing.T) {
-	// Mock DS to return valid state
-	t.Cleanup(func() {
-		jwt_key.Reset()
-		biz_operator.ClearCache()
-	})
+	/*
+		// Mock DS to return valid state
+		t.Cleanup(func() {
+			jwt_key.Reset()
+			biz_operator.ClearCache()
+		})
 	mockDS := new(mock_ds.MockDS)
 	mockDS.On("Get", mock.Anything, mock.Anything).
 		Return(true, `{"CodeVerifier":"test_verifier","RedirectURI":"https://client.app/callback"}`, nil)
-
+	mockDS.On("Set", mock.Anything, "dummy_id_token", mock.Anything, mock.Anything).Return(nil)
+	ds.Set(mockDS)
 	// Mock OAuth2 config behavior
 	mockOAuthCfg := new(auth_mock.MockOAuth2Cfg)
 	exchangedToken := &oauth2.Token{}
@@ -116,14 +452,14 @@ func TestLoginCallback_Success(t *testing.T) {
 
 	mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 		Return(&http.Client{
-			Transport: roundTripFunc(func(req *http.Request) *http.Response {
+			Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
 				userInfo := map[string]string{"email": "test@example.com"}
 				body, _ := json.Marshal(userInfo)
 				return &http.Response{
 					StatusCode: http.StatusOK,
 					Body:       io.NopCloser(bytes.NewBuffer(body)),
 					Header:     make(http.Header),
-				}
+				}, nil
 			}),
 		})
 
@@ -153,7 +489,7 @@ func TestLoginCallback_Success(t *testing.T) {
 		JWTClaimsAudience:             "test-audience",
 		JWTExpirationInSeconds:        3600,
 		JWTRefreshExpirationInSeconds: 7200,
-		SecureCookie:                  false,
+		CookieSecure:                  false,
 		UserInfoURL:                   "https://userinfo.test",
 	}).ServeHTTP(w, req)
 
@@ -168,12 +504,7 @@ func TestLoginCallback_Success(t *testing.T) {
 	mockOperatorProvider.AssertExpectations(t)
 }
 
-// Helper to mock HTTP Client RoundTrip
-type roundTripFunc func(req *http.Request) *http.Response
 
-func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return f(req), nil
-}
 
 func TestLoginCallback_Errors(t *testing.T) {
 	type testCase struct {
@@ -231,13 +562,13 @@ func TestLoginCallback_Errors(t *testing.T) {
 				mockDS.On("Get", mock.Anything, mock.Anything).
 					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
 				exchangedToken := &oauth2.Token{}
-				exchangedToken = exchangedToken.WithExtra(map[string]interface{}{"id_token": "token"})
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
 				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
-							return &http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader(""))}
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							return &http.Response{StatusCode: http.StatusInternalServerError, Body: io.NopCloser(strings.NewReader(""))}, nil
 						}),
 					})
 			},
@@ -255,8 +586,8 @@ func TestLoginCallback_Errors(t *testing.T) {
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
-							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("invalid json"))}
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader("invalid json"))}, nil
 						}),
 					})
 			},
@@ -269,15 +600,15 @@ func TestLoginCallback_Errors(t *testing.T) {
 				mockDS.On("Get", mock.Anything, mock.Anything).
 					Return(true, `{"CodeVerifier":"verifier","RedirectURI":"https://redirect"}`, nil)
 				exchangedToken := &oauth2.Token{}
-				exchangedToken = exchangedToken.WithExtra(map[string]interface{}{"id_token": "token"})
+				exchangedToken = exchangedToken.WithExtra(map[string]any{"id_token": "token"})
 				mockOAuthCfg.On("Exchange", mock.Anything, "test_code", mock.Anything).
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 							userInfo := map[string]string{"email": "test@example.com"}
 							body, _ := json.Marshal(userInfo)
-							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
 						}),
 					})
 				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
@@ -297,10 +628,10 @@ func TestLoginCallback_Errors(t *testing.T) {
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 							userInfo := map[string]string{"email": "test@example.com"}
 							body, _ := json.Marshal(userInfo)
-							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
 						}),
 					})
 				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
@@ -320,10 +651,10 @@ func TestLoginCallback_Errors(t *testing.T) {
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 							userInfo := map[string]string{"email": "test@example.com"}
 							body, _ := json.Marshal(userInfo)
-							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}
+							return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewBuffer(body))}, nil
 						}),
 					})
 				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
@@ -343,13 +674,13 @@ func TestLoginCallback_Errors(t *testing.T) {
 					Return(exchangedToken, nil)
 				mockOAuthCfg.On("Client", mock.Anything, exchangedToken).
 					Return(&http.Client{
-						Transport: roundTripFunc(func(*http.Request) *http.Response {
+						Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
 							userInfo := map[string]string{"email": "test@example.com"}
 							body, _ := json.Marshal(userInfo)
 							return &http.Response{
 								StatusCode: http.StatusOK,
 								Body:       io.NopCloser(bytes.NewBuffer(body)),
-							}
+							}, nil
 						}),
 					})
 				mockOperatorProvider.On("GetOperatorByAccount", mock.Anything, "test@example.com").
@@ -375,7 +706,7 @@ func TestLoginCallback_Errors(t *testing.T) {
 			mockDS := new(mock_ds.MockDS)
 			mockOAuthCfg := new(auth_mock.MockOAuth2Cfg)
 			mockOperatorProvider := new(mock_operator_provider.MockOperatorProvider)
-
+			ds.Set(mockDS)
 			tt.setupMocks(mockDS, mockOAuthCfg, mockOperatorProvider)
 
 			a := auth.New(auth.OAuthConfig{ClientSecret: "mySecret"}, mockDS)
@@ -407,4 +738,162 @@ func TestLoginCallback_Errors(t *testing.T) {
 			})
 		})
 	}
+}*/
+
+func TestLogOut_AllCases(t *testing.T) {
+
+	tests := []struct {
+		name            string
+		setup           func(r *http.Request)
+		expectedMessage string
+		expectRevoke    bool
+	}{
+		{
+			name: "Token not found",
+			setup: func(req *http.Request) {
+
+			},
+			expectedMessage: i18n.MsgAuthTokenNotFoud,
+			expectRevoke:    false,
+		},
+		{
+			name: "Token parse fails",
+			setup: func(req *http.Request) {
+				req.AddCookie(&http.Cookie{
+					Name:  auth.AuthTokenKey,
+					Value: "invalid.jwt.token",
+				})
+			},
+			expectedMessage: i18n.MsgAuthTokenInvalid,
+			expectRevoke:    false,
+		},
+		{
+			name: "DS.Get fails",
+			setup: func(req *http.Request) {
+				mockDS := new(mock_ds.MockDS)
+				mockDS.On("Get", mock.Anything, "idp-token").
+					Return(false, "", errors.New("ds error"))
+				ds.Set(mockDS)
+				testutil.InjectMockJWTKey()
+				token, _ := auth.GenerateAuthToken(model.Operator{}, "idp-token", auth.OAuthConfig{JWTExpirationInSeconds: 10})
+				req.AddCookie(&http.Cookie{
+					Name:  auth.AuthTokenKey,
+					Value: token,
+				})
+
+			},
+			expectedMessage: i18n.MsgInternalServerError,
+			expectRevoke:    false,
+		},
+		{
+			name: "Token not found in DS",
+			setup: func(req *http.Request) {
+				mockDS := new(mock_ds.MockDS)
+				mockDS.On("Get", mock.Anything, "idp-token").
+					Return(false, "", nil)
+				ds.Set(mockDS)
+				testutil.InjectMockJWTKey()
+				token, _ := auth.GenerateAuthToken(model.Operator{}, "idp-token", auth.OAuthConfig{JWTExpirationInSeconds: 10})
+				req.AddCookie(&http.Cookie{
+					Name:  auth.AuthTokenKey,
+					Value: token,
+				})
+			},
+			expectedMessage: i18n.MsgAccessTokenNotFound,
+			expectRevoke:    false,
+		},
+		{
+			name: "Token successfully revoked",
+			setup: func(req *http.Request) {
+				mockDS := new(mock_ds.MockDS)
+				mockDS.On("Get", mock.Anything, "idp-token").
+					Return(true, "access-token", nil)
+				ds.Set(mockDS)
+				testutil.InjectMockJWTKey()
+				token, _ := auth.GenerateAuthToken(model.Operator{}, "idp-token", auth.OAuthConfig{JWTExpirationInSeconds: 10})
+				req.AddCookie(&http.Cookie{
+					Name:  auth.AuthTokenKey,
+					Value: token,
+				})
+			},
+			expectedMessage: "",
+			expectRevoke:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var revokeCalled bool
+			httpClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+				revokeCalled = true
+				assert.Equal(t, "application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+				return &http.Response{
+					StatusCode: http.StatusOK,
+					Body:       io.NopCloser(bytes.NewBufferString("")),
+				}, nil
+			})}
+			req := httptest.NewRequest(http.MethodGet, "/logout", nil)
+			tt.setup(req)
+
+			log.Set(&mock_log.MockNoOpLogger{})
+
+			w := httptest.NewRecorder()
+			LogOut(auth.OAuthConfig{
+				RevokeTokenURL: "https://revoke.url",
+			}).ServeHTTP(w, req)
+
+			res := w.Result()
+			defer res.Body.Close()
+			assert.Equal(t, http.StatusOK, res.StatusCode)
+
+			var resp response.Response[any]
+			err := json.NewDecoder(res.Body).Decode(&resp)
+			assert.NoError(t, err)
+
+			expected := i18n.Get(req, tt.expectedMessage)
+			assert.Equal(t, expected, resp.Message)
+			if tt.name == "Token successfully revoked" {
+				time.Sleep(100 * time.Millisecond)
+			}
+			assert.Equal(t, tt.expectRevoke, revokeCalled)
+		})
+	}
+}
+
+func TestRevokeToken_AllCases(t *testing.T) {
+	ctx := context.Background()
+	log.Set(&mock_log.MockNoOpLogger{})
+
+	t.Run("success", func(t *testing.T) {
+		httpClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			assert.Equal(t, "application/x-www-form-urlencoded", req.Header.Get("Content-Type"))
+			return &http.Response{
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewBufferString("")),
+			}, nil
+		})}
+
+		revokeToken(ctx, "token", "https://example.com")
+	})
+
+	t.Run("new request fails", func(t *testing.T) {
+		revokeToken(ctx, "token", ":invalid-url") // triggers url parse error
+	})
+
+	t.Run("client.Do fails", func(t *testing.T) {
+		httpClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return nil, errors.New("client error")
+		})}
+		revokeToken(ctx, "token", "https://example.com")
+	})
+
+	t.Run("non-200 status", func(t *testing.T) {
+		httpClient = &http.Client{Transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
+			return &http.Response{
+				StatusCode: http.StatusBadRequest,
+				Body:       io.NopCloser(bytes.NewBufferString("bad request")),
+			}, nil
+		})}
+		revokeToken(ctx, "token", "https://example.com")
+	})
 }

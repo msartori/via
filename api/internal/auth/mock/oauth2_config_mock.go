@@ -15,7 +15,6 @@ type MockOAuth2Cfg struct {
 func (m *MockOAuth2Cfg) Client(ctx context.Context, token *oauth2.Token) *http.Client {
 	args := m.Called(ctx, token)
 	return args.Get(0).(*http.Client)
-	//MockHttpRequester
 }
 
 func (m *MockOAuth2Cfg) Exchange(ctx context.Context, code string, opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {

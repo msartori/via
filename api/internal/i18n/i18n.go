@@ -20,6 +20,9 @@ const (
 	MsgAuthFailedToExchangeToken = "auth_failed_to_exchange_token"
 	MsgAuthFailedToGetUserInfo   = "auth_failed_to_get_user_info"
 	MsgBadRequest                = "bad_request"
+	MsgAuthTokenNotFoud          = "auth_token_not_found"
+	MsgAuthTokenInvalid          = "invalid_auth_token"
+	MsgAccessTokenNotFound       = "access_token_not_found"
 )
 
 var messages = map[string]map[string]string{
@@ -38,6 +41,9 @@ var messages = map[string]map[string]string{
 		MsgAuthFailedToExchangeToken: "Error al intercambiar el token de autenticación.",
 		MsgAuthFailedToGetUserInfo:   "Error al obtener la información del usuario.",
 		MsgBadRequest:                "Solicitud Incorrecta.",
+		MsgAuthTokenNotFoud:          "Token de autenticación no encontrado.",
+		MsgAuthTokenInvalid:          "Token de autenticación inválido.",
+		MsgAccessTokenNotFound:       "Token de acceso no encontrado.",
 	},
 	"en": {
 		MsgRequestTimeout:          "Request timeout.",

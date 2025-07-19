@@ -5,18 +5,18 @@ import (
 	"testing"
 	"time"
 	"via/internal/ds"
+	"via/internal/secret"
+	mock_secret "via/internal/secret/mock"
 
 	"github.com/go-redis/redismock/v9"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestNewRedisDS(t *testing.T) {
-	// Override secret.ReadSecret temporarily
-	originalReadSecret := readSecret
-	readSecret = func(_ string) string {
-		return "mockedPassword"
-	}
-	defer func() { readSecret = originalReadSecret }()
+	secretMock := new(mock_secret.MockSecret)
+	secret.Set(secretMock)
+	secretMock.On("Read", mock.Anything).Return("mockedPassword")
 
 	cfg := ds.DSConfig{
 		Host:         "localhost",

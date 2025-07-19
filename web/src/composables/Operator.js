@@ -1,5 +1,5 @@
-import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
-import {assignGuideToOperator, getGuideStatusOptions, changeGuideStatus, handleAuthRedirect } from '../services/api'
+import { ref, nextTick, onMounted, onBeforeUnmount, computed, handleError } from 'vue'
+import {assignGuideToOperator, getGuideStatusOptions, changeGuideStatus, handleAuthRedirect, doLogout } from '../services/api'
 import {apiSSEUrl, apiSSE} from '../services/apiConfig'
 
 export default function useOperator({
@@ -9,14 +9,16 @@ export default function useOperator({
   error,
   requestId,
   statusChanging,
-  animateActivity
+  animateActivity,
+  loggingOut
 }) {
   const operatorGuides = ref([])
   const activeGuide = ref(null)
   const statusOptions = ref([])
   const loadingStatusOptions = ref(false)
   const pendingStatusChange = ref({ guideId: null, status: null, viaGuideId: null })
- 
+  
+
   let operatorGuidesSource = null
 
   const verifyUnauthorizedOnSSE = async (uri) => {
@@ -51,7 +53,7 @@ export default function useOperator({
           }
         } 
         if (content.message != "") {
-          console.error(content.message)
+          //console.error(content.message)
           error.value = content.message
           requestId.value = content.requestId
         }
@@ -64,9 +66,9 @@ export default function useOperator({
     operatorGuidesSource.onerror = async (err) => {
       let state = await verifyUnauthorizedOnSSE('/operator/guides?lang=es')
       handleAuthRedirect(state)
-      console.error('SSE connection error:', err)
-      error.value = 'Error al conectarse al servidor'
-      requestId.value = ''
+      //console.error('SSE connection error:', err)
+      //error.value = 'Error al conectarse al servidor'
+      //requestId.value = ''
       operatorGuidesSource.close()
     }
   }
@@ -97,7 +99,6 @@ export default function useOperator({
 
   async function selectGuide(guide) {
     if (!guide.selectable) return
-    console.log(guide.operator.id)
     if (guide.operator.id != 1) {
       activeGuide.value = { ...guide }
       await loadStatusOptions(guide.guideId)
@@ -107,7 +108,6 @@ export default function useOperator({
 
     const response = await assignGuideToOperator(guide.guideId)
     if (response.status === 200) {
-      //await fetchOperatorGuides()
       const updated = operatorGuides.value.find(g => g.guideId === guide.guideId)
       if (updated) {
         activeGuide.value = { ...updated }
@@ -146,7 +146,6 @@ export default function useOperator({
 
   async function closeSuccessModal() {
     showSuccessModal.value = false
-    //await fetchOperatorGuides()
   }
 
   const elapsedTime = computed(() => {
@@ -161,14 +160,26 @@ export default function useOperator({
     return `${days}d ${hours}:${minutes}:${seconds}`
   })
 
+  async function logout() {
+    loggingOut.value = true
+    const res = await doLogout()
+    if (res.status === 200) {
+      if (res.content.message == "") {
+        window.location.reload()
+      } else {
+          error.value = res.content.message
+          requestId.value = res.content.requestId
+      }
+    }
+    loggingOut.value = false
+  }
+
   onMounted(() => {
     fetchOperatorGuides()
-    //refreshIntervalId = setInterval(fetchOperatorGuides, 10000)
   })
 
   onBeforeUnmount(() => {
     operatorGuidesSource.close()
-    //clearInterval(refreshIntervalId)
   })
 
   setInterval(() => {
@@ -186,6 +197,7 @@ export default function useOperator({
     statusOptions,
     loadingStatusOptions,
     pendingStatusChange,
-    elapsedTime
+    elapsedTime,
+    logout
   }
 }

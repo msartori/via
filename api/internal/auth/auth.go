@@ -2,8 +2,11 @@ package auth
 
 import (
 	"context"
+	"net/http"
 	"sync"
+	"time"
 	"via/internal/ds"
+	"via/internal/model"
 	"via/internal/secret"
 
 	"crypto/rand"
@@ -11,6 +14,10 @@ import (
 	"encoding/base64"
 	"via/internal/cache"
 
+	jwt_key "via/internal/jwt"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/oauth2"
 )
 
@@ -27,6 +34,12 @@ type Auth struct {
 	cache        *cache.Cache // Use a suitable cache implementation, e.g., Redis
 }
 
+type Claims struct {
+	OperatorID int    `json:"operatorId"`
+	IDPIDToken string `json:"idpIdToken"`
+	jwt.RegisteredClaims
+}
+
 func Get() *Auth {
 	mutex.RLock()
 	defer mutex.RUnlock()
@@ -41,7 +54,7 @@ func Set(auth *Auth) {
 
 func New(cfg OAuthConfig, ds ds.DS) *Auth {
 	if cfg.ClientSecret == "" {
-		cfg.ClientSecret = secret.ReadSecret(cfg.ClientSecretFile)
+		cfg.ClientSecret = secret.Get().Read(cfg.ClientSecretFile)
 	}
 	return &Auth{
 		cache: cache.New(ds),
@@ -73,7 +86,10 @@ type OAuthConfig struct {
 	AuthURL                       string   `env:"AUTH_URL" json:"authUrl"`
 	TokenURL                      string   `env:"TOKEN_URL" json:"tokenUrl"`
 	UserInfoURL                   string   `env:"USER_INFO_URL" json:"userInfoUrl"`
-	SecureCookie                  bool     `env:"SECURE_COOKIE" json:"secure"`
+	RevokeTokenURL                string   `env:"REVOKE_TOKEN_URL" json:"revokeTokenUrl"`
+	CookieSecure                  bool     `env:"COOKIE_SECURE" json:"secure"`
+	CookieSameSiteNone            bool     `env:"COOKIE_SAME_SITE_NONE" json:"sameSiteNone"`
+	CookieDomain                  string   `env:"COOKIE_DOMAIN" json:"domain"`
 	JWTClaimsIssuer               string   `env:"JWT_CLAIMS_ISSUER" json:"jwtClaimsIssuer"`
 	JWTClaimsAudience             string   `env:"JWT_CLAIMS_AUDIENCE" json:"jwtClaimsAudience"`
 	JWTExpirationInSeconds        int      `env:"JWT_EXPIRATION_IN_SECONDS" json:"jwtExpirationInSeconds"`
@@ -142,4 +158,67 @@ func (a *Auth) GetState(ctx context.Context, state string) (AuthState, bool, err
 		return AuthState{}, false, nil // Not found
 	}
 	return authState, true, nil
+}
+
+func GetAuthToken(r *http.Request) (token string, err error) {
+	cookie, err := r.Cookie(AuthTokenKey)
+	if err != nil {
+		return
+	}
+	err = cookie.Valid()
+	if err != nil {
+		return
+	}
+	token = cookie.Value
+	return
+}
+
+func writeAuthCookie(w http.ResponseWriter, token string, cfg OAuthConfig, expires time.Time) {
+	sameSite := http.SameSiteLaxMode
+	if cfg.CookieSameSiteNone {
+		sameSite = http.SameSiteNoneMode
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     AuthTokenKey,
+		Value:    token,
+		Expires:  expires,
+		HttpOnly: true,
+		Secure:   cfg.CookieSecure,
+		SameSite: sameSite,
+		Path:     "/",
+		Domain:   cfg.CookieDomain,
+	})
+}
+
+func SetAuthToken(w http.ResponseWriter, token string, cfg OAuthConfig) {
+	writeAuthCookie(w, token, cfg, time.Now().Add(time.Duration(cfg.JWTExpirationInSeconds)*time.Second))
+}
+
+func DelAuthToken(w http.ResponseWriter, cfg OAuthConfig) {
+	writeAuthCookie(w, "", cfg, time.Now().Add(-time.Hour))
+}
+
+func ParseTokenWithClaims(token string) (claims Claims, tkn *jwt.Token, err error) {
+	tkn, err = jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (any, error) {
+		return jwt_key.GetPublicKey(), nil
+	})
+	return
+}
+
+func GenerateAuthToken(operator model.Operator, idToken string, cfg OAuthConfig) (string, error) {
+	now := time.Now()
+	claims := Claims{
+		OperatorID: operator.ID,
+		IDPIDToken: idToken,
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:    cfg.JWTClaimsIssuer,
+			Audience:  jwt.ClaimStrings{cfg.JWTClaimsAudience},
+			IssuedAt:  jwt.NewNumericDate(now),
+			ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(cfg.JWTExpirationInSeconds) * time.Second)),
+			ID:        uuid.New().String(),
+			Subject:   operator.Account,
+		},
+	}
+	tokenJWT := jwt.NewWithClaims(jwt_key.GetSigningMethod(), claims)
+	return tokenJWT.SignedString(jwt_key.GetPrivateKey())
 }

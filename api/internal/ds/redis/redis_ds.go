@@ -14,11 +14,9 @@ type RedisDS struct {
 	client *redis.Client
 }
 
-var readSecret = secret.ReadSecret
-
 func New(cfg ds.DSConfig) ds.DS {
 	if cfg.Password == "" {
-		cfg.Password = readSecret(cfg.PasswordFile)
+		cfg.Password = secret.Get().Read(cfg.PasswordFile)
 	}
 	base, _ := strconv.Atoi(cfg.Base)
 	rdb := redis.NewClient(&redis.Options{

@@ -1,21 +1,21 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
+	"io"
 	"net/http"
-	"time"
+	"net/url"
+	"strings"
 	"via/internal/auth"
 	biz_operator "via/internal/biz/operator"
+	"via/internal/ds"
 	"via/internal/i18n"
-	jwt_key "via/internal/jwt"
-	"via/internal/middleware"
 	"via/internal/response"
 
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
-	"golang.org/x/oauth2"
-
 	"via/internal/log"
+
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -125,21 +125,8 @@ func LoginCallback(cfg auth.OAuthConfig) http.Handler {
 			}, http.StatusUnauthorized)
 			return
 		}
-		now := time.Now()
-		claims := middleware.Claims{
-			OperatorID: operator.ID,
-			IDPIDToken: idToken,
-			RegisteredClaims: jwt.RegisteredClaims{
-				Issuer:    cfg.JWTClaimsIssuer,
-				Audience:  jwt.ClaimStrings{cfg.JWTClaimsAudience},
-				IssuedAt:  jwt.NewNumericDate(now),
-				ExpiresAt: jwt.NewNumericDate(now.Add(time.Duration(cfg.JWTExpirationInSeconds) * time.Second)),
-				ID:        uuid.New().String(),
-				Subject:   operator.Account,
-			},
-		}
-		tokenJWT := jwt.NewWithClaims(jwt_key.GetSigningMethod(), claims)
-		signedToken, err := tokenJWT.SignedString(jwt_key.GetPrivateKey())
+
+		signedToken, err := auth.GenerateAuthToken(operator, idToken, cfg)
 		if err != nil {
 			log.Get().Error(r.Context(), err, "msg", "failed to sign JWT token")
 			response.WriteJSON(w, r, response.Response[any]{
@@ -147,15 +134,76 @@ func LoginCallback(cfg auth.OAuthConfig) http.Handler {
 			}, http.StatusInternalServerError)
 			return
 		}
-		http.SetCookie(w, &http.Cookie{
-			Name:     auth.AuthTokenKey,
-			Value:    signedToken,
-			Expires:  time.Now().Add(time.Duration(cfg.JWTRefreshExpirationInSeconds) * time.Second),
-			HttpOnly: true,
-			Secure:   cfg.SecureCookie,
-			SameSite: http.SameSiteLaxMode,
-			Path:     "/",
-		})
+		err = ds.Get().Set(r.Context(), idToken, token.AccessToken, cfg.JWTExpirationInSeconds)
+		if err != nil {
+			log.Get().Error(r.Context(), err, "msg", "unable to store access token", "error")
+		}
+		auth.SetAuthToken(w, signedToken, cfg)
 		http.Redirect(w, r, authState.RedirectURI, http.StatusSeeOther)
 	})
+}
+
+func LogOut(cfg auth.OAuthConfig) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		resp := response.Response[any]{}
+		token, err := auth.GetAuthToken(r)
+		if err != nil {
+			log.Get().Warn(r.Context(), "msg", "access token not found")
+			resp.Message = i18n.Get(r, i18n.MsgAuthTokenNotFoud)
+			response.WriteJSON(w, r, resp, http.StatusOK)
+			return
+		}
+
+		auth.DelAuthToken(w, cfg)
+
+		claims, _, err := auth.ParseTokenWithClaims(token)
+		if err != nil {
+			log.Get().Warn(r.Context(), "msg", "unable to parse JWT token", "error", err.Error())
+			resp.Message = i18n.Get(r, i18n.MsgAuthTokenInvalid)
+			response.WriteJSON(w, r, resp, http.StatusOK)
+			return
+		}
+		ok, accessToken, err := ds.Get().Get(r.Context(), claims.IDPIDToken)
+		if err != nil {
+			log.Get().Error(r.Context(), err, "msg", "unable get access token from DS", "error")
+			resp.Message = i18n.Get(r, i18n.MsgInternalServerError)
+			response.WriteJSON(w, r, resp, http.StatusOK)
+			return
+		}
+		if !ok {
+			log.Get().Warn(r.Context(), "msg", "access token not found in DS")
+			resp.Message = i18n.Get(r, i18n.MsgAccessTokenNotFound)
+			response.WriteJSON(w, r, resp, http.StatusOK)
+			return
+		}
+		response.WriteJSON(w, r, resp, http.StatusOK)
+
+		go revokeToken(r.Context(), accessToken, cfg.RevokeTokenURL)
+
+	})
+}
+
+var httpClient = http.DefaultClient
+
+func revokeToken(ctx context.Context, token, uri string) {
+	data := url.Values{}
+	data.Set("token", token)
+	req, err := http.NewRequest("POST", uri, strings.NewReader(data.Encode()))
+	if err != nil {
+		log.Get().Error(ctx, err, "msg", "unable to create revoke token request", "error", err.Error())
+		return
+	}
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Get().Error(ctx, err, "msg", "error in revoke token request")
+		return
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		log.Get().Warn(ctx, "msg", "token revoke call error", "status", resp.StatusCode, "response", string(body))
+	}
+	log.Get().Info(ctx, "msg", "token revoke done")
 }
