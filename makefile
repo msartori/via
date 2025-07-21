@@ -10,7 +10,7 @@ export
 CURDIR := $(shell pwd)/api
 API_IMAGE_NAME := $(APPNAME)-$(ENV)-api-img
 WEB_IMAGE_NAME := $(APPNAME)-$(ENV)-web-img
-COVERAGE_THRESHOLD := 40# coverage lower threshold
+COVERAGE_THRESHOLD := 80# coverage lower threshold
 BROWSERDIR := open -a "Google Chrome"
 
 GOBUILD := $(CURDIR)/build
