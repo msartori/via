@@ -98,9 +98,14 @@ ent generate ./ent/schema
 
 #### JWT Key generation
 ```
-openssl rsa -in private.pem -pubout -out public.pem    
 openssl genpkey -algorithm RSA -out private.pem -pkeyopt rsa_keygen_bits:2048
+openssl rsa -in private.pem -pubout -out public.pem    
+
 ```
 
 
+| Comando       | Descripción           |
+| ------------- | --------------------- |
+| `make up`     | Levanta la aplicación |
+| `make test`   | Ejecuta los tests     |
 

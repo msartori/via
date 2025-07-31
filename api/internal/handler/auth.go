@@ -139,6 +139,7 @@ func LoginCallback(cfg auth.OAuthConfig) http.Handler {
 			log.Get().Error(r.Context(), err, "msg", "unable to store access token", "error")
 		}
 		auth.SetAuthToken(w, signedToken, cfg)
+		log.Get().Info(r.Context(), "msg", "redirecting", "uri", authState.RedirectURI)
 		http.Redirect(w, r, authState.RedirectURI, http.StatusSeeOther)
 	})
 }

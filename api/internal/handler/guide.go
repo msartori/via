@@ -97,7 +97,10 @@ func CreateGuideToWidthdraw(biz biz_config.BussinessCfg) http.Handler {
 		}
 		logger.WithLogFieldsInRequest(r, "guide_id", id)
 		logger.Info(r.Context(), "msg", "guide to withdraw created")
-		pubsub.Get().Publish(r.Context(), global.NewGuideChannel, fmt.Sprintf("{\"guide_id\":\"%d\"}", id))
+		err = pubsub.Get().Publish(r.Context(), global.NewGuideChannel, fmt.Sprintf("{\"guide_id\":\"%d\"}", id))
+		if err != nil {
+			logger.Error(r.Context(), err, "msg", "unable to publish event", "channel", global.NewGuideChannel)
+		}
 		data.WithdrawMessage = getWithDrawMessage(r, inProcess, viaGuide.ID)
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})

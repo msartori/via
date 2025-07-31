@@ -13,7 +13,7 @@ export default function useMonitorEvents() {
   }
 
   const getMonitorEvents = () => {
-    eventSource = new EventSource(`${apiSSEUrl}/monitor/events?lang=es`)
+    eventSource = new EventSource(`${apiSSEUrl}/monitor/events?lang=es`,  { withCredentials: true })
 
     eventSource.onmessage = (event) => {
       try {

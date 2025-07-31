@@ -35,7 +35,7 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, loader Loader[any], event
 	defer sub.Close()
 
 	//initial connection -> respond original data
-	log.Get().Debug(r.Context(), "event", "initial connection")
+	log.Get().Info(r.Context(), "event", "initial connection")
 	response.WriteJSONEvent(w, r, loader(r))
 	flusher.Flush()
 
@@ -48,11 +48,11 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, loader Loader[any], event
 				response.WriteJSONEvent(w, r, res)
 				return
 			}
-			log.Get().Debug(r.Context(), "event", event)
+			log.Get().Info(r.Context(), "event", event)
 			response.WriteJSONEvent(w, r, loader(r))
 			flusher.Flush()
 		case <-r.Context().Done():
-			log.Get().Debug(r.Context(), "msg", "Client disconnected")
+			log.Get().Info(r.Context(), "msg", "Client disconnected")
 			return
 		}
 	}
