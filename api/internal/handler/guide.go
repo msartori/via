@@ -1,52 +1,23 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
-	"strconv"
 	biz_config "via/internal/biz/config"
 	biz_guide_status "via/internal/biz/guide/status"
 	biz_operator "via/internal/biz/operator"
+	"via/internal/global"
 	"via/internal/i18n"
 	"via/internal/log"
+	"via/internal/middleware"
 	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	via_guide_provider "via/internal/provider/via/guide"
+	"via/internal/pubsub"
 	response "via/internal/response"
 
 	"github.com/go-chi/chi/v5"
 )
-
-type GetGuideByViaGuideIdOutput struct {
-	Guide model.Guide `json:"guide"`
-}
-
-func GetGuideByViaGuideId() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
-		res := response.Response[GetGuideByViaGuideIdOutput]{}
-		viaGuideId := chi.URLParam(r, "viaGuideId")
-
-		if ok := isValidViaGuideId(w, r, viaGuideId); !ok {
-			return
-		}
-
-		logger := log.Get()
-		logger.WithLogFieldsInRequest(r, "via_guide_id", viaGuideId)
-
-		guide, err := guide_provider.Get().GetGuideByViaGuideId(r.Context(), viaGuideId)
-
-		if ok := isFailedToFetchGuide(w, r, err); ok {
-			return
-		}
-
-		if ok := isGuideNotFound(w, r, guide.ViaGuideID); !ok {
-			return
-		}
-
-		res.Data = GetGuideByViaGuideIdOutput{guide}
-		response.WriteJSON(w, r, res, http.StatusOK)
-	})
-}
 
 type CreateGuideToWidthdrawInput struct {
 	ViaGuideId string `json:"viaGuideId"`
@@ -56,7 +27,7 @@ type CreateGuideToWidthdrawOutput struct {
 	WithdrawMessage string `json:"withdrawMessage"`
 }
 
-func CreateGuideToWidthdraw(biz biz_config.Bussiness) http.Handler {
+func CreateGuideToWidthdraw(biz biz_config.BussinessCfg) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := response.Response[*CreateGuideToWidthdrawOutput]{}
 		var input CreateGuideToWidthdrawInput
@@ -126,6 +97,10 @@ func CreateGuideToWidthdraw(biz biz_config.Bussiness) http.Handler {
 		}
 		logger.WithLogFieldsInRequest(r, "guide_id", id)
 		logger.Info(r.Context(), "msg", "guide to withdraw created")
+		err = pubsub.Get().Publish(r.Context(), global.NewGuideChannel, fmt.Sprintf("{\"guide_id\":\"%d\"}", id))
+		if err != nil {
+			logger.Error(r.Context(), err, "msg", "unable to publish event", "channel", global.NewGuideChannel)
+		}
 		data.WithdrawMessage = getWithDrawMessage(r, inProcess, viaGuide.ID)
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
@@ -135,58 +110,69 @@ type GetOperatorGuideOutput struct {
 	OperatorGuides []model.OperatorGuide `json:"operatorGuides"`
 }
 
-func GetOperatorGuide() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res := response.Response[GetOperatorGuideOutput]{}
-		operatorGuides := []model.OperatorGuide{}
-		operatorId := 0
-		if operatorIdParam, err := strconv.Atoi(r.URL.Query().Get("operatorId")); err == nil {
-			operatorId = operatorIdParam
-		}
-		guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetOperatorStatus())
-		if ok := isFailedToFetchGuide(w, r, err); ok {
-			return
-		}
-		for _, guide := range guides {
-			operatorGuides = append(operatorGuides,
-				model.OperatorGuide{
-					GuideId:    guide.ID,
-					Recipient:  guide.Recipient,
-					Status:     biz_guide_status.GetStatusDescription(response.GetLanguage(r), guide.Status),
-					Operator:   guide.Operator,
-					Selectable: guide.Operator.ID == biz_operator.OPERATOR_SYSTEM || guide.Operator.ID == operatorId,
-					ViaGuideId: guide.ViaGuideID,
-					Payment:    biz_config.GetPaymentDescription(response.GetLanguage(r), guide.Payment),
-					LastChange: guide.UpdatedAt,
-				})
-		}
-		logger := log.Get()
-		logger.Info(r.Context(), "msg", "returning operator guides")
-		res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides}
-		response.WriteJSON(w, r, res, http.StatusOK)
-	})
+func GetOperatorGuide(r *http.Request) response.Response[any] {
+	res := response.Response[any]{}
+	operatorGuides := []model.OperatorGuide{}
+
+	operatorIdCtx := r.Context().Value(middleware.OperatorIDKey)
+	operatorId, ok := operatorIdCtx.(int)
+	if !ok {
+		log.Get().Warn(r.Context(), "msg", "missing operator id in context", "operator_id", operatorIdCtx)
+		res.Message = i18n.Get(r, i18n.MsgOperatorInvalid)
+		res.HttpStatus = http.StatusUnauthorized
+		return res
+	}
+
+	logger := log.Get()
+	logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+
+	guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetOperatorStatus())
+
+	if err != nil {
+		log.Get().Error(r.Context(), err, "msg", "failed to fetch guide")
+		res.Message = i18n.Get(r, i18n.MsgInternalServerError)
+		res.HttpStatus = http.StatusInternalServerError
+		return res
+	}
+
+	for _, guide := range guides {
+		operatorGuides = append(operatorGuides,
+			model.OperatorGuide{
+				GuideId:    guide.ID,
+				Recipient:  guide.Recipient,
+				Status:     biz_guide_status.GetStatusDescription(response.GetLanguage(r), guide.Status),
+				Operator:   guide.Operator,
+				Selectable: guide.Operator.ID == biz_operator.OPERATOR_SYSTEM || guide.Operator.ID == operatorId,
+				ViaGuideId: guide.ViaGuideID,
+				Payment:    biz_config.GetPaymentDescription(response.GetLanguage(r), guide.Payment),
+				LastChange: guide.UpdatedAt,
+			})
+	}
+	logger.Info(r.Context(), "msg", "returning operator guides")
+	res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides}
+	res.HttpStatus = http.StatusOK
+	return res
 }
 
-type AssignGuideToOperatorInput struct {
-	OperatorID int `json:"operatorId"`
+type AssignGuideToOperatorOutput struct {
+	Guide model.Guide `json:"guide"`
 }
 
 func AssignGuideToOperator() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res := response.Response[GetGuideByViaGuideIdOutput]{}
+		res := response.Response[AssignGuideToOperatorOutput]{}
 		valid, guideId := isValidGuideId(w, r, chi.URLParam(r, "guideId"))
 		if !valid {
 			return
 		}
-
 		logger := log.Get()
 		logger.WithLogFieldsInRequest(r, "guide_id", guideId)
-		var input AssignGuideToOperatorInput
-		if ok := getJsonBody(w, r, &input); !ok {
+		operatorId := 0
+		if operatorId = isValidOperatorId(w, r); operatorId == 0 {
 			return
 		}
-		logger.WithLogFieldsInRequest(r, "operator_id", input.OperatorID)
-		err := guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guideId, Operator: model.Operator{ID: input.OperatorID}})
+		logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+		err := guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guideId, Operator: model.Operator{ID: operatorId}})
 		if err != nil {
 			log.Get().Error(r.Context(), err, "msg", "failed assigning operator to guide")
 			res.Message = i18n.Get(r, i18n.MsgInternalServerError)
@@ -195,6 +181,7 @@ func AssignGuideToOperator() http.Handler {
 			return
 		}
 		logger.Info(r.Context(), "msg", "operator assigned to guide")
+		pubsub.Get().Publish(r.Context(), global.GuideAssignmentChannel, fmt.Sprintf("{\"guide_id\":\"%d\"}", guideId))
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }
@@ -257,9 +244,15 @@ func UpdateGuideStatus() http.Handler {
 		if !valid {
 			return
 		}
-
 		logger := log.Get()
 		logger.WithLogFieldsInRequest(r, "guide_id", guideId)
+
+		operatorId := 0
+		if operatorId = isValidOperatorId(w, r); operatorId == 0 {
+			return
+		}
+		logger.WithLogFieldsInRequest(r, "operator_id", operatorId)
+
 		var input UpdateGuideStatusInput
 		if ok := getJsonBody(w, r, &input); !ok {
 			return
@@ -275,6 +268,7 @@ func UpdateGuideStatus() http.Handler {
 			return
 		}
 		logger.Info(r.Context(), "msg", "guide status updated")
+		pubsub.Get().Publish(r.Context(), global.GuideStatusChangeChannel, fmt.Sprintf("{\"guide_id\":\"%d\"}", guideId))
 		response.WriteJSON(w, r, res, http.StatusOK)
 	})
 }

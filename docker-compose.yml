@@ -7,18 +7,25 @@ services:
       dockerfile: dockerfile.api
       args:
         APPNAME: ${APPNAME}
-        PORT: ${API_PORT}
+        REST_PORT: ${API_REST_PORT}
+        SSE_PORT: ${API_SSE_PORT}
     env_file:
       - api/env/.env.${ENV}   
     networks:
       - ${APPNAME}-network  
     ports:
-      - "${API_PORT}:${API_PORT}"
+      - "${API_REST_PORT}:${API_REST_PORT}"
+      - "${API_SSE_PORT}:${API_SSE_PORT}"
     secrets:
       - db_password   
       - via_auth
+      - oauth_client_secret
+      - jwt_private_key 
+      - jwt_public_key
+      - ds_password
     depends_on:
       - db  
+      - ds
 
   web:
     build:
@@ -54,7 +61,25 @@ services:
     secrets:
       - db_password
     ports:
-      - "${DB_PORT}:5432"  # opcional si necesitas acceder desde el host
+      - "${DB_PORT}:5432"
+
+  ds:
+    build:
+      context: .
+      dockerfile: dockerfile.ds
+    container_name: ${APPNAME}-${ENV}-ds
+    env_file:
+      - ds/env/.env.${ENV}   
+    networks:
+      - ${APPNAME}-network
+    ports:
+      - "${DS_PORT}:6379"
+    volumes:
+      - ./ds_data.${ENV}:/data
+    secrets:
+      - ds_password
+    command: >
+      redis-server --requirepass "$(cat /run/secrets/ds_password)"
 
 networks:
   via-network:
@@ -66,3 +91,11 @@ secrets:
     file: ./secrets/db_password.${ENV}
   via_auth:
     file: ./secrets/via_auth.${ENV}
+  oauth_client_secret:
+    file: ./secrets/oauth_client_secret.${ENV}
+  jwt_private_key:
+    file: ./secrets/jwt_private_key.${ENV}
+  jwt_public_key:
+    file: ./secrets/jwt_public_key.${ENV}
+  ds_password:
+    file: ./secrets/ds_password.${ENV}  

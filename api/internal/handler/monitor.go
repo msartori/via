@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 	biz_guide_status "via/internal/biz/guide/status"
+	"via/internal/i18n"
+	"via/internal/log"
 	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	"via/internal/response"
@@ -15,26 +17,26 @@ type GetMonitorEventOutput struct {
 }
 
 func init() {
-	rand.New(rand.NewSource(time.Now().UnixNano())) // Semilla para aleatoriedad
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 }
 
-func GetMonitorEvents() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		res := response.Response[GetMonitorEventOutput]{}
-		monitorEvents := []model.MonitorEvent{}
-
-		guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetMonitorStatus())
-		if isFailedToFetchGuide(w, r, err) {
-			return
-		}
-		for _, guide := range guides {
-			monitorEvents = append(monitorEvents,
-				model.MonitorEvent{GuideId: guide.ViaGuideID,
-					Recipient: guide.Recipient,
-					Status:    model.GetMonitorEventStatusDescriptionByGuideStatus(response.GetLanguage(r), guide.Status),
-					Highlight: model.GetHighlightByGuideStatus(guide.Status)})
-		}
-		res.Data = GetMonitorEventOutput{Events: monitorEvents}
-		response.WriteJSON(w, r, res, http.StatusOK)
-	})
+func GetMonitorEvents(r *http.Request) response.Response[any] {
+	res := response.Response[any]{}
+	monitorEvents := []model.MonitorEvent{}
+	guides, err := guide_provider.Get().GetGuidesByStatus(r.Context(), biz_guide_status.GetMonitorStatus())
+	if err != nil {
+		log.Get().Error(r.Context(), err, "msg", "failed to fetch guide")
+		res.Message = i18n.Get(r, i18n.MsgInternalServerError)
+		res.HttpStatus = http.StatusInternalServerError
+		return res
+	}
+	for _, guide := range guides {
+		monitorEvents = append(monitorEvents,
+			model.MonitorEvent{GuideId: guide.ViaGuideID,
+				Recipient: guide.Recipient,
+				Status:    model.GetMonitorEventStatusDescriptionByGuideStatus(response.GetLanguage(r), guide.Status),
+				Highlight: model.GetHighlightByGuideStatus(guide.Status)})
+	}
+	res.Data = GetMonitorEventOutput{monitorEvents}
+	return res
 }

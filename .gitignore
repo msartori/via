@@ -14,3 +14,14 @@ api/env/set-fly-secrets.sh
 api/env/.env.prod
 api/set-fly-secrets.sh
 web/env/.env.prod
+/ds_data.local
+/ds_data.dev
+.tmp_api_rest_url
+.tmp_api_sse_url
+.tmp_web_url
+ngrok-api.log
+ngrok-sse.log
+ngrok-web.log
+.ngrok-configs/api-rest.yml
+.ngrok-configs/api-sse.yml
+.ngrok-configs/web.yml

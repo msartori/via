@@ -19,7 +19,7 @@ type GetGuideToWithdrawOutput struct {
 	WithdrawMessage   string `json:"withdrawMessage"`
 }
 
-func GetGuideToWithdraw(biz biz_config.Bussiness) http.Handler {
+func GetGuideToWithdraw(biz biz_config.BussinessCfg) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		res := response.Response[*GetGuideToWithdrawOutput]{}
 		viaGuideId := chi.URLParam(r, "viaGuideId")

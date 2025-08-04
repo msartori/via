@@ -2,6 +2,7 @@ package response
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 	biz_language "via/internal/biz/language"
@@ -9,12 +10,14 @@ import (
 )
 
 type Response[T any] struct {
-	Data      T      `json:"data"`
-	Message   string `json:"message"`
-	RequestID string `json:"requestId"`
+	Data       T      `json:"data"`
+	Message    string `json:"message"`
+	RequestID  string `json:"requestId"`
+	HttpStatus int    `json:"http_status"`
 }
 
 func WriteJSON[T any](w http.ResponseWriter, r *http.Request, res Response[T], status int) {
+	//avoid writting on conext error
 	if r.Context().Err() != nil {
 		return
 	}
@@ -28,10 +31,20 @@ func WriteJSONError[T any](w http.ResponseWriter, r *http.Request, res Response[
 func writeJSON[T any](w http.ResponseWriter, r *http.Request, res Response[T], status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+	res.HttpStatus = status
 	if requestID, ok := r.Context().Value(global.RequestIDKey).(string); ok {
 		res.RequestID = requestID
 	}
 	json.NewEncoder(w).Encode(res)
+}
+
+func WriteJSONEvent[T any](w http.ResponseWriter, r *http.Request, res Response[T]) {
+	if requestID, ok := r.Context().Value(global.RequestIDKey).(string); ok {
+		res.RequestID = requestID
+	}
+	var data strings.Builder
+	json.NewEncoder(&data).Encode(res)
+	fmt.Fprintf(w, "data:%s\n\n", strings.TrimSpace(data.String()))
 }
 
 func GetLanguage(r *http.Request) string {

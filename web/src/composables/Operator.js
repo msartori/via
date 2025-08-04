@@ -1,5 +1,6 @@
-import { ref, nextTick, onMounted, onBeforeUnmount, computed } from 'vue'
-import { getOperatorGuides, assignGuideToOperator, getGuideStatusOptions, changeGuideStatus } from '../services/api'
+import { ref, nextTick, onMounted, onBeforeUnmount, computed, handleError } from 'vue'
+import {assignGuideToOperator, getGuideStatusOptions, changeGuideStatus, handleAuthRedirect, doLogout } from '../services/api'
+import {apiSSEUrl, apiSSE} from '../services/apiConfig'
 
 export default function useOperator({
   activityPanel,
@@ -8,38 +9,67 @@ export default function useOperator({
   error,
   requestId,
   statusChanging,
-  animateActivity
+  animateActivity,
+  loggingOut
 }) {
-  const operatorId = '3'
   const operatorGuides = ref([])
   const activeGuide = ref(null)
   const statusOptions = ref([])
   const loadingStatusOptions = ref(false)
   const pendingStatusChange = ref({ guideId: null, status: null, viaGuideId: null })
+  
 
-  let refreshIntervalId = null
+  let operatorGuidesSource = null
 
-  async function fetchOperatorGuides() {
-    error.value = null
-    const response = await getOperatorGuides(operatorId)
-    const { status, content } = response
+  const verifyUnauthorizedOnSSE = async (uri) => {
+    try {
+      const res = await apiSSE.get(uri, {
+        headers: {
+          Accept: 'text/event-stream',
+        },
+        validateStatus: () => true
+      })
+      return res.status
+    } catch (e) {
+      console.error('SSE pre-check failed', e)
+      return 500
+    }
+  }
 
-    if (status === 200) {
-      const updatedGuides = content.data?.operatorGuides || []
-      operatorGuides.value = updatedGuides
-
-      if (activeGuide.value) {
-        const stillExists = updatedGuides.find(g => g.guideId === activeGuide.value.guideId)
-        if (stillExists && stillExists.operator?.id === Number(operatorId)) {
-          activeGuide.value = { ...stillExists }
-          await loadStatusOptions(stillExists.guideId)
-        } else {
-          activeGuide.value = null
+  const fetchOperatorGuides = async () => {
+    operatorGuidesSource = new EventSource(`${apiSSEUrl}/operator/guides?lang=es`,  { withCredentials: true })
+    operatorGuidesSource.onmessage = (event) => {
+      try {
+        const content = JSON.parse(event.data)
+        const updatedGuides = content.data?.operatorGuides || []
+        operatorGuides.value = updatedGuides
+        if (activeGuide.value) {
+          const stillExists = updatedGuides.find(g => g.guideId === activeGuide.value.guideId)
+          if (stillExists && stillExists.operator.id != 0) {
+            activeGuide.value = { ...stillExists }
+            loadStatusOptions(stillExists.guideId)
+          } else {
+            activeGuide.value = null
+          }
+        } 
+        if (content.message != "") {
+          //console.error(content.message)
+          error.value = content.message
+          requestId.value = content.requestId
         }
+      } catch (e) {
+        console.error('Failed to parse SSE data', e)
+        handleError('Fallo al interpretar data de SSE')
       }
-    } else {
-      error.value = content.message || 'Error al obtener las guías'
-      requestId.value = content.requestId
+    }
+
+    operatorGuidesSource.onerror = async (err) => {
+      let state = await verifyUnauthorizedOnSSE('/operator/guides?lang=es')
+      handleAuthRedirect(state)
+      //console.error('SSE connection error:', err)
+      //error.value = 'Error al conectarse al servidor'
+      //requestId.value = ''
+      operatorGuidesSource.close()
     }
   }
 
@@ -69,17 +99,15 @@ export default function useOperator({
 
   async function selectGuide(guide) {
     if (!guide.selectable) return
-
-    if (guide.operator?.id === Number(operatorId)) {
+    if (guide.operator.id != 1) {
       activeGuide.value = { ...guide }
       await loadStatusOptions(guide.guideId)
       scrollToActivity()
       return
     }
 
-    const response = await assignGuideToOperator(guide.guideId, operatorId)
+    const response = await assignGuideToOperator(guide.guideId)
     if (response.status === 200) {
-      await fetchOperatorGuides()
       const updated = operatorGuides.value.find(g => g.guideId === guide.guideId)
       if (updated) {
         activeGuide.value = { ...updated }
@@ -118,7 +146,6 @@ export default function useOperator({
 
   async function closeSuccessModal() {
     showSuccessModal.value = false
-    await fetchOperatorGuides()
   }
 
   const elapsedTime = computed(() => {
@@ -133,13 +160,26 @@ export default function useOperator({
     return `${days}d ${hours}:${minutes}:${seconds}`
   })
 
+  async function logout() {
+    loggingOut.value = true
+    const res = await doLogout()
+    if (res.status === 200) {
+      if (res.content.message == "") {
+        window.location.reload()
+      } else {
+          error.value = res.content.message
+          requestId.value = res.content.requestId
+      }
+    }
+    loggingOut.value = false
+  }
+
   onMounted(() => {
     fetchOperatorGuides()
-    refreshIntervalId = setInterval(fetchOperatorGuides, 10000)
   })
 
   onBeforeUnmount(() => {
-    clearInterval(refreshIntervalId)
+    operatorGuidesSource.close()
   })
 
   setInterval(() => {
@@ -150,7 +190,6 @@ export default function useOperator({
     operatorGuides,
     activeGuide,
     selectGuide,
-    fetchOperatorGuides,
     openConfirmModal,
     closeConfirmModal,
     confirmChangeStatus,
@@ -158,6 +197,7 @@ export default function useOperator({
     statusOptions,
     loadingStatusOptions,
     pendingStatusChange,
-    elapsedTime
+    elapsedTime,
+    logout
   }
 }

@@ -9,9 +9,8 @@ import (
 	"testing"
 	http_client "via/internal/client/http"
 	mock_http "via/internal/client/http/mock"
-	"via/internal/log"
-	mock_log "via/internal/log/mock"
 	"via/internal/model"
+	"via/internal/testutil"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -31,9 +30,7 @@ func (m *mockParser) Parse(data []byte, v any) error {
 }
 
 func TestGetGuide(t *testing.T) {
-	mockLog := new(mock_log.MockNoOpLogger)
-	// logger mock setup
-	log.Set(mockLog)
+	testutil.InjectNoOpLogger()
 
 	tests := []struct {
 		name         string

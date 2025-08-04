@@ -18,7 +18,7 @@ func Request(next http.Handler) http.Handler {
 		start := time.Now()
 		reqID := manageRequestId(w, r)
 		logger := log.Get()
-		r = logger.WithLogFieldsInRequest(r, "requestId", reqID)
+		r = logger.WithLogFieldsInRequest(r, "request_id", reqID)
 		logger.Info(r.Context(), "msg", "request start")
 		// Add Request ID to context
 		ctx := context.WithValue(r.Context(), global.RequestIDKey, reqID)
