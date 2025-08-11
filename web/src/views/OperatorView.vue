@@ -23,7 +23,8 @@ const {
   loadingStatusOptions,
   pendingStatusChange,
   elapsedTime,
-  logout
+  logout,
+  loggedOperator
 } = useOperator({
   activityPanel,
   showConfirmModal,
@@ -34,17 +35,26 @@ const {
   animateActivity,
   loggingOut
 })
+
+
+
 </script>
 
 <template>
-  <div class="flex justify-end items-center p-4">
-    <button
-      class="text-sm font-medium px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
-      @click="logout"
-    >
-      Cerrar sesión
-    </button>
+<div class="flex justify-between items-start p-4 relative">
+  <!-- Top-left: Dynamic text -->
+  <div v-if="loggedOperator" class="text-sm font-medium  text-black px-2 py-0.5">
+    {{ loggedOperator }}
   </div>
+
+  <!-- Top-right: Logout button -->
+  <button
+    class="text-sm font-medium px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded"
+    @click="logout"
+  >
+    Cerrar sesión
+  </button>
+</div>
   <div class="p-4 sm:p-6 flex flex-col lg:flex-row gap-6">
     <!-- Lista de guías -->
     <div class="w-full lg:w-1/2 max-h-screen overflow-hidden">

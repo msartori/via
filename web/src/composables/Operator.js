@@ -1,6 +1,6 @@
 import { ref, nextTick, onMounted, onBeforeUnmount, computed, handleError } from 'vue'
-import {assignGuideToOperator, getGuideStatusOptions, changeGuideStatus, handleAuthRedirect, doLogout } from '../services/api'
-import {apiSSEUrl, apiSSE} from '../services/apiConfig'
+import { assignGuideToOperator, getGuideStatusOptions, changeGuideStatus, handleAuthRedirect, doLogout } from '../services/api'
+import { apiSSEUrl, api } from '../services/apiConfig'
 
 export default function useOperator({
   activityPanel,
@@ -17,13 +17,13 @@ export default function useOperator({
   const statusOptions = ref([])
   const loadingStatusOptions = ref(false)
   const pendingStatusChange = ref({ guideId: null, status: null, viaGuideId: null })
+  const loggedOperator = ref('')
   
-
   let operatorGuidesSource = null
 
   const verifyUnauthorizedOnSSE = async (uri) => {
     try {
-      const res = await apiSSE.get(uri, {
+      const res = await api.get(uri, {
         headers: {
           Accept: 'text/event-stream',
         },
@@ -41,11 +41,13 @@ export default function useOperator({
     operatorGuidesSource.onmessage = (event) => {
       try {
         const content = JSON.parse(event.data)
+        const operatorId = content.data?.operatorId || 0
         const updatedGuides = content.data?.operatorGuides || []
+        loggedOperator.value = 'Operador: ' + content.data?.operatorName || ''
         operatorGuides.value = updatedGuides
         if (activeGuide.value) {
           const stillExists = updatedGuides.find(g => g.guideId === activeGuide.value.guideId)
-          if (stillExists && stillExists.operator.id != 0) {
+          if (stillExists && stillExists.operator.id ==operatorId) {
             activeGuide.value = { ...stillExists }
             loadStatusOptions(stillExists.guideId)
           } else {
@@ -64,7 +66,7 @@ export default function useOperator({
     }
 
     operatorGuidesSource.onerror = async (err) => {
-      let state = await verifyUnauthorizedOnSSE('/operator/guides?lang=es')
+      let state = await verifyUnauthorizedOnSSE('/authcheck')
       handleAuthRedirect(state)
       //console.error('SSE connection error:', err)
       //error.value = 'Error al conectarse al servidor'
@@ -198,6 +200,7 @@ export default function useOperator({
     loadingStatusOptions,
     pendingStatusChange,
     elapsedTime,
-    logout
+    logout,
+    loggedOperator
   }
 }

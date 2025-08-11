@@ -2,7 +2,9 @@ package sse
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
+	"time"
 	"via/internal/i18n"
 	"via/internal/log"
 	"via/internal/pubsub"
@@ -39,6 +41,9 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, loader Loader[any], event
 	response.WriteJSONEvent(w, r, loader(r))
 	flusher.Flush()
 
+	ticker := time.NewTicker(10 * time.Second) // ⏱️ envía cada 10 segundos
+	defer ticker.Stop()
+
 	for {
 		select {
 		case event, ok := <-sub.Channel():
@@ -50,6 +55,11 @@ func HandleSSE(w http.ResponseWriter, r *http.Request, loader Loader[any], event
 			}
 			log.Get().Info(r.Context(), "event", event)
 			response.WriteJSONEvent(w, r, loader(r))
+			flusher.Flush()
+		case <-ticker.C:
+			log.Get().Info(r.Context(), "event", "periodic ping")
+			// Write SSE comment to keep the connection alive
+			fmt.Fprint(w, ": keep-alive\n\n")
 			flusher.Flush()
 		case <-r.Context().Done():
 			log.Get().Info(r.Context(), "msg", "Client disconnected")

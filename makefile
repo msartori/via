@@ -73,6 +73,23 @@ localtunnel-start:
 
 	@sed -i '' -e '/^VITE_API_SSE_URL=/d' web/env/.env.$(ENV)
 	@echo "VITE_API_SSE_URL=https://via-$(ENV)-sse-api.loca.lt" >> web/env/.env.$(ENV)
+	
+	@sed -i '' -e '/^OAUTH_REDIRECT_URL=/d' api/env/.env.$(ENV); 
+	@echo "OAUTH_REDIRECT_URL=https://via-$(ENV)-api.loca.lt/auth/callback" >> api/env/.env.$(ENV); 
+
+	@sed -i '' -e '/^VITE_API_SSE_URL=/d' web/env/.env.$(ENV); 
+	@echo "VITE_API_SSE_URL=https://via-$(ENV)-sse-api.loca.lt" >> web/env/.env.$(ENV); 
+	
+	@sed -i '' -e '/^VITE_WEB_URL=/d' web/env/.env.$(ENV); 
+	@echo "VITE_WEB_URL=https://via-$(ENV)-web.loca.lt" >> web/env/.env.$(ENV)
+
+	@sed -i '' -e '/^CORS_ORIGINS=/d' api/env/.env.$(ENV); 
+	@echo "CORS_ORIGINS=https://via-$(ENV)-web.loca.lt" >> api/env/.env.$(ENV); 
+
+	@sed -i '' -e '/^OAUTH_JWT_CLAIMS_AUDIENCE=/d' api/env/.env.$(ENV); 
+	@echo "OAUTH_JWT_CLAIMS_AUDIENCE=https://via-$(ENV)-web.loca.lt" >> api/env/.env.$(ENV); 
+
+
 
 localtunnel-stop:
 	@echo "Killing LocalTunnel process..."
@@ -86,11 +103,14 @@ start-web:
 
 up:
 	echo "🔼 Starting service on ENV: $(ENV_FILE)..."
-	#docker-compose --env-file $(ENV_FILE) up --build -d
-	make start-api
 ifeq ($(SKIP_TUNNEL),)
 	make localtunnel-start
-endif
+	#make ngrok-start
+	#make cloudflared-start
+endif	
+	#docker-compose --env-file $(ENV_FILE) up --build -d
+	make start-api
+
 	make start-web
 	
 # Stop container
@@ -163,3 +183,46 @@ ngrok-start:
 	@echo "OAUTH_JWT_CLAIMS_AUDIENCE=$$(cat .tmp_web_url)" >> api/env/.env.$(ENV); 
 
 	@echo "Ngrok tunnels started and environment variables updated."
+
+
+cloudflared-start:
+	@echo "Starting Cloudflare tunnels using temporary domains..."
+
+	# Iniciar túnel para API REST
+	@nohup cloudflared tunnel --url http://localhost:8081 > .tmp_api_rest.log 2>&1 &
+	
+	# Iniciar túnel para WEB frontend
+	@nohup cloudflared tunnel --url http://localhost:81 > .tmp_web.log 2>&1 &
+
+	@sleep 8
+
+	# Extraer URLs desde los logs
+	@grep -o "https://[a-zA-Z0-9.-]*\.trycloudflare\.com" .tmp_api_rest.log | head -n 1 > .tmp_api_rest_url
+	@grep -o "https://[a-zA-Z0-9.-]*\.trycloudflare\.com" .tmp_web.log | head -n 1 > .tmp_web_url
+
+	# Reemplazar/Agregar variables en archivos .env
+
+	@sed -i '' -e '/^VITE_API_URL=/d' web/env/.env.$(ENV); \
+	echo "VITE_API_URL=$$(cat .tmp_api_rest_url)" >> web/env/.env.$(ENV); \
+
+	@sed -i '' -e '/^OAUTH_REDIRECT_URL=/d' api/env/.env.$(ENV); \
+	echo "OAUTH_REDIRECT_URL=$$(cat .tmp_api_rest_url)/auth/callback" >> api/env/.env.$(ENV); \
+
+	#@sed -i '' -e '/^VITE_API_SSE_URL=/d' web/env/.env.$(ENV); \
+	#echo "VITE_API_SSE_URL=$$(cat .tmp_api_sse_url)" >> web/env/.env.$(ENV); \
+
+	@sed -i '' -e '/^VITE_WEB_URL=/d' web/env/.env.$(ENV); \
+	echo "VITE_WEB_URL=$$(cat .tmp_web_url)" >> web/env/.env.$(ENV); \
+
+	@sed -i '' -e '/^CORS_ORIGINS=/d' api/env/.env.$(ENV); \
+	echo "CORS_ORIGINS=$$(cat .tmp_web_url)" >> api/env/.env.$(ENV); \
+
+	@sed -i '' -e '/^OAUTH_JWT_CLAIMS_AUDIENCE=/d' api/env/.env.$(ENV); \
+	echo "OAUTH_JWT_CLAIMS_AUDIENCE=$$(cat .tmp_web_url)" >> api/env/.env.$(ENV);
+
+	@echo "Cloudflare temporary tunnels started and environment variables updated."
+
+cloudflared-stop:
+	@echo "Killing all cloudflared tunnels..."
+	@pkill -f "cloudflared tunnel --url"
+	@rm -f .tmp_api_*.log .tmp_web.log .tmp_*_url

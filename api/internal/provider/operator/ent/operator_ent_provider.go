@@ -57,8 +57,22 @@ func (o OperatorEntProvider) GetOperatorByAccount(ctx context.Context, account s
 			return model.Operator{}, nil
 
 		}
-		log.Get().Error(ctx, err, "msg", "failed querying operator by account")
+		log.Get().Error(ctx, err, "msg", "failed querying operator by account", "account", account)
 		return model.Operator{}, fmt.Errorf("failed querying operator by account: %w", err)
+
+	}
+	return fromEntOperator(*operator), err
+}
+
+func (o OperatorEntProvider) GetOperatorById(ctx context.Context, id int) (model.Operator, error) {
+	operator, err := o.client.Operator.Get(ctx, id)
+	if err != nil {
+		if ent.IsNotFound(err) {
+			return model.Operator{}, nil
+
+		}
+		log.Get().Error(ctx, err, "msg", "failed querying operator by id", "operator_id", id)
+		return model.Operator{}, fmt.Errorf("failed querying operator by id: %w", err)
 
 	}
 	return fromEntOperator(*operator), err

@@ -9,6 +9,7 @@ import (
 type OperatorProvider interface {
 	GetOperators(ctx context.Context) ([]model.Operator, error)
 	GetOperatorByAccount(ctx context.Context, account string) (model.Operator, error)
+	GetOperatorById(ctx context.Context, id int) (model.Operator, error)
 }
 
 var (

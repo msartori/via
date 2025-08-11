@@ -74,6 +74,10 @@ func CreateGuideToWidthdraw(biz biz_config.BussinessCfg) http.Handler {
 				guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guide.ID, Status: biz_guide_status.INITIAL})
 				logger.Info(r.Context(), "msg", "guide re-init")
 				data.WithdrawMessage = getWithDrawMessage(r, inProcess, viaGuide.ID)
+				err = pubsub.Get().Publish(r.Context(), global.NewGuideChannel, fmt.Sprintf("{\"guide_id\":\"%s\"}", viaGuide.ID))
+				if err != nil {
+					logger.Error(r.Context(), err, "msg", "unable to publish event", "channel", global.NewGuideChannel)
+				}
 				response.WriteJSON(w, r, res, http.StatusOK)
 				return
 			}
@@ -108,6 +112,8 @@ func CreateGuideToWidthdraw(biz biz_config.BussinessCfg) http.Handler {
 
 type GetOperatorGuideOutput struct {
 	OperatorGuides []model.OperatorGuide `json:"operatorGuides"`
+	OperatorId     int                   `json:"operatorId"`
+	OperatorName   string                `json:"operatorName,omitempty"`
 }
 
 func GetOperatorGuide(r *http.Request) response.Response[any] {
@@ -149,7 +155,11 @@ func GetOperatorGuide(r *http.Request) response.Response[any] {
 			})
 	}
 	logger.Info(r.Context(), "msg", "returning operator guides")
-	res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides}
+	operator, err := biz_operator.GetOperatorById(r.Context(), operatorId)
+	if err != nil {
+		log.Get().Error(r.Context(), err, "msg", "failed to fetch operator")
+	}
+	res.Data = GetOperatorGuideOutput{OperatorGuides: operatorGuides, OperatorId: operatorId, OperatorName: operator.Name}
 	res.HttpStatus = http.StatusOK
 	return res
 }
@@ -259,7 +269,11 @@ func UpdateGuideStatus() http.Handler {
 		}
 
 		logger.WithLogFieldsInRequest(r, "status", input.Status)
-		err := guide_provider.Get().UpdateGuide(r.Context(), model.Guide{ID: guideId, Status: input.Status})
+		guideToUpdate := model.Guide{ID: guideId, Status: input.Status}
+		if input.Status == biz_guide_status.ON_HOLD {
+			guideToUpdate.Operator = model.Operator{ID: biz_operator.OPERATOR_SYSTEM}
+		}
+		err := guide_provider.Get().UpdateGuide(r.Context(), guideToUpdate)
 		if err != nil {
 			log.Get().Error(r.Context(), err, "msg", "failed updating guide status")
 			res.Message = i18n.Get(r, i18n.MsgInternalServerError)

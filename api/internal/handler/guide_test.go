@@ -24,6 +24,8 @@ import (
 	"via/internal/model"
 	guide_provider "via/internal/provider/guide"
 	mock_guide_provider "via/internal/provider/guide/mock"
+	operator_provider "via/internal/provider/operator"
+	mock_operator_provider "via/internal/provider/operator/mock"
 	via_guide_provider "via/internal/provider/via/guide"
 	mock_via_guide_provider "via/internal/provider/via/guide/mock"
 	"via/internal/pubsub"
@@ -206,6 +208,11 @@ func TestGetOperatorGuide(t *testing.T) {
 		guides := []model.Guide{
 			{ID: 2, Recipient: "John", Status: "INIT", Operator: model.Operator{ID: 42}, ViaGuideID: "V123", Payment: "PREPAID"},
 		}
+		mockProvider := new(mock_operator_provider.MockOperatorProvider)
+		mockProvider.On("GetOperatorById", mock.Anything, 42).
+			Return(model.Operator{ID: 42, Name: "Test Operator"}, nil).Once()
+
+		operator_provider.Set(mockProvider)
 
 		req := newOperatorRequest(http.MethodGet, "/guide/operator", nil, 42)
 

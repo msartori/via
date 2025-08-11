@@ -20,3 +20,8 @@ func (m *MockOperatorProvider) GetOperatorByAccount(ctx context.Context, account
 	args := m.Called(ctx, account)
 	return args.Get(0).(model.Operator), args.Error(1)
 }
+
+func (m *MockOperatorProvider) GetOperatorById(ctx context.Context, id int) (model.Operator, error) {
+	args := m.Called(ctx, id)
+	return args.Get(0).(model.Operator), args.Error(1)
+}

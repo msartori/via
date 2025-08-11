@@ -65,6 +65,10 @@ func NewRest(cfg config.Config) http.Handler {
 
 		r.Put("/guide/{guideId}/status", middleware.LogHandlerExecution("handler.UpdateGuideStatus",
 			handler.UpdateGuideStatus().ServeHTTP))
+
+		r.Get("/authcheck", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			response.WriteJSON(w, r, response.Response[any]{Data: "ok", Message: "ping status"}, http.StatusOK)
+		}))
 	})
 
 	return r
